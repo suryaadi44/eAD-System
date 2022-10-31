@@ -2,7 +2,9 @@ package main
 
 import (
 	"github.com/joho/godotenv"
+	"github.com/labstack/echo/v4"
 	"github.com/suryaadi44/eAD-System/pkg/config"
+	"github.com/suryaadi44/eAD-System/pkg/controller"
 	"log"
 
 	"github.com/suryaadi44/eAD-System/pkg/database"
@@ -35,4 +37,9 @@ func main() {
 	if err != nil {
 		log.Fatalf(err.Error())
 	}
+
+	e := echo.New()
+	controller.InitController(e, db)
+
+	e.Logger.Fatal(e.Start(":" + env["PORT"]))
 }
