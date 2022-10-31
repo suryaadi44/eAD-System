@@ -2,6 +2,7 @@ package database
 
 import (
 	"fmt"
+	"github.com/suryaadi44/eAD-System/pkg/entity"
 	"time"
 
 	"gorm.io/driver/mysql"
@@ -28,5 +29,11 @@ func Connect(dbHost string, dbPort string, dbUsername string, dbPassword string,
 }
 
 func Migrate(db *gorm.DB) error {
-	return db.AutoMigrate()
+	return db.AutoMigrate(
+		&entity.User{},
+		&entity.Template{},
+		&entity.TemplateField{},
+		&entity.Document{},
+		&entity.DocumentField{},
+	)
 }
