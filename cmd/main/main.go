@@ -39,7 +39,7 @@ func main() {
 	}
 
 	e := echo.New()
-	controller.InitController(e, db)
+	controller.InitController(e, db, env)
 
 	e.Logger.Fatal(e.Start(":" + env["PORT"]))
 }

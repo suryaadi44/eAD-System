@@ -18,6 +18,7 @@ func NewUserController(userService service.UserService) *UserController {
 
 func (u *UserController) InitRoute(e *echo.Group) {
 	e.POST("/signup", u.SignUpUser)
+	e.POST("/login", u.LoginUser)
 }
 
 func (u *UserController) SignUpUser(c echo.Context) error {
@@ -46,5 +47,31 @@ func (u *UserController) SignUpUser(c echo.Context) error {
 
 	return c.JSON(200, echo.Map{
 		"message": "success creating user",
+	})
+}
+
+func (u *UserController) LoginUser(c echo.Context) error {
+	user := new(dto.UserLoginRequest)
+	if err := c.Bind(user); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, utils.ErrBadRequestBody.Error())
+	}
+
+	if err := c.Validate(user); err != nil {
+		return err
+	}
+
+	token, err := u.userService.LogInUser(c.Request().Context(), user)
+	if err != nil {
+		switch err {
+		case utils.ErrInvalidCredentials:
+			return echo.NewHTTPError(http.StatusUnauthorized, err.Error())
+		default:
+			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		}
+	}
+
+	return c.JSON(200, echo.Map{
+		"message": "success login",
+		"token":   token,
 	})
 }
