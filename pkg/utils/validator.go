@@ -25,6 +25,9 @@ func (cv *CustomValidator) Validate(i interface{}) error {
 			case "len":
 				msg := fmt.Sprintf("%s must be %s characters long", each.Field(), each.Param())
 				return echo.NewHTTPError(http.StatusBadRequest, msg)
+			case "gte":
+				msg := fmt.Sprintf("%s must be greater than or equal to %s", each.Field(), each.Param())
+				return echo.NewHTTPError(http.StatusBadRequest, msg)
 			default:
 				msg := fmt.Sprintf("Invalid field %s", each.Field())
 				return echo.NewHTTPError(http.StatusBadRequest, msg)

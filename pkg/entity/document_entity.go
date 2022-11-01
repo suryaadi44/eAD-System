@@ -12,7 +12,7 @@ type Document struct {
 	Applicant   User   `gorm:"foreignKey:ApplicantID"`
 	TemplateID  string
 	Template    Template
-	Fields      []DocumentField
+	Fields      DocumentFields
 	Stage       int
 	VerifierID  string `gorm:"type:varchar(36)"`
 	Verifier    User   `gorm:"foreignKey:VerifierID"`
@@ -33,11 +33,18 @@ type DocumentField struct {
 	Value           string
 }
 
+type DocumentFields []DocumentField
+
 type Template struct {
 	gorm.Model
-	Name   string
-	Path   string
-	Fields []TemplateField
+	Name         string `gorm:"type:varchar(255);not null;uniqueIndex"`
+	Path         string `gorm:"type:varchar(255);not null;uniqueIndex"`
+	MarginTop    uint
+	MarginBottom uint
+	MarginLeft   uint
+	MarginRight  uint
+	IsActive     bool `gorm:"default:true"`
+	Fields       TemplateFields
 }
 
 type TemplateField struct {
@@ -45,3 +52,5 @@ type TemplateField struct {
 	TemplateID uint
 	Key        string
 }
+
+type TemplateFields []TemplateField
