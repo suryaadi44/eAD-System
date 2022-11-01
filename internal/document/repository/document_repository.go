@@ -8,4 +8,5 @@ import (
 type DocumentRepository interface {
 	AddTemplate(ctc context.Context, template *entity.Template) error
 	GetAllTemplate(ctx context.Context) (*entity.Templates, error)
+	GetTemplateDetail(ctx context.Context, templateId int64) (*entity.Template, error)
 }

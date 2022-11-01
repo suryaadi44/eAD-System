@@ -6,6 +6,7 @@ import (
 	"github.com/suryaadi44/eAD-System/internal/document/service"
 	"github.com/suryaadi44/eAD-System/pkg/utils"
 	"net/http"
+	"strconv"
 )
 
 type DocumentController struct {
@@ -18,6 +19,8 @@ func NewDocumentController(documentService service.DocumentService) *DocumentCon
 
 func (d *DocumentController) InitRoute(api *echo.Group, secureApi *echo.Group) {
 	api.GET("/templates", d.GetAllTemplate)
+	api.GET("/templates/:template_id", d.GetTemplateDetail)
+
 	secureApi.POST("/templates", d.AddTemplate)
 }
 
@@ -59,5 +62,27 @@ func (d *DocumentController) GetAllTemplate(c echo.Context) error {
 	return c.JSON(http.StatusOK, echo.Map{
 		"message": "success getting all template",
 		"data":    templates,
+	})
+}
+
+func (d *DocumentController) GetTemplateDetail(c echo.Context) error {
+	templateId := c.Param("template_id")
+	templateIdInt, err := strconv.ParseInt(templateId, 10, 64)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, utils.ErrInvalidTemplateID.Error())
+	}
+
+	template, err := d.documentService.GetTemplateDetail(c.Request().Context(), templateIdInt)
+	if err != nil {
+		if err == utils.ErrTemplateNotFound {
+			return echo.NewHTTPError(http.StatusNotFound, err.Error())
+		}
+
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	return c.JSON(http.StatusOK, echo.Map{
+		"message": "success getting template detail",
+		"data":    template,
 	})
 }

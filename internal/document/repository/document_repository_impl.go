@@ -37,3 +37,17 @@ func (d *DocumentRepositoryImpl) GetAllTemplate(ctx context.Context) (*entity.Te
 
 	return &templates, nil
 }
+
+func (d *DocumentRepositoryImpl) GetTemplateDetail(ctx context.Context, templateId int64) (*entity.Template, error) {
+	var template entity.Template
+	err := d.db.WithContext(ctx).Preload("Fields").First(&template, "id = ?", templateId).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, utils.ErrTemplateNotFound
+		}
+
+		return nil, err
+	}
+
+	return &template, nil
+}
