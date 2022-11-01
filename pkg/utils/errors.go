@@ -4,9 +4,10 @@ import "errors"
 
 // Controller errors
 var (
-	ErrBadRequestBody     = errors.New("bad request body")
-	ErrInvalidCredentials = errors.New("invalid email or password")
-	ErrInvalidTemplateID  = errors.New("invalid template id")
+	ErrBadRequestBody       = errors.New("bad request body")
+	ErrInvalidCredentials   = errors.New("invalid email or password")
+	ErrInvalidTemplateID    = errors.New("invalid template id")
+	ErrDocumentAccessDenied = errors.New("document access denied")
 )
 
 // Service errors
@@ -23,4 +24,5 @@ var (
 	ErrTemplateNotFound      = errors.New("template not found")
 	ErrTemplateFieldNotFound = errors.New("template field not found")
 	ErrDuplicateRegister     = errors.New("document with provided register already exist")
+	ErrDocumentNotFound      = errors.New("document not found")
 )

@@ -2,11 +2,13 @@ package repository
 
 import (
 	"context"
+	"strings"
+
 	"github.com/suryaadi44/eAD-System/pkg/config"
 	"github.com/suryaadi44/eAD-System/pkg/entity"
 	"github.com/suryaadi44/eAD-System/pkg/utils"
 	"gorm.io/gorm"
-	"strings"
+	"gorm.io/gorm/clause"
 )
 
 type DocumentRepositoryImpl struct {
@@ -112,4 +114,18 @@ func (d *DocumentRepositoryImpl) AddDocument(ctx context.Context, document *enti
 	}
 
 	return document.ID, nil
+}
+
+func (d *DocumentRepositoryImpl) GetDocument(ctx context.Context, documentID string) (*entity.Document, error) {
+	var document entity.Document
+	err := d.db.WithContext(ctx).Preload(clause.Associations).Preload("Fields.TemplateField").First(&document, "id = ?", documentID).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, utils.ErrDocumentNotFound
+		}
+
+		return nil, err
+	}
+
+	return &document, nil
 }

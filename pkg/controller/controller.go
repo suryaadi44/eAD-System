@@ -10,6 +10,7 @@ import (
 	userControllerPkg "github.com/suryaadi44/eAD-System/internal/user/controller"
 	userRepositoryPkg "github.com/suryaadi44/eAD-System/internal/user/repository"
 	userServicePkg "github.com/suryaadi44/eAD-System/internal/user/service"
+	pdfServicePkg "github.com/suryaadi44/eAD-System/pkg/pdf"
 
 	"github.com/suryaadi44/eAD-System/pkg/utils"
 	"gorm.io/gorm"
@@ -34,8 +35,9 @@ func InitController(e *echo.Echo, db *gorm.DB, conf map[string]string) {
 	userController := userControllerPkg.NewUserController(userService)
 	userController.InitRoute(v1)
 
+	pdfService := pdfServicePkg.NewPDFService()
 	documentRepository := documentRepositoryPkg.NewDocumentRepositoryImpl(db)
-	documentService := documentServicePkg.NewDocumentServiceImpl(documentRepository)
+	documentService := documentServicePkg.NewDocumentServiceImpl(documentRepository, pdfService)
 	documentController := documentControllerPkg.NewDocumentController(documentService, jwtService)
 	documentController.InitRoute(v1, secureV1)
 }
