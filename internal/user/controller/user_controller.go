@@ -30,7 +30,7 @@ func (u *UserController) SignUpUser(c echo.Context) error {
 		return err
 	}
 
-	err := u.userService.SignUpUser(user, c.Request().Context())
+	err := u.userService.SignUpUser(c.Request().Context(), user)
 	if err != nil {
 		switch err {
 		case utils.ErrUsernameAlreadyExist:
