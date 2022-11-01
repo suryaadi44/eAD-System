@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"github.com/suryaadi44/eAD-System/pkg/entity"
+	"github.com/suryaadi44/eAD-System/pkg/utils"
 	"gorm.io/gorm"
 )
 
@@ -14,30 +15,25 @@ func NewDocumentRepositoryImpl(db *gorm.DB) DocumentRepository {
 	return &DocumentRepositoryImpl{db}
 }
 
-func (d *DocumentRepositoryImpl) AddTemplate(ctx context.Context, template *entity.Template) (uint, error) {
+func (d *DocumentRepositoryImpl) AddTemplate(ctx context.Context, template *entity.Template) error {
 	result := d.db.WithContext(ctx).Create(template)
 	if result.Error != nil {
-		return 0, result.Error
-	}
-
-	return template.ID, nil
-}
-
-func (d *DocumentRepositoryImpl) AddTemplateFields(ctx context.Context, templateField *entity.TemplateFields) error {
-	err := d.db.WithContext(ctx).Create(templateField).Error
-	if err != nil {
-		return err
+		return result.Error
 	}
 
 	return nil
 }
 
-func (d *DocumentRepositoryImpl) GetAllTemplate(ctx context.Context, id uint) (*entity.Template, error) {
-	var template entity.Template
-	err := d.db.WithContext(ctx).Where("id = ?", id).Preload("Fields").First(&template).Error
+func (d *DocumentRepositoryImpl) GetAllTemplate(ctx context.Context) (*entity.Templates, error) {
+	var templates entity.Templates
+	err := d.db.WithContext(ctx).Preload("Fields").Find(&templates).Error
 	if err != nil {
 		return nil, err
 	}
 
-	return &template, nil
+	if len(templates) == 0 {
+		return nil, utils.ErrTemplateNotFound
+	}
+
+	return &templates, nil
 }

@@ -11,7 +11,7 @@ type TemplateRequest struct {
 	Keys         []string `form:"keys[]" validate:"required"`
 }
 
-func (t TemplateRequest) ToEntity() (*entity.Template, *entity.TemplateFields) {
+func (t TemplateRequest) ToEntity() *entity.Template {
 	template := entity.Template{
 		Name:         t.Name,
 		MarginTop:    t.MarginTop,
@@ -27,7 +27,9 @@ func (t TemplateRequest) ToEntity() (*entity.Template, *entity.TemplateFields) {
 		})
 	}
 
-	return &template, &fields
+	template.Fields = fields
+
+	return &template
 }
 
 type TemplateResponse struct {
@@ -39,6 +41,8 @@ type TemplateResponse struct {
 	MarginRight  uint     `json:"margin_right"`
 	Keys         []string `json:"keys"`
 }
+
+type TemplatesResponse []TemplateResponse
 
 func NewTemplateResponse(template *entity.Template) *TemplateResponse {
 	var keys []string
@@ -55,4 +59,13 @@ func NewTemplateResponse(template *entity.Template) *TemplateResponse {
 		MarginRight:  template.MarginRight,
 		Keys:         keys,
 	}
+}
+
+func NewTemplatesResponse(templates *entity.Templates) *TemplatesResponse {
+	var responses TemplatesResponse
+	for _, template := range *templates {
+		responses = append(responses, *NewTemplateResponse(&template))
+	}
+
+	return &responses
 }

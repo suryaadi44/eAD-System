@@ -49,22 +49,24 @@ func (d *DocumentServiceImpl) AddTemplate(ctx context.Context, template dto.Temp
 		return err
 	}
 
-	templateEntity, fieldsEntity := template.ToEntity()
+	templateEntity := template.ToEntity()
 	templateEntity.Path = path
 
-	templateID, err := d.documentRepository.AddTemplate(ctx, templateEntity)
-	if err != nil {
-		return err
-	}
-
-	for i := range *fieldsEntity {
-		(*fieldsEntity)[i].TemplateID = templateID
-	}
-
-	err = d.documentRepository.AddTemplateFields(ctx, fieldsEntity)
+	err = d.documentRepository.AddTemplate(ctx, templateEntity)
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func (d *DocumentServiceImpl) GetAllTemplate(ctx context.Context) (*dto.TemplatesResponse, error) {
+	templates, err := d.documentRepository.GetAllTemplate(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	templateResponse := dto.NewTemplatesResponse(templates)
+
+	return templateResponse, nil
 }

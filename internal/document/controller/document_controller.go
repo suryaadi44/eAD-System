@@ -16,8 +16,9 @@ func NewDocumentController(documentService service.DocumentService) *DocumentCon
 	return &DocumentController{documentService}
 }
 
-func (d *DocumentController) InitRoute(_ *echo.Group, secure *echo.Group) {
-	secure.POST("/template", d.AddTemplate)
+func (d *DocumentController) InitRoute(api *echo.Group, secureApi *echo.Group) {
+	api.GET("/templates", d.GetAllTemplate)
+	secureApi.POST("/templates", d.AddTemplate)
 }
 
 func (d *DocumentController) AddTemplate(c echo.Context) error {
@@ -42,5 +43,21 @@ func (d *DocumentController) AddTemplate(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, echo.Map{
 		"message": "success adding template",
+	})
+}
+
+func (d *DocumentController) GetAllTemplate(c echo.Context) error {
+	templates, err := d.documentService.GetAllTemplate(c.Request().Context())
+	if err != nil {
+		if err == utils.ErrTemplateNotFound {
+			return echo.NewHTTPError(http.StatusNotFound, err.Error())
+		}
+
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	return c.JSON(http.StatusOK, echo.Map{
+		"message": "success getting all template",
+		"data":    templates,
 	})
 }

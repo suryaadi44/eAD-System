@@ -18,4 +18,5 @@ var (
 	ErrNIKAlreadyExist      = errors.New("user with provided nik already exist")
 	ErrNIPAlreadyExist      = errors.New("user with provided nip already exist")
 	ErrUserNotFound         = errors.New("user not found")
+	ErrTemplateNotFound     = errors.New("template not found")
 )
