@@ -11,7 +11,7 @@ type TemplateRequest struct {
 	Keys         []string `form:"keys[]" validate:"required"`
 }
 
-func (t TemplateRequest) ToEntity() (*entity.Template, *entity.TemplateFields) {
+func (t TemplateRequest) ToEntity() *entity.Template {
 	template := entity.Template{
 		Name:         t.Name,
 		MarginTop:    t.MarginTop,
@@ -27,5 +27,7 @@ func (t TemplateRequest) ToEntity() (*entity.Template, *entity.TemplateFields) {
 		})
 	}
 
-	return &template, &fields
+	template.Fields = fields
+
+	return &template
 }

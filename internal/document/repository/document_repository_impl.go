@@ -14,19 +14,10 @@ func NewDocumentRepositoryImpl(db *gorm.DB) DocumentRepository {
 	return &DocumentRepositoryImpl{db}
 }
 
-func (d *DocumentRepositoryImpl) AddTemplate(ctx context.Context, template *entity.Template) (uint, error) {
+func (d *DocumentRepositoryImpl) AddTemplate(ctx context.Context, template *entity.Template) error {
 	result := d.db.WithContext(ctx).Create(template)
 	if result.Error != nil {
-		return 0, result.Error
-	}
-
-	return template.ID, nil
-}
-
-func (d *DocumentRepositoryImpl) AddTemplateFields(ctx context.Context, templateField *entity.TemplateFields) error {
-	err := d.db.WithContext(ctx).Create(templateField).Error
-	if err != nil {
-		return err
+		return result.Error
 	}
 
 	return nil
