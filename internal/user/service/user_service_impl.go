@@ -26,7 +26,7 @@ func NewUserServiceImpl(userRepository repository.UserRepository, function Paswo
 	}
 }
 
-func (u *UserServiceImpl) SignUpUser(user *dto.UserSignUpRequest, ctx context.Context) error {
+func (u *UserServiceImpl) SignUpUser(ctx context.Context, user *dto.UserSignUpRequest) error {
 	hashedPassword, err := u.passwordHash.GenerateFromPassword([]byte(user.Password), 10)
 	if err != nil {
 		return err
@@ -37,7 +37,7 @@ func (u *UserServiceImpl) SignUpUser(user *dto.UserSignUpRequest, ctx context.Co
 	userEntity := user.ToEntity()
 	userEntity.ID = uuid.New().String()
 
-	err = u.userRepository.CreateUser(userEntity, ctx)
+	err = u.userRepository.CreateUser(ctx, userEntity)
 	if err != nil {
 		return err
 	}

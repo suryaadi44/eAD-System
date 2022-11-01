@@ -6,5 +6,5 @@ import (
 )
 
 type UserService interface {
-	SignUpUser(user *dto.UserSignUpRequest, ctx context.Context) error
+	SignUpUser(ctx context.Context, user *dto.UserSignUpRequest) error
 }

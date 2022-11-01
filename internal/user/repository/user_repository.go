@@ -6,5 +6,5 @@ import (
 )
 
 type UserRepository interface {
-	CreateUser(user *entity.User, ctx context.Context) error
+	CreateUser(ctx context.Context, user *entity.User) error
 }

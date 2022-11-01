@@ -16,7 +16,7 @@ func NewUserRepositoryImpl(db *gorm.DB) *UserRepositoryImpl {
 	return &UserRepositoryImpl{db: db}
 }
 
-func (u *UserRepositoryImpl) CreateUser(user *entity.User, ctx context.Context) error {
+func (u *UserRepositoryImpl) CreateUser(ctx context.Context, user *entity.User) error {
 	err := u.db.WithContext(ctx).Create(user).Error
 	if err != nil {
 		if strings.Contains(err.Error(), "Error 1062: Duplicate entry") {
