@@ -2,6 +2,7 @@ package pdf
 
 import (
 	"bytes"
+
 	"github.com/SebastiaanKlippert/go-wkhtmltopdf"
 )
 
@@ -12,7 +13,7 @@ func NewPDFService() PDFService {
 	return &PDFServiceImpl{}
 }
 
-func (s *PDFServiceImpl) GeneratePDF(data *bytes.Buffer, marginTop uint, marginBottom uint, marginLeft uint, marginRight uint) ([]byte, error) {
+func (*PDFServiceImpl) GeneratePDF(data *bytes.Buffer, marginTop uint, marginBottom uint, marginLeft uint, marginRight uint) ([]byte, error) {
 	pdfg, err := wkhtmltopdf.NewPDFGenerator()
 	if err != nil {
 		return nil, err
