@@ -37,12 +37,13 @@ type DocumentFields []DocumentField
 
 type Template struct {
 	gorm.Model
-	Name         string
-	Path         string
+	Name         string `gorm:"type:varchar(255);not null;uniqueIndex"`
+	Path         string `gorm:"type:varchar(255);not null;uniqueIndex"`
 	MarginTop    uint
 	MarginBottom uint
 	MarginLeft   uint
 	MarginRight  uint
+	IsActive     bool `gorm:"default:true"`
 	Fields       TemplateFields
 }
 
