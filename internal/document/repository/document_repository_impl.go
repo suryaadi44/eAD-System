@@ -31,3 +31,13 @@ func (d *DocumentRepositoryImpl) AddTemplateFields(ctx context.Context, template
 
 	return nil
 }
+
+func (d *DocumentRepositoryImpl) GetAllTemplate(ctx context.Context, id uint) (*entity.Template, error) {
+	var template entity.Template
+	err := d.db.WithContext(ctx).Where("id = ?", id).Preload("Fields").First(&template).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return &template, nil
+}
