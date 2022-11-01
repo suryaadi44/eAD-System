@@ -2,8 +2,9 @@ package utils
 
 import (
 	"fmt"
-	"github.com/go-playground/validator/v10"
 	"net/http"
+
+	"github.com/go-playground/validator/v10"
 
 	"github.com/labstack/echo/v4"
 )

@@ -45,7 +45,7 @@ func (u *UserController) SignUpUser(c echo.Context) error {
 		}
 	}
 
-	return c.JSON(200, echo.Map{
+	return c.JSON(http.StatusCreated, echo.Map{
 		"message": "success creating user",
 	})
 }
@@ -70,7 +70,7 @@ func (u *UserController) LoginUser(c echo.Context) error {
 		}
 	}
 
-	return c.JSON(200, echo.Map{
+	return c.JSON(http.StatusOK, echo.Map{
 		"message": "success login",
 		"token":   token,
 	})
