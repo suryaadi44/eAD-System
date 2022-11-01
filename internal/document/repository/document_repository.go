@@ -6,6 +6,5 @@ import (
 )
 
 type DocumentRepository interface {
-	AddTemplate(ctc context.Context, template *entity.Template) (uint, error)
-	AddTemplateFields(ctc context.Context, templateField *entity.TemplateFields) error
+	AddTemplate(ctc context.Context, template *entity.Template) error
 }

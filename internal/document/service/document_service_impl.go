@@ -49,19 +49,10 @@ func (d *DocumentServiceImpl) AddTemplate(ctx context.Context, template dto.Temp
 		return err
 	}
 
-	templateEntity, fieldsEntity := template.ToEntity()
+	templateEntity := template.ToEntity()
 	templateEntity.Path = path
 
-	templateID, err := d.documentRepository.AddTemplate(ctx, templateEntity)
-	if err != nil {
-		return err
-	}
-
-	for i := range *fieldsEntity {
-		(*fieldsEntity)[i].TemplateID = templateID
-	}
-
-	err = d.documentRepository.AddTemplateFields(ctx, fieldsEntity)
+	err = d.documentRepository.AddTemplate(ctx, templateEntity)
 	if err != nil {
 		return err
 	}
