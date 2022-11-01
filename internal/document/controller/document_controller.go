@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"github.com/golang-jwt/jwt"
 	"github.com/labstack/echo/v4"
 	"github.com/suryaadi44/eAD-System/internal/document/dto"
 	"github.com/suryaadi44/eAD-System/internal/document/service"
@@ -9,12 +10,22 @@ import (
 	"strconv"
 )
 
-type DocumentController struct {
-	documentService service.DocumentService
-}
+type (
+	JWTService interface {
+		GetClaims(c *echo.Context) jwt.MapClaims
+	}
 
-func NewDocumentController(documentService service.DocumentService) *DocumentController {
-	return &DocumentController{documentService}
+	DocumentController struct {
+		documentService service.DocumentService
+		jwtService      JWTService
+	}
+)
+
+func NewDocumentController(documentService service.DocumentService, jwtService JWTService) *DocumentController {
+	return &DocumentController{
+		documentService: documentService,
+		jwtService:      jwtService,
+	}
 }
 
 func (d *DocumentController) InitRoute(api *echo.Group, secureApi *echo.Group) {
@@ -22,6 +33,7 @@ func (d *DocumentController) InitRoute(api *echo.Group, secureApi *echo.Group) {
 	api.GET("/templates/:template_id", d.GetTemplateDetail)
 
 	secureApi.POST("/templates", d.AddTemplate)
+	secureApi.POST("/documents", d.AddDocument)
 }
 
 func (d *DocumentController) AddTemplate(c echo.Context) error {
@@ -67,12 +79,12 @@ func (d *DocumentController) GetAllTemplate(c echo.Context) error {
 
 func (d *DocumentController) GetTemplateDetail(c echo.Context) error {
 	templateId := c.Param("template_id")
-	templateIdInt, err := strconv.ParseInt(templateId, 10, 64)
+	templateIdInt, err := strconv.ParseUint(templateId, 10, 64)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, utils.ErrInvalidTemplateID.Error())
 	}
 
-	template, err := d.documentService.GetTemplateDetail(c.Request().Context(), templateIdInt)
+	template, err := d.documentService.GetTemplateDetail(c.Request().Context(), uint(templateIdInt))
 	if err != nil {
 		if err == utils.ErrTemplateNotFound {
 			return echo.NewHTTPError(http.StatusNotFound, err.Error())
@@ -84,5 +96,40 @@ func (d *DocumentController) GetTemplateDetail(c echo.Context) error {
 	return c.JSON(http.StatusOK, echo.Map{
 		"message": "success getting template detail",
 		"data":    template,
+	})
+}
+
+func (d *DocumentController) AddDocument(c echo.Context) error {
+	document := new(dto.DocumentRequest)
+	if err := c.Bind(document); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, utils.ErrBadRequestBody)
+	}
+
+	if err := c.Validate(document); err != nil {
+		return err
+	}
+
+	claims := d.jwtService.GetClaims(&c)
+	userID := claims["user_id"].(string)
+
+	id, err := d.documentService.AddDocument(c.Request().Context(), *document, userID)
+	if err != nil {
+		switch err {
+		case utils.ErrTemplateNotFound:
+			return echo.NewHTTPError(http.StatusNotFound, err.Error())
+		case utils.ErrFieldNotMatch:
+			return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+		case utils.ErrDuplicateRegister:
+			return echo.NewHTTPError(http.StatusConflict, err.Error())
+		default:
+			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		}
+	}
+
+	return c.JSON(http.StatusOK, echo.Map{
+		"message": "success adding document",
+		"data": echo.Map{
+			"id": id,
+		},
 	})
 }

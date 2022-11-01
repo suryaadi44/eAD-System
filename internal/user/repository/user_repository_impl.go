@@ -38,7 +38,7 @@ func (u *UserRepositoryImpl) CreateUser(ctx context.Context, user *entity.User) 
 
 func (u *UserRepositoryImpl) FindByUsername(ctx context.Context, username string) (*entity.User, error) {
 	var user entity.User
-	err := u.db.WithContext(ctx).Select([]string{"id", "username", "password"}).Where("username = ?", username).First(&user).Error
+	err := u.db.WithContext(ctx).Select([]string{"id", "username", "password", "role"}).Where("username = ?", username).First(&user).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, utils.ErrUserNotFound
