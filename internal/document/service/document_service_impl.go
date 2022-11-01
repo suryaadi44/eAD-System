@@ -70,3 +70,14 @@ func (d *DocumentServiceImpl) GetAllTemplate(ctx context.Context) (*dto.Template
 
 	return templateResponse, nil
 }
+
+func (d *DocumentServiceImpl) GetTemplateDetail(ctx context.Context, templateId int64) (*dto.TemplateResponse, error) {
+	template, err := d.documentRepository.GetTemplateDetail(ctx, templateId)
+	if err != nil {
+		return nil, err
+	}
+
+	templateResponse := dto.NewTemplateResponse(template)
+
+	return templateResponse, nil
+}
