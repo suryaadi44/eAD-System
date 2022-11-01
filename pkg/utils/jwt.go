@@ -1,10 +1,11 @@
 package utils
 
 import (
+	"time"
+
 	"github.com/golang-jwt/jwt"
 	"github.com/labstack/echo/v4"
 	"github.com/suryaadi44/eAD-System/pkg/entity"
-	"time"
 )
 
 type JWTService struct {
@@ -29,7 +30,7 @@ func (j *JWTService) GenerateToken(user *entity.User) (string, error) {
 	return token.SignedString([]byte(j.secretKey))
 }
 
-func (j *JWTService) GetClaims(c *echo.Context) jwt.MapClaims {
+func (*JWTService) GetClaims(c *echo.Context) jwt.MapClaims {
 	user := (*c).Get("user").(*jwt.Token)
 	claims := user.Claims.(jwt.MapClaims)
 	return claims
