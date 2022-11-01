@@ -40,9 +40,12 @@ func (d *DocumentServiceImpl) AddTemplate(ctx context.Context, template dto.Temp
 	if err != nil {
 		return err
 	}
-	defer dst.Close()
 
 	if _, err = io.Copy(dst, src); err != nil {
+		return err
+	}
+
+	if err = dst.Close(); err != nil {
 		return err
 	}
 
