@@ -31,3 +31,41 @@ func (t TemplateRequest) ToEntity() *entity.Template {
 
 	return &template
 }
+
+type TemplateResponse struct {
+	ID           uint     `json:"id"`
+	Name         string   `json:"name"`
+	MarginTop    uint     `json:"margin_top"`
+	MarginBottom uint     `json:"margin_bottom"`
+	MarginLeft   uint     `json:"margin_left"`
+	MarginRight  uint     `json:"margin_right"`
+	Keys         []string `json:"keys"`
+}
+
+type TemplatesResponse []TemplateResponse
+
+func NewTemplateResponse(template *entity.Template) *TemplateResponse {
+	var keys []string
+	for _, field := range template.Fields {
+		keys = append(keys, field.Key)
+	}
+
+	return &TemplateResponse{
+		ID:           template.ID,
+		Name:         template.Name,
+		MarginTop:    template.MarginTop,
+		MarginBottom: template.MarginBottom,
+		MarginLeft:   template.MarginLeft,
+		MarginRight:  template.MarginRight,
+		Keys:         keys,
+	}
+}
+
+func NewTemplatesResponse(templates *entity.Templates) *TemplatesResponse {
+	var responses TemplatesResponse
+	for _, template := range *templates {
+		responses = append(responses, *NewTemplateResponse(&template))
+	}
+
+	return &responses
+}

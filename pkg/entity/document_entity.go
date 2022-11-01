@@ -47,6 +47,8 @@ type Template struct {
 	Fields       TemplateFields
 }
 
+type Templates []Template
+
 type TemplateField struct {
 	gorm.Model
 	TemplateID uint

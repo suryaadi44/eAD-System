@@ -8,4 +8,5 @@ import (
 
 type DocumentService interface {
 	AddTemplate(ctx context.Context, template dto.TemplateRequest, file *multipart.FileHeader) error
+	GetAllTemplate(ctx context.Context) (*dto.TemplatesResponse, error)
 }

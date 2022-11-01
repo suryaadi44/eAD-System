@@ -59,3 +59,14 @@ func (d *DocumentServiceImpl) AddTemplate(ctx context.Context, template dto.Temp
 
 	return nil
 }
+
+func (d *DocumentServiceImpl) GetAllTemplate(ctx context.Context) (*dto.TemplatesResponse, error) {
+	templates, err := d.documentRepository.GetAllTemplate(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	templateResponse := dto.NewTemplatesResponse(templates)
+
+	return templateResponse, nil
+}
