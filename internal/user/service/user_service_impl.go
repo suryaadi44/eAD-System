@@ -26,7 +26,7 @@ type (
 	}
 )
 
-func NewUserServiceImpl(userRepository repository.UserRepository, function PasswordHashFunction, jwt JWTService) *UserServiceImpl {
+func NewUserServiceImpl(userRepository repository.UserRepository, function PasswordHashFunction, jwt JWTService) UserService {
 	return &UserServiceImpl{
 		userRepository: userRepository,
 		passwordHash:   function,
