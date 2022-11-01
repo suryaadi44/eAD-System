@@ -17,4 +17,5 @@ var (
 	ErrUsernameAlreadyExist = errors.New("user with provided username already exist")
 	ErrNIKAlreadyExist      = errors.New("user with provided nik already exist")
 	ErrNIPAlreadyExist      = errors.New("user with provided nip already exist")
+	ErrUserNotFound         = errors.New("user not found")
 )
