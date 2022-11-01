@@ -44,6 +44,7 @@ func (u *UserServiceImpl) SignUpUser(ctx context.Context, user *dto.UserSignUpRe
 
 	userEntity := user.ToEntity()
 	userEntity.ID = uuid.New().String()
+	userEntity.Role = 1
 
 	err = u.userRepository.CreateUser(ctx, userEntity)
 	if err != nil {
