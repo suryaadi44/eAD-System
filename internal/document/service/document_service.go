@@ -9,5 +9,7 @@ import (
 type DocumentService interface {
 	AddTemplate(ctx context.Context, template dto.TemplateRequest, file *multipart.FileHeader) error
 	GetAllTemplate(ctx context.Context) (*dto.TemplatesResponse, error)
-	GetTemplateDetail(ctx context.Context, templateId int64) (*dto.TemplateResponse, error)
+	GetTemplateDetail(ctx context.Context, templateId uint) (*dto.TemplateResponse, error)
+
+	AddDocument(ctx context.Context, document dto.DocumentRequest, userID string) (string, error)
 }

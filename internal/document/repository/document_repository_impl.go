@@ -2,9 +2,11 @@ package repository
 
 import (
 	"context"
+	"github.com/suryaadi44/eAD-System/pkg/config"
 	"github.com/suryaadi44/eAD-System/pkg/entity"
 	"github.com/suryaadi44/eAD-System/pkg/utils"
 	"gorm.io/gorm"
+	"strings"
 )
 
 type DocumentRepositoryImpl struct {
@@ -12,7 +14,40 @@ type DocumentRepositoryImpl struct {
 }
 
 func NewDocumentRepositoryImpl(db *gorm.DB) DocumentRepository {
-	return &DocumentRepositoryImpl{db}
+	documentRepository := &DocumentRepositoryImpl{
+		db: db,
+	}
+
+	err := documentRepository.InitDefaultStage()
+	if err != nil {
+		panic(err)
+	}
+
+	return documentRepository
+}
+
+func (d *DocumentRepositoryImpl) InitDefaultStage() error {
+	var count int64
+	err := d.db.Model(&entity.Stage{}).Count(&count).Error
+	if err != nil {
+		return err
+	}
+
+	if count != 0 {
+		return nil
+	}
+
+	for idx, stage := range config.DefaultDocumentStage {
+		err := d.db.Create(&entity.Stage{
+			ID:     idx + 1,
+			Status: stage,
+		}).Error
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (d *DocumentRepositoryImpl) AddTemplate(ctx context.Context, template *entity.Template) error {
@@ -38,7 +73,7 @@ func (d *DocumentRepositoryImpl) GetAllTemplate(ctx context.Context) (*entity.Te
 	return &templates, nil
 }
 
-func (d *DocumentRepositoryImpl) GetTemplateDetail(ctx context.Context, templateId int64) (*entity.Template, error) {
+func (d *DocumentRepositoryImpl) GetTemplateDetail(ctx context.Context, templateId uint) (*entity.Template, error) {
 	var template entity.Template
 	err := d.db.WithContext(ctx).Preload("Fields").First(&template, "id = ?", templateId).Error
 	if err != nil {
@@ -50,4 +85,31 @@ func (d *DocumentRepositoryImpl) GetTemplateDetail(ctx context.Context, template
 	}
 
 	return &template, nil
+}
+
+func (d *DocumentRepositoryImpl) GetTemplateFields(ctx context.Context, templateId uint) (*entity.TemplateFields, error) {
+	var templateFields entity.TemplateFields
+	err := d.db.WithContext(ctx).Find(&templateFields, "template_id = ?", templateId).Error
+	if err != nil {
+		return nil, err
+	}
+
+	if len(templateFields) == 0 {
+		return nil, utils.ErrTemplateFieldNotFound
+	}
+
+	return &templateFields, nil
+}
+
+func (d *DocumentRepositoryImpl) AddDocument(ctx context.Context, document *entity.Document) (string, error) {
+	err := d.db.WithContext(ctx).Create(document).Error
+	if err != nil {
+		if strings.Contains(err.Error(), "Error 1062: Duplicate entry") {
+			return "", utils.ErrDuplicateRegister
+		}
+
+		return "", err
+	}
+
+	return document.ID, nil
 }

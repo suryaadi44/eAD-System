@@ -36,6 +36,6 @@ func InitController(e *echo.Echo, db *gorm.DB, conf map[string]string) {
 
 	documentRepository := documentRepositoryPkg.NewDocumentRepositoryImpl(db)
 	documentService := documentServicePkg.NewDocumentServiceImpl(documentRepository)
-	documentController := documentControllerPkg.NewDocumentController(documentService)
+	documentController := documentControllerPkg.NewDocumentController(documentService, jwtService)
 	documentController.InitRoute(v1, secureV1)
 }

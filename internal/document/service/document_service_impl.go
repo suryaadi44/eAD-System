@@ -4,8 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/google/uuid"
 	"github.com/suryaadi44/eAD-System/internal/document/dto"
 	"github.com/suryaadi44/eAD-System/internal/document/repository"
+	"github.com/suryaadi44/eAD-System/pkg/utils"
 	"io"
 	"mime/multipart"
 	"os"
@@ -71,7 +73,7 @@ func (d *DocumentServiceImpl) GetAllTemplate(ctx context.Context) (*dto.Template
 	return templateResponse, nil
 }
 
-func (d *DocumentServiceImpl) GetTemplateDetail(ctx context.Context, templateId int64) (*dto.TemplateResponse, error) {
+func (d *DocumentServiceImpl) GetTemplateDetail(ctx context.Context, templateId uint) (*dto.TemplateResponse, error) {
 	template, err := d.documentRepository.GetTemplateDetail(ctx, templateId)
 	if err != nil {
 		return nil, err
@@ -80,4 +82,36 @@ func (d *DocumentServiceImpl) GetTemplateDetail(ctx context.Context, templateId 
 	templateResponse := dto.NewTemplateResponse(template)
 
 	return templateResponse, nil
+}
+
+func (d *DocumentServiceImpl) AddDocument(ctx context.Context, document dto.DocumentRequest, userID string) (string, error) {
+	keyList, err := d.documentRepository.GetTemplateFields(ctx, document.TemplateID)
+	if err != nil {
+		return "", err
+	}
+
+	// validate document fields with template fields
+	for _, key := range *keyList {
+		match := false
+		for _, field := range document.Fields {
+			if key.ID == field.FieldID {
+				match = true
+				break
+			}
+		}
+
+		if !match {
+			return "", utils.ErrFieldNotMatch
+		}
+	}
+
+	var documentEntity = document.ToEntity()
+	documentEntity.ID = uuid.New().String()
+	documentEntity.ApplicantID = userID
+	id, err := d.documentRepository.AddDocument(ctx, documentEntity)
+	if err != nil {
+		return "", err
+	}
+
+	return id, nil
 }

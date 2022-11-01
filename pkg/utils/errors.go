@@ -10,13 +10,17 @@ var (
 )
 
 // Service errors
-var ()
+var (
+	ErrFieldNotMatch = errors.New("document fields doesn't match with template fields")
+)
 
 // Repository errors
 var (
-	ErrUsernameAlreadyExist = errors.New("user with provided username already exist")
-	ErrNIKAlreadyExist      = errors.New("user with provided nik already exist")
-	ErrNIPAlreadyExist      = errors.New("user with provided nip already exist")
-	ErrUserNotFound         = errors.New("user not found")
-	ErrTemplateNotFound     = errors.New("template not found")
+	ErrUsernameAlreadyExist  = errors.New("user with provided username already exist")
+	ErrNIKAlreadyExist       = errors.New("user with provided nik already exist")
+	ErrNIPAlreadyExist       = errors.New("user with provided nip already exist")
+	ErrUserNotFound          = errors.New("user not found")
+	ErrTemplateNotFound      = errors.New("template not found")
+	ErrTemplateFieldNotFound = errors.New("template field not found")
+	ErrDuplicateRegister     = errors.New("document with provided register already exist")
 )

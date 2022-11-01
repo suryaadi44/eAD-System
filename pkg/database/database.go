@@ -33,6 +33,7 @@ func Migrate(db *gorm.DB) error {
 		&entity.User{},
 		&entity.Template{},
 		&entity.TemplateField{},
+		&entity.Stage{},
 		&entity.Document{},
 		&entity.DocumentField{},
 	)

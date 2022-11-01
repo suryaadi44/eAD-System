@@ -1,6 +1,23 @@
 package config
 
-import "os"
+import (
+	"github.com/suryaadi44/eAD-System/pkg/entity"
+	"os"
+)
+
+var (
+	DefaultDocumentStage = []string{
+		"Sent",
+		"Verified",
+		"Approved",
+	}
+
+	DefaultUser = &entity.User{
+		Username: "admin",
+		Password: "admin",
+		Role:     3,
+	}
+)
 
 func LoadConfig() map[string]string {
 	env := make(map[string]string)

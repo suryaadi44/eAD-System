@@ -10,18 +10,19 @@ type Document struct {
 	Register    string `gorm:"type:varchar(255);not null;uniqueIndex"`
 	ApplicantID string `gorm:"type:varchar(36);not null"`
 	Applicant   User   `gorm:"foreignKey:ApplicantID"`
-	TemplateID  string
+	TemplateID  uint
 	Template    Template
 	Fields      DocumentFields
-	Stage       int
-	VerifierID  string `gorm:"type:varchar(36)"`
-	Verifier    User   `gorm:"foreignKey:VerifierID"`
-	VerifiedAt  time.Time
-	SignerID    string `gorm:"type:varchar(36)"`
-	Signer      User   `gorm:"foreignKey:SignerID"`
-	SignedAt    time.Time
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
+	StageID     int            `gorm:"type:int;default:1"`
+	Stage       Stage          `gorm:"foreignKey:StageID"`
+	VerifierID  string         `gorm:"type:varchar(36);default:null"`
+	Verifier    User           `gorm:"foreignKey:VerifierID"`
+	VerifiedAt  time.Time      `gorm:"type:datetime;default:null"`
+	SignerID    string         `gorm:"type:varchar(36);default:null"`
+	Signer      User           `gorm:"foreignKey:SignerID"`
+	SignedAt    time.Time      `gorm:"type:datetime;default:null"`
+	CreatedAt   time.Time      `gorm:"autoCreateTime"`
+	UpdatedAt   time.Time      `gorm:"autoUpdateTime"`
 	DeletedAt   gorm.DeletedAt `gorm:"index"`
 }
 
@@ -34,6 +35,11 @@ type DocumentField struct {
 }
 
 type DocumentFields []DocumentField
+
+type Stage struct {
+	ID     int    `gorm:"primaryKey; type:int"`
+	Status string `gorm:"type:varchar(255);not null;uniqueIndex"`
+}
 
 type Template struct {
 	gorm.Model
