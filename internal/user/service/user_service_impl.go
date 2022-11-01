@@ -8,18 +8,18 @@ import (
 )
 
 type (
-	PaswordHashFunction interface {
+	PasswordHashFunction interface {
 		GenerateFromPassword(password []byte, cost int) ([]byte, error)
 		CompareHashAndPassword(hashedPassword, password []byte) error
 	}
 
 	UserServiceImpl struct {
 		userRepository repository.UserRepository
-		passwordHash   PaswordHashFunction
+		passwordHash   PasswordHashFunction
 	}
 )
 
-func NewUserServiceImpl(userRepository repository.UserRepository, function PaswordHashFunction) *UserServiceImpl {
+func NewUserServiceImpl(userRepository repository.UserRepository, function PasswordHashFunction) *UserServiceImpl {
 	return &UserServiceImpl{
 		userRepository: userRepository,
 		passwordHash:   function,
