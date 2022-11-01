@@ -12,6 +12,7 @@ type User struct {
 	Username  string `gorm:"type:varchar(255);not null;uniqueIndex"`
 	Password  string `gorm:"type:varchar(255);not null"`
 	Role      int
+	Position  string
 	Name      string
 	Telp      string
 	Sex       string `gorm:"type:varchar(1)"`

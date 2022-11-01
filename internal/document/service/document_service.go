@@ -12,4 +12,5 @@ type DocumentService interface {
 	GetTemplateDetail(ctx context.Context, templateId uint) (*dto.TemplateResponse, error)
 
 	AddDocument(ctx context.Context, document dto.DocumentRequest, userID string) (string, error)
+	GetDocument(ctx context.Context, documentID string) (*dto.DocumentResponse, error)
 }

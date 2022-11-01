@@ -34,6 +34,7 @@ func (d *DocumentController) InitRoute(api *echo.Group, secureApi *echo.Group) {
 
 	secureApi.POST("/templates", d.AddTemplate)
 	secureApi.POST("/documents", d.AddDocument)
+	secureApi.GET("/documents/:document_id", d.GetDocument)
 }
 
 func (d *DocumentController) AddTemplate(c echo.Context) error {
@@ -132,4 +133,32 @@ func (d *DocumentController) AddDocument(c echo.Context) error {
 			"id": id,
 		},
 	})
+}
+
+func (d *DocumentController) GetDocument(c echo.Context) error {
+	documentID := c.Param("document_id")
+	document, err := d.documentService.GetDocument(c.Request().Context(), documentID)
+	if err != nil {
+		if err == utils.ErrDocumentNotFound {
+			return echo.NewHTTPError(http.StatusNotFound, err.Error())
+		}
+
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	claims := d.jwtService.GetClaims(&c)
+	userID := claims["user_id"].(string)
+	role := claims["role"].(float64)
+
+	switch {
+	case role > 1:
+		fallthrough
+	case document.Applicant.ID == userID:
+		return c.JSON(http.StatusOK, echo.Map{
+			"message": "success getting document",
+			"data":    document,
+		})
+	default:
+		return echo.NewHTTPError(http.StatusForbidden, utils.ErrDocumentAccessDenied.Error())
+	}
 }

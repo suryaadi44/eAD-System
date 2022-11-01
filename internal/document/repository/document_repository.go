@@ -12,4 +12,5 @@ type DocumentRepository interface {
 	GetTemplateFields(ctx context.Context, templateId uint) (*entity.TemplateFields, error)
 
 	AddDocument(ctx context.Context, document *entity.Document) (string, error)
+	GetDocument(ctx context.Context, documentID string) (*entity.Document, error)
 }

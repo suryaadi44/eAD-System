@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/suryaadi44/eAD-System/internal/document/dto"
 	"github.com/suryaadi44/eAD-System/internal/document/repository"
+	"github.com/suryaadi44/eAD-System/pkg/pdf"
 	"github.com/suryaadi44/eAD-System/pkg/utils"
 	"io"
 	"mime/multipart"
@@ -16,10 +17,14 @@ import (
 
 type DocumentServiceImpl struct {
 	documentRepository repository.DocumentRepository
+	pdfService         pdf.PDFService
 }
 
-func NewDocumentServiceImpl(documentRepository repository.DocumentRepository) DocumentService {
-	return &DocumentServiceImpl{documentRepository}
+func NewDocumentServiceImpl(documentRepository repository.DocumentRepository, pdfgService pdf.PDFService) DocumentService {
+	return &DocumentServiceImpl{
+		documentRepository: documentRepository,
+		pdfService:         pdfgService,
+	}
 }
 
 func (d *DocumentServiceImpl) AddTemplate(ctx context.Context, template dto.TemplateRequest, file *multipart.FileHeader) error {
@@ -114,4 +119,15 @@ func (d *DocumentServiceImpl) AddDocument(ctx context.Context, document dto.Docu
 	}
 
 	return id, nil
+}
+
+func (d *DocumentServiceImpl) GetDocument(ctx context.Context, documentID string) (*dto.DocumentResponse, error) {
+	document, err := d.documentRepository.GetDocument(ctx, documentID)
+	if err != nil {
+		return nil, err
+	}
+
+	var documentResponse = dto.NewDocumentResponse(document)
+
+	return documentResponse, nil
 }
