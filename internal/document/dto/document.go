@@ -90,3 +90,12 @@ func NewFieldsResponse(fields *entity.DocumentFields) *FieldsResponse {
 
 	return &fieldsResponse
 }
+
+func NewFieldsMapResponse(fields *entity.DocumentFields) map[string]interface{} {
+	var fieldsResponse = make(map[string]interface{})
+	for _, field := range *fields {
+		fieldsResponse[field.TemplateField.Key] = field.Value
+	}
+
+	return fieldsResponse
+}

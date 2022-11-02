@@ -4,26 +4,31 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/google/uuid"
-	"github.com/suryaadi44/eAD-System/internal/document/dto"
-	"github.com/suryaadi44/eAD-System/internal/document/repository"
-	"github.com/suryaadi44/eAD-System/pkg/pdf"
-	"github.com/suryaadi44/eAD-System/pkg/utils"
+	"github.com/suryaadi44/eAD-System/pkg/html"
 	"io"
 	"mime/multipart"
 	"os"
 	"path/filepath"
+
+	"github.com/google/uuid"
+	"github.com/suryaadi44/eAD-System/internal/document/dto"
+	"github.com/suryaadi44/eAD-System/internal/document/repository"
+	"github.com/suryaadi44/eAD-System/pkg/entity"
+	"github.com/suryaadi44/eAD-System/pkg/pdf"
+	"github.com/suryaadi44/eAD-System/pkg/utils"
 )
 
 type DocumentServiceImpl struct {
 	documentRepository repository.DocumentRepository
 	pdfService         pdf.PDFService
+	renderService      html.RenderService
 }
 
-func NewDocumentServiceImpl(documentRepository repository.DocumentRepository, pdfgService pdf.PDFService) DocumentService {
+func NewDocumentServiceImpl(documentRepository repository.DocumentRepository, pdfgService pdf.PDFService, renderService html.RenderService) DocumentService {
 	return &DocumentServiceImpl{
 		documentRepository: documentRepository,
 		pdfService:         pdfgService,
+		renderService:      renderService,
 	}
 }
 
@@ -79,12 +84,12 @@ func (d *DocumentServiceImpl) GetAllTemplate(ctx context.Context) (*dto.Template
 }
 
 func (d *DocumentServiceImpl) GetTemplateDetail(ctx context.Context, templateId uint) (*dto.TemplateResponse, error) {
-	template, err := d.documentRepository.GetTemplateDetail(ctx, templateId)
+	tmpl, err := d.documentRepository.GetTemplateDetail(ctx, templateId)
 	if err != nil {
 		return nil, err
 	}
 
-	templateResponse := dto.NewTemplateResponse(template)
+	templateResponse := dto.NewTemplateResponse(tmpl)
 
 	return templateResponse, nil
 }
@@ -130,4 +135,60 @@ func (d *DocumentServiceImpl) GetDocument(ctx context.Context, documentID string
 	var documentResponse = dto.NewDocumentResponse(document)
 
 	return documentResponse, nil
+}
+
+func (d *DocumentServiceImpl) GeneratePDFDocument(ctx context.Context, documentID string) ([]byte, error) {
+	document, err := d.documentRepository.GetDocument(ctx, documentID)
+	if err != nil {
+		return nil, err
+	}
+
+	fieldsMap, err := d.fillMapFields(document)
+	if err != nil {
+		return nil, err
+	}
+
+	generatedHTML, err := d.renderService.GenerateHTMLDocument(&document.Template, fieldsMap)
+	if err != nil {
+		return nil, err
+	}
+
+	generatedPDF, err := d.pdfService.GeneratePDF(generatedHTML, document.Template.MarginTop, document.Template.MarginBottom, document.Template.MarginLeft, document.Template.MarginRight)
+	if err != nil {
+		return nil, err
+	}
+
+	return generatedPDF, nil
+}
+
+func (d *DocumentServiceImpl) fillMapFields(document *entity.Document) (*map[string]interface{}, error) {
+	fieldsMap := dto.NewFieldsMapResponse(&document.Fields)
+	fieldsMap["register"] = document.Register
+
+	if document.SignedAt.IsZero() {
+		fieldsMap["signedDate"] = ""
+		fieldsMap["signature"] = ""
+		fieldsMap["footer"] = ""
+		return &fieldsMap, nil
+	}
+
+	signature, err := d.renderService.GenerateSignature(document.Signer)
+	if err != nil {
+		return nil, err
+	}
+	fieldsMap["signature"] = signature
+
+	footer, err := d.renderService.GenerateFooter(document)
+	if err != nil {
+		return nil, err
+	}
+	fieldsMap["footer"] = footer
+
+	fieldsMap["signedDate"] = document.SignedAt.Format("02 January 2006")
+
+	return &fieldsMap, nil
+}
+
+func (d *DocumentServiceImpl) GetApplicantID(ctx context.Context, documentID string) (*string, error) {
+	return d.documentRepository.GetApplicantID(ctx, documentID)
 }
