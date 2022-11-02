@@ -13,4 +13,5 @@ type DocumentService interface {
 
 	AddDocument(ctx context.Context, document dto.DocumentRequest, userID string) (string, error)
 	GetDocument(ctx context.Context, documentID string) (*dto.DocumentResponse, error)
+	GeneratePDFDocument(ctx context.Context, documentID string) ([]byte, error)
 }

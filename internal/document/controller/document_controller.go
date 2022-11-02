@@ -35,6 +35,7 @@ func (d *DocumentController) InitRoute(api *echo.Group, secureApi *echo.Group) {
 	secureApi.POST("/templates", d.AddTemplate)
 	secureApi.POST("/documents", d.AddDocument)
 	secureApi.GET("/documents/:document_id", d.GetDocument)
+	secureApi.GET("/documents/:document_id/pdf", d.GetPDFDocument)
 }
 
 func (d *DocumentController) AddTemplate(c echo.Context) error {
@@ -161,4 +162,22 @@ func (d *DocumentController) GetDocument(c echo.Context) error {
 	default:
 		return echo.NewHTTPError(http.StatusForbidden, utils.ErrDocumentAccessDenied.Error())
 	}
+}
+
+func (d *DocumentController) GetPDFDocument(c echo.Context) error {
+	documentID := c.Param("document_id")
+	pdf, err := d.documentService.GeneratePDFDocument(c.Request().Context(), documentID)
+	if err != nil {
+		if err == utils.ErrDocumentNotFound {
+			return echo.NewHTTPError(http.StatusNotFound, err.Error())
+		}
+
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	//claims := d.jwtService.GetClaims(&c)
+	//userID := claims["user_id"].(string)
+	//role := claims["role"].(float64)
+
+	return c.Blob(http.StatusOK, "application/pdf", pdf)
 }

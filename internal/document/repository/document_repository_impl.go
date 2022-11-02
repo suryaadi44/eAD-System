@@ -8,7 +8,6 @@ import (
 	"github.com/suryaadi44/eAD-System/pkg/entity"
 	"github.com/suryaadi44/eAD-System/pkg/utils"
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
 type DocumentRepositoryImpl struct {
@@ -118,7 +117,19 @@ func (d *DocumentRepositoryImpl) AddDocument(ctx context.Context, document *enti
 
 func (d *DocumentRepositoryImpl) GetDocument(ctx context.Context, documentID string) (*entity.Document, error) {
 	var document entity.Document
-	err := d.db.WithContext(ctx).Preload(clause.Associations).Preload("Fields.TemplateField").First(&document, "id = ?", documentID).Error
+	err := d.db.WithContext(ctx).
+		Preload("Applicant", func(db *gorm.DB) *gorm.DB {
+			return db.Select("id, username, name")
+		}).
+		Preload("Verifier", func(db *gorm.DB) *gorm.DB {
+			return db.Select("id, username, name, n_ip, position")
+		}).
+		Preload("Signer", func(db *gorm.DB) *gorm.DB {
+			return db.Select("id, username, name, n_ip, position")
+		}).
+		Preload("Template").
+		Preload("Fields").
+		Preload("Fields.TemplateField").First(&document, "id = ?", documentID).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, utils.ErrDocumentNotFound

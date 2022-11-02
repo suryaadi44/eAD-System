@@ -29,6 +29,7 @@ func LoadConfig() map[string]string {
 	env["DB_NAME"] = os.Getenv("DB_NAME")
 	env["PORT"] = os.Getenv("PORT")
 	env["JWT_SECRET"] = os.Getenv("JWT_SECRET")
+	env["QR_PATH"] = os.Getenv("QR_PATH")
 
 	return env
 }
