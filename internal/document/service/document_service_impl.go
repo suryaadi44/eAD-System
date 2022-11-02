@@ -213,3 +213,25 @@ func (d *DocumentServiceImpl) VerifyDocument(ctx context.Context, documentID str
 
 	return d.documentRepository.VerifyDocument(ctx, &documentEntity)
 }
+
+func (d *DocumentServiceImpl) SignDocument(ctx context.Context, documentID string, signerID string) error {
+	// check stage
+	stage, err := d.documentRepository.GetDocumentStage(ctx, documentID)
+	if err != nil {
+		return err
+	}
+
+	if *stage > 2 {
+		return utils.ErrAlreadySigned
+	} else if *stage < 2 {
+		return utils.ErrNotVerifiedYet
+	}
+
+	var documentEntity = entity.Document{}
+	documentEntity.ID = documentID
+	documentEntity.SignerID = signerID
+	documentEntity.SignedAt = time.Now()
+	documentEntity.StageID = 3
+
+	return d.documentRepository.SignDocument(ctx, &documentEntity)
+}

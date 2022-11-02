@@ -182,3 +182,16 @@ func (d *DocumentRepositoryImpl) VerifyDocument(ctx context.Context, document *e
 
 	return nil
 }
+
+func (d *DocumentRepositoryImpl) SignDocument(ctx context.Context, document *entity.Document) error {
+	result := d.db.WithContext(ctx).Model(&entity.Document{}).Where("id = ?", document.ID).Select("SignerID", "SignedAt", "StageID").Updates(document)
+	if result.Error != nil {
+		return result.Error
+	}
+
+	if result.RowsAffected == 0 {
+		return utils.ErrDocumentNotFound
+	}
+
+	return nil
+}

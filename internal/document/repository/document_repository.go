@@ -16,4 +16,5 @@ type DocumentRepository interface {
 	GetApplicantID(ctx context.Context, documentID string) (*string, error)
 	GetDocumentStage(ctx context.Context, documentID string) (*int, error)
 	VerifyDocument(ctx context.Context, document *entity.Document) error
+	SignDocument(ctx context.Context, document *entity.Document) error
 }

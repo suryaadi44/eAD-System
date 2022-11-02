@@ -24,6 +24,12 @@ var (
 
 	// ErrAlreadyVerified is used when the document is already verified
 	ErrAlreadyVerified = errors.New("already verified")
+
+	// ErrNotVerifiedYet is used when the document is not verified yet
+	ErrNotVerifiedYet = errors.New("not verified yet")
+
+	//ErrAlreadySigned is used when the document is already signed
+	ErrAlreadySigned = errors.New("already signed")
 )
 
 // Repository errors
