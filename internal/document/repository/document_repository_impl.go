@@ -129,6 +129,7 @@ func (d *DocumentRepositoryImpl) GetDocument(ctx context.Context, documentID str
 		}).
 		Preload("Template").
 		Preload("Fields").
+		Preload("Stage").
 		Preload("Fields.TemplateField").First(&document, "id = ?", documentID).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -153,4 +154,31 @@ func (d *DocumentRepositoryImpl) GetApplicantID(ctx context.Context, documentID 
 	}
 
 	return &applicantID, nil
+}
+
+func (d *DocumentRepositoryImpl) GetDocumentStage(ctx context.Context, documentID string) (*int, error) {
+	var stage int
+	err := d.db.WithContext(ctx).Model(&entity.Document{}).Select("stage_id").First(&stage, "id = ?", documentID).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, utils.ErrDocumentNotFound
+		}
+
+		return nil, err
+	}
+
+	return &stage, nil
+}
+
+func (d *DocumentRepositoryImpl) VerifyDocument(ctx context.Context, document *entity.Document) error {
+	result := d.db.WithContext(ctx).Model(&entity.Document{}).Where("id = ?", document.ID).Select("VerifierID", "VerifiedAt", "StageID").Updates(document)
+	if result.Error != nil {
+		return result.Error
+	}
+
+	if result.RowsAffected == 0 {
+		return utils.ErrDocumentNotFound
+	}
+
+	return nil
 }

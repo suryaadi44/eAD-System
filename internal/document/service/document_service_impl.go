@@ -9,6 +9,7 @@ import (
 	"mime/multipart"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/suryaadi44/eAD-System/internal/document/dto"
@@ -191,4 +192,24 @@ func (d *DocumentServiceImpl) fillMapFields(document *entity.Document) (*map[str
 
 func (d *DocumentServiceImpl) GetApplicantID(ctx context.Context, documentID string) (*string, error) {
 	return d.documentRepository.GetApplicantID(ctx, documentID)
+}
+
+func (d *DocumentServiceImpl) VerifyDocument(ctx context.Context, documentID string, verifierID string) error {
+	// check stage
+	stage, err := d.documentRepository.GetDocumentStage(ctx, documentID)
+	if err != nil {
+		return err
+	}
+
+	if *stage > 1 {
+		return utils.ErrAlreadyVerified
+	}
+
+	var documentEntity = entity.Document{}
+	documentEntity.ID = documentID
+	documentEntity.VerifierID = verifierID
+	documentEntity.VerifiedAt = time.Now()
+	documentEntity.StageID = 2
+
+	return d.documentRepository.VerifyDocument(ctx, &documentEntity)
 }

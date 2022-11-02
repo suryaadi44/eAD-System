@@ -1,6 +1,7 @@
 package config
 
 import (
+	"github.com/google/uuid"
 	"github.com/suryaadi44/eAD-System/pkg/entity"
 	"os"
 )
@@ -13,6 +14,7 @@ var (
 	}
 
 	DefaultUser = &entity.User{
+		ID:       uuid.New().String(),
 		Username: "admin",
 		Password: "admin",
 		Role:     3,

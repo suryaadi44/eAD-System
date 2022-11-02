@@ -21,6 +21,9 @@ var (
 var (
 	// ErrFieldNotMatch is used when the field in the request body is not match with the field in the template that saved in the database
 	ErrFieldNotMatch = errors.New("document fields doesn't match with template fields")
+
+	// ErrAlreadyVerified is used when the document is already verified
+	ErrAlreadyVerified = errors.New("already verified")
 )
 
 // Repository errors
