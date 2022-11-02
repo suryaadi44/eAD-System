@@ -8,6 +8,7 @@ import (
 type Document struct {
 	ID          string `gorm:"primaryKey; type:varchar(36)"`
 	Register    string `gorm:"type:varchar(255);not null;uniqueIndex"`
+	Description string `gorm:"type:varchar(255)"`
 	ApplicantID string `gorm:"type:varchar(36);not null"`
 	Applicant   User   `gorm:"foreignKey:ApplicantID"`
 	TemplateID  uint

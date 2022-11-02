@@ -48,11 +48,11 @@ func NewApplicantResponse(user *entity.User) *ApplicantResponse {
 }
 
 type EmployeeResponse struct {
-	ID       string `json:"id"`
-	Username string `json:"username"`
-	Name     string `json:"name"`
-	NIP      string `json:"nip"`
-	Position string `json:"position"`
+	ID       string `json:"id,omitempty"`
+	Username string `json:"username,omitempty"`
+	Name     string `json:"name,omitempty"`
+	NIP      string `json:"nip,omitempty"`
+	Position string `json:"position,omitempty"`
 }
 
 func NewEmployeeResponse(user *entity.User) *EmployeeResponse {
