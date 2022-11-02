@@ -138,6 +138,17 @@ func (d *DocumentServiceImpl) GetDocument(ctx context.Context, documentID string
 	return documentResponse, nil
 }
 
+func (d *DocumentServiceImpl) GetDocumentStatus(ctx context.Context, documentID string) (*dto.DocumentStatusResponse, error) {
+	document, err := d.documentRepository.GetDocumentStatus(ctx, documentID)
+	if err != nil {
+		return nil, err
+	}
+
+	var documentStatusResponse = dto.NewDocumentStatusResponse(document)
+
+	return documentStatusResponse, nil
+}
+
 func (d *DocumentServiceImpl) GeneratePDFDocument(ctx context.Context, documentID string) ([]byte, error) {
 	document, err := d.documentRepository.GetDocument(ctx, documentID)
 	if err != nil {

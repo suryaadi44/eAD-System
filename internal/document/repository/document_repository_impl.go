@@ -142,6 +142,28 @@ func (d *DocumentRepositoryImpl) GetDocument(ctx context.Context, documentID str
 	return &document, nil
 }
 
+func (d *DocumentRepositoryImpl) GetDocumentStatus(ctx context.Context, documentID string) (*entity.Document, error) {
+	var document entity.Document
+	err := d.db.WithContext(ctx).
+		Preload("Stage").
+		Preload("Verifier", func(db *gorm.DB) *gorm.DB {
+			return db.Select("id, username, name, n_ip, position")
+		}).
+		Preload("Signer", func(db *gorm.DB) *gorm.DB {
+			return db.Select("id, username, name, n_ip, position")
+		}).
+		First(&document, "id = ?", documentID).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, utils.ErrDocumentNotFound
+		}
+
+		return nil, err
+	}
+
+	return &document, nil
+}
+
 func (d *DocumentRepositoryImpl) GetApplicantID(ctx context.Context, documentID string) (*string, error) {
 	var applicantID string
 	err := d.db.WithContext(ctx).Model(&entity.Document{}).Select("applicant_id").First(&applicantID, "id = ?", documentID).Error

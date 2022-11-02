@@ -31,6 +31,7 @@ func NewDocumentController(documentService service.DocumentService, jwtService J
 func (d *DocumentController) InitRoute(api *echo.Group, secureApi *echo.Group) {
 	api.GET("/templates", d.GetAllTemplate)
 	api.GET("/templates/:template_id", d.GetTemplateDetail)
+	api.GET("/documents/:document_id/status", d.GetDocumentStatus)
 
 	secureApi.POST("/templates", d.AddTemplate)
 	secureApi.POST("/documents", d.AddDocument)
@@ -170,6 +171,23 @@ func (d *DocumentController) GetDocument(c echo.Context) error {
 	default:
 		return echo.NewHTTPError(http.StatusForbidden, utils.ErrDidntHavePermission.Error())
 	}
+}
+
+func (d *DocumentController) GetDocumentStatus(c echo.Context) error {
+	documentID := c.Param("document_id")
+	status, err := d.documentService.GetDocumentStatus(c.Request().Context(), documentID)
+	if err != nil {
+		if err == utils.ErrDocumentNotFound {
+			return echo.NewHTTPError(http.StatusNotFound, err.Error())
+		}
+
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	return c.JSON(http.StatusOK, echo.Map{
+		"message": "success getting document status",
+		"data":    status,
+	})
 }
 
 func (d *DocumentController) GetPDFDocument(c echo.Context) error {

@@ -13,6 +13,7 @@ type DocumentService interface {
 
 	AddDocument(ctx context.Context, document dto.DocumentRequest, userID string) (string, error)
 	GetDocument(ctx context.Context, documentID string) (*dto.DocumentResponse, error)
+	GetDocumentStatus(ctx context.Context, documentID string) (*dto.DocumentStatusResponse, error)
 	GeneratePDFDocument(ctx context.Context, documentID string) ([]byte, error)
 	GetApplicantID(ctx context.Context, documentID string) (*string, error)
 	VerifyDocument(ctx context.Context, documentID string, verifierID string) error

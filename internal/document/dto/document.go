@@ -8,9 +8,10 @@ import (
 )
 
 type DocumentRequest struct {
-	Register   string        `json:"register" validate:"required"`
-	TemplateID uint          `json:"template_id" validate:"required"`
-	Fields     FieldsRequest `json:"fields" validate:"required"`
+	Register    string        `json:"register" validate:"required"`
+	Description string        `json:"description" validate:"required"`
+	TemplateID  uint          `json:"template_id" validate:"required"`
+	Fields      FieldsRequest `json:"fields" validate:"required"`
 }
 
 type FieldRequest struct {
@@ -30,41 +31,44 @@ func (d *DocumentRequest) ToEntity() *entity.Document {
 	}
 
 	return &entity.Document{
-		Register:   d.Register,
-		TemplateID: d.TemplateID,
-		Fields:     fields,
+		Register:    d.Register,
+		Description: d.Description,
+		TemplateID:  d.TemplateID,
+		Fields:      fields,
 	}
 }
 
 type DocumentResponse struct {
-	ID         string                `json:"id"`
-	Register   string                `json:"register"`
-	Applicant  dto.ApplicantResponse `json:"applicant_id"`
-	Template   TemplateResponse      `json:"template"`
-	Fields     FieldsResponse        `json:"fields"`
-	Stage      string                `json:"stage"`
-	Verifier   dto.EmployeeResponse  `json:"verifier"`
-	VerifiedAt time.Time             `json:"verified_at"`
-	Signer     dto.EmployeeResponse  `json:"signer"`
-	SignedAt   time.Time             `json:"signed_at"`
-	CreatedAt  time.Time             `json:"created_at"`
-	UpdatedAt  time.Time             `json:"updated_at"`
+	ID          string                `json:"id"`
+	Register    string                `json:"register"`
+	Description string                `json:"description"`
+	Applicant   dto.ApplicantResponse `json:"applicant_id"`
+	Template    TemplateResponse      `json:"template"`
+	Fields      FieldsResponse        `json:"fields"`
+	Stage       string                `json:"stage"`
+	Verifier    dto.EmployeeResponse  `json:"verifier"`
+	VerifiedAt  time.Time             `json:"verified_at"`
+	Signer      dto.EmployeeResponse  `json:"signer"`
+	SignedAt    time.Time             `json:"signed_at"`
+	CreatedAt   time.Time             `json:"created_at"`
+	UpdatedAt   time.Time             `json:"updated_at"`
 }
 
 func NewDocumentResponse(document *entity.Document) *DocumentResponse {
 	return &DocumentResponse{
-		ID:         document.ID,
-		Register:   document.Register,
-		Applicant:  *dto.NewApplicantResponse(&document.Applicant),
-		Template:   *NewTemplateResponse(&document.Template),
-		Fields:     *NewFieldsResponse(&document.Fields),
-		Stage:      document.Stage.Status,
-		Verifier:   *dto.NewEmployeeResponse(&document.Verifier),
-		VerifiedAt: document.VerifiedAt,
-		Signer:     *dto.NewEmployeeResponse(&document.Signer),
-		SignedAt:   document.SignedAt,
-		CreatedAt:  document.CreatedAt,
-		UpdatedAt:  document.UpdatedAt,
+		ID:          document.ID,
+		Register:    document.Register,
+		Description: document.Description,
+		Applicant:   *dto.NewApplicantResponse(&document.Applicant),
+		Template:    *NewTemplateResponse(&document.Template),
+		Fields:      *NewFieldsResponse(&document.Fields),
+		Stage:       document.Stage.Status,
+		Verifier:    *dto.NewEmployeeResponse(&document.Verifier),
+		VerifiedAt:  document.VerifiedAt,
+		Signer:      *dto.NewEmployeeResponse(&document.Signer),
+		SignedAt:    document.SignedAt,
+		CreatedAt:   document.CreatedAt,
+		UpdatedAt:   document.UpdatedAt,
 	}
 }
 
@@ -98,4 +102,32 @@ func NewFieldsMapResponse(fields *entity.DocumentFields) map[string]interface{} 
 	}
 
 	return fieldsResponse
+}
+
+type DocumentStatusResponse struct {
+	ID          string               `json:"id"`
+	Description string               `json:"description"`
+	Register    string               `json:"register"`
+	Stage       string               `json:"stage"`
+	Verifier    dto.EmployeeResponse `json:"verifier"`
+	VerifiedAt  time.Time            `json:"verified_at"`
+	Signer      dto.EmployeeResponse `json:"signer"`
+	SignedAt    time.Time            `json:"signed_at"`
+	CreatedAt   time.Time            `json:"created_at"`
+	UpdatedAt   time.Time            `json:"updated_at"`
+}
+
+func NewDocumentStatusResponse(document *entity.Document) *DocumentStatusResponse {
+	return &DocumentStatusResponse{
+		ID:          document.ID,
+		Description: document.Description,
+		Register:    document.Register,
+		Stage:       document.Stage.Status,
+		Verifier:    *dto.NewEmployeeResponse(&document.Verifier),
+		VerifiedAt:  document.VerifiedAt,
+		Signer:      *dto.NewEmployeeResponse(&document.Signer),
+		SignedAt:    document.SignedAt,
+		CreatedAt:   document.CreatedAt,
+		UpdatedAt:   document.UpdatedAt,
+	}
 }
