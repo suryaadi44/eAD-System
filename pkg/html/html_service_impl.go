@@ -19,7 +19,7 @@ func NewRenderServiceImpl(codeService qr.CodeService) RenderService {
 	}
 }
 
-func (r *RenderServiceImpl) GenerateSignature(signer entity.User) (*template.HTML, error) {
+func (_ *RenderServiceImpl) GenerateSignature(signer entity.User) (*template.HTML, error) {
 	tmpl, err := template.ParseFiles("./template/signature/signature.html")
 	if err != nil {
 		return nil, err
@@ -66,7 +66,7 @@ func (r *RenderServiceImpl) GenerateFooter(document *entity.Document) (*template
 	return &templateHTML, nil
 }
 
-func (r *RenderServiceImpl) GenerateHTMLDocument(docTemplate *entity.Template, data *map[string]interface{}) (*bytes.Buffer, error) {
+func (_ *RenderServiceImpl) GenerateHTMLDocument(docTemplate *entity.Template, data *map[string]interface{}) (*bytes.Buffer, error) {
 	tmpl, err := template.ParseFiles(docTemplate.Path)
 	if err != nil {
 		return nil, err
