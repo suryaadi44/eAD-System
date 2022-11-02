@@ -166,6 +166,26 @@ func (d *DocumentController) GetDocument(c echo.Context) error {
 
 func (d *DocumentController) GetPDFDocument(c echo.Context) error {
 	documentID := c.Param("document_id")
+
+	claims := d.jwtService.GetClaims(&c)
+	userID := claims["user_id"].(string)
+	role := claims["role"].(float64)
+
+	if role == 1 {
+		applicantID, err := d.documentService.GetApplicantID(c.Request().Context(), documentID)
+		if err != nil {
+			if err == utils.ErrDocumentNotFound {
+				return echo.NewHTTPError(http.StatusNotFound, err.Error())
+			}
+
+			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		}
+
+		if *applicantID != userID {
+			return echo.NewHTTPError(http.StatusForbidden, utils.ErrDocumentAccessDenied.Error())
+		}
+	}
+
 	pdf, err := d.documentService.GeneratePDFDocument(c.Request().Context(), documentID)
 	if err != nil {
 		if err == utils.ErrDocumentNotFound {
@@ -174,10 +194,6 @@ func (d *DocumentController) GetPDFDocument(c echo.Context) error {
 
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
-
-	//claims := d.jwtService.GetClaims(&c)
-	//userID := claims["user_id"].(string)
-	//role := claims["role"].(float64)
 
 	return c.Blob(http.StatusOK, "application/pdf", pdf)
 }

@@ -188,3 +188,7 @@ func (d *DocumentServiceImpl) fillMapFields(document *entity.Document) (*map[str
 
 	return &fieldsMap, nil
 }
+
+func (d *DocumentServiceImpl) GetApplicantID(ctx context.Context, documentID string) (*string, error) {
+	return d.documentRepository.GetApplicantID(ctx, documentID)
+}

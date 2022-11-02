@@ -140,3 +140,17 @@ func (d *DocumentRepositoryImpl) GetDocument(ctx context.Context, documentID str
 
 	return &document, nil
 }
+
+func (d *DocumentRepositoryImpl) GetApplicantID(ctx context.Context, documentID string) (*string, error) {
+	var applicantID string
+	err := d.db.WithContext(ctx).Model(&entity.Document{}).Select("applicant_id").First(&applicantID, "id = ?", documentID).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, utils.ErrDocumentNotFound
+		}
+
+		return nil, err
+	}
+
+	return &applicantID, nil
+}
