@@ -39,6 +39,12 @@ func (d *DocumentController) InitRoute(api *echo.Group, secureApi *echo.Group) {
 }
 
 func (d *DocumentController) AddTemplate(c echo.Context) error {
+	claims := d.jwtService.GetClaims(&c)
+	role := claims["role"].(float64)
+	if role < 2 { // role 2 or above are employee
+		return echo.NewHTTPError(http.StatusForbidden, utils.ErrDidntHavePermission.Error())
+	}
+
 	template := new(dto.TemplateRequest)
 	if err := c.Bind(template); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, utils.ErrBadRequestBody)
@@ -160,7 +166,7 @@ func (d *DocumentController) GetDocument(c echo.Context) error {
 			"data":    document,
 		})
 	default:
-		return echo.NewHTTPError(http.StatusForbidden, utils.ErrDocumentAccessDenied.Error())
+		return echo.NewHTTPError(http.StatusForbidden, utils.ErrDidntHavePermission.Error())
 	}
 }
 
@@ -182,7 +188,7 @@ func (d *DocumentController) GetPDFDocument(c echo.Context) error {
 		}
 
 		if *applicantID != userID {
-			return echo.NewHTTPError(http.StatusForbidden, utils.ErrDocumentAccessDenied.Error())
+			return echo.NewHTTPError(http.StatusForbidden, utils.ErrDidntHavePermission.Error())
 		}
 	}
 
