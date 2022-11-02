@@ -36,6 +36,8 @@ func (d *DocumentController) InitRoute(api *echo.Group, secureApi *echo.Group) {
 	secureApi.POST("/documents", d.AddDocument)
 	secureApi.GET("/documents/:document_id", d.GetDocument)
 	secureApi.GET("/documents/:document_id/pdf", d.GetPDFDocument)
+	secureApi.PATCH("/documents/:document_id/verify", d.VerifyDocument)
+
 }
 
 func (d *DocumentController) AddTemplate(c echo.Context) error {
@@ -202,4 +204,27 @@ func (d *DocumentController) GetPDFDocument(c echo.Context) error {
 	}
 
 	return c.Blob(http.StatusOK, "application/pdf", pdf)
+}
+
+func (d *DocumentController) VerifyDocument(c echo.Context) error {
+	claims := d.jwtService.GetClaims(&c)
+	role := claims["role"].(float64)
+	userID := claims["user_id"].(string)
+	if role < 2 { // role 2 or above are employee
+		return echo.NewHTTPError(http.StatusForbidden, utils.ErrDidntHavePermission.Error())
+	}
+
+	documentID := c.Param("document_id")
+	err := d.documentService.VerifyDocument(c.Request().Context(), documentID, userID)
+	if err != nil {
+		if err == utils.ErrDocumentNotFound {
+			return echo.NewHTTPError(http.StatusNotFound, err.Error())
+		}
+
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	return c.JSON(http.StatusOK, echo.Map{
+		"message": "success verifying document",
+	})
 }
