@@ -16,4 +16,5 @@ type DocumentService interface {
 	GeneratePDFDocument(ctx context.Context, documentID string) ([]byte, error)
 	GetApplicantID(ctx context.Context, documentID string) (*string, error)
 	VerifyDocument(ctx context.Context, documentID string, verifierID string) error
+	SignDocument(ctx context.Context, documentID string, signerID string) error
 }
