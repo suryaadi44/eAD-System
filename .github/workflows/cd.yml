@@ -32,6 +32,7 @@ jobs:
   deploy:
     name: Deploy to server via SSH
     needs: build
+    environment: production
     uses: appleboy/ssh-action@master
     with:
       host: ${{ secrets.SERVER_HOST }}
