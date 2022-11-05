@@ -4,7 +4,7 @@ import "errors"
 
 // Controller errors
 var (
-	// ErrBadRequest is used when the request body is not valid format
+	// ErrBadRequestBody is used when the request body is not valid format
 	ErrBadRequestBody = errors.New("bad request body")
 
 	// ErrInvalidCredentials is used when the user's credentials are invalid

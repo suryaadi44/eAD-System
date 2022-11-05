@@ -37,6 +37,7 @@ func (s *TestSuiteUserRepository) TeardownTest() {
 	s.userRepository = nil
 }
 
+//goland:noinspection GoErrorStringFormat,GoErrorStringFormat,GoErrorStringFormat,GoErrorStringFormat,GoErrorStringFormat
 func (s *TestSuiteUserRepository) TestCreateUser() {
 	query := regexp.QuoteMeta("INSERT INTO `users` (`id`,`n_ip`,`nik`,`username`,`password`,`role`,`name`,`telp`,`sex`,`address`,`created_at`,`updated_at`,`deleted_at`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)")
 	for _, tc := range []struct {
@@ -89,6 +90,7 @@ func (s *TestSuiteUserRepository) TestCreateUser() {
 	}
 }
 
+//goland:noinspection GoErrorStringFormat,GoErrorStringFormat
 func (s *TestSuiteUserRepository) TestFindByUsername() {
 	query := regexp.QuoteMeta("SELECT `id`,`username`,`password`,`role` FROM `users` WHERE username = ? AND `users`.`deleted_at` IS NULL ORDER BY `users`.`id` LIMIT 1")
 	for _, tc := range []struct {
