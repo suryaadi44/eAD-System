@@ -54,4 +54,4 @@ jobs:
           -e "PORT=${{ secrets.PORT }}" \
           -e "JWT_SECRET=${{ secrets.JWT_SECRET }}" \
           -v ead:/template \
-        -p 80:80 --name ead suryawarior44/ead-system:latest
+        -p ${{ secrets.PORT }}:${{ secrets.PORT }} --name ead suryawarior44/ead-system:latest
