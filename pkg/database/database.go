@@ -2,8 +2,9 @@ package database
 
 import (
 	"fmt"
-	"github.com/suryaadi44/eAD-System/pkg/entity"
 	"time"
+
+	"github.com/suryaadi44/eAD-System/pkg/entity"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -14,15 +15,22 @@ func Connect(dbHost string, dbPort string, dbUsername string, dbPassword string,
 	var err error
 
 	conString := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local", dbUsername, dbPassword, dbHost, dbPort, dbName)
-	db, err = gorm.Open(mysql.Open(conString), &gorm.Config{})
-	for err != nil {
+	gormConfig := &gorm.Config{
+		SkipDefaultTransaction: true,
+	}
+
+	for {
+		db, err = gorm.Open(mysql.Open(conString), gormConfig)
+		if err == nil {
+			break
+		}
+
 		if retries == 0 {
 			return nil, err
 		}
 		retries--
 
 		time.Sleep(5 * time.Second)
-		db, err = gorm.Open(mysql.Open(conString), &gorm.Config{})
 	}
 
 	return db, err
