@@ -16,7 +16,7 @@ import (
 type TestSuiteUserRepository struct {
 	suite.Suite
 	mock           sqlmock.Sqlmock
-	userRepository UserRepository
+	userRepository *UserRepositoryImpl
 }
 
 func (s *TestSuiteUserRepository) SetupTest() {
@@ -29,7 +29,7 @@ func (s *TestSuiteUserRepository) SetupTest() {
 		SkipInitializeWithVersion: true,
 	}), &gorm.Config{})
 
-	s.userRepository = NewUserRepositoryImpl(DB)
+	s.userRepository = &UserRepositoryImpl{db: DB}
 }
 
 func (s *TestSuiteUserRepository) TeardownTest() {
@@ -39,7 +39,7 @@ func (s *TestSuiteUserRepository) TeardownTest() {
 
 //goland:noinspection GoErrorStringFormat,GoErrorStringFormat,GoErrorStringFormat,GoErrorStringFormat,GoErrorStringFormat
 func (s *TestSuiteUserRepository) TestCreateUser() {
-	query := regexp.QuoteMeta("INSERT INTO `users` (`id`,`n_ip`,`nik`,`username`,`password`,`role`,`name`,`telp`,`sex`,`address`,`created_at`,`updated_at`,`deleted_at`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)")
+	query := regexp.QuoteMeta("INSERT INTO `users` (`id`,`n_ip`,`nik`,`username`,`password`,`role`,`position`,`name`,`telp`,`sex`,`address`,`created_at`,`updated_at`,`deleted_at`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
 	for _, tc := range []struct {
 		Name        string
 		Err         error
