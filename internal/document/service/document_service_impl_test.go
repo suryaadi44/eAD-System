@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"github.com/suryaadi44/eAD-System/internal/document/dto"
 	"html/template"
 	"os"
 	"testing"
@@ -193,6 +194,60 @@ func (s *TestSuiteDocumentService) TestAddTemplateToRepo_FailRepoError() {
 
 	err = s.documentService.addTemplateToRepo(context.Background(), tmp)
 	s.Error(err)
+}
+
+func (s *TestSuiteDocumentService) TestGetAllTemplate_Success() {
+	tmp := &entity.Templates{
+		{
+			Model: gorm.Model{
+				ID: 1,
+			},
+			Name:         "Test Template",
+			Path:         "test.html",
+			MarginTop:    10,
+			MarginBottom: 10,
+			MarginLeft:   10,
+			MarginRight:  10,
+			Fields: []entity.TemplateField{
+				{
+					Model: gorm.Model{
+						ID: 1,
+					},
+					Key: "field1",
+				},
+			},
+		},
+	}
+
+	expectedReturn := &dto.TemplatesResponse{
+		{
+			ID:           1,
+			Name:         "Test Template",
+			MarginTop:    10,
+			MarginBottom: 10,
+			MarginLeft:   10,
+			MarginRight:  10,
+			Keys: dto.KeysResponse{
+				{
+					ID:  1,
+					Key: "field1",
+				},
+			},
+		},
+	}
+
+	s.mockDocumentRepository.On("GetAllTemplate", mock.Anything).Return(tmp, nil)
+
+	actualTmp, err := s.documentService.GetAllTemplate(context.Background())
+	s.NoError(err)
+	s.Equal(expectedReturn, actualTmp)
+}
+
+func (s *TestSuiteDocumentService) TestGetAllTemplate_RepositoryGenericError() {
+	s.mockDocumentRepository.On("GetAllTemplate", mock.Anything).Return(&entity.Templates{}, errors.New("error"))
+
+	_, err := s.documentService.GetAllTemplate(context.Background())
+	s.Equal(err, errors.New("error"))
 }
 
 func TestUserService(t *testing.T) {
