@@ -80,6 +80,55 @@ func (s *TestSuiteDocumentRepository) TestAddTemplate() {
 	}
 }
 
+func (s *TestSuiteDocumentRepository) TestGetAllTemplate() {
+	query := regexp.QuoteMeta("SELECT * FROM `templates` WHERE `templates`.`deleted_at` IS NULL")
+	preloadField := regexp.QuoteMeta("SELECT * FROM `template_fields` WHERE `template_fields`.`template_id` = ? AND `template_fields`.`deleted_at` IS NULL")
+	for _, tc := range []struct {
+		Name             string
+		Err              error
+		ExpectedErr      error
+		ReturnedRow      *sqlmock.Rows
+		ReturnedRowField *sqlmock.Rows
+	}{
+		{
+			Name:        "Success",
+			Err:         nil,
+			ExpectedErr: nil,
+			ReturnedRow: sqlmock.NewRows([]string{"id", "name", "path", "margin_top", "margin_bottom", "margin_left", "margin_right", "is_active"}).
+				AddRow(1, "template1", "path1", 1, 1, 1, 1, 1),
+			ReturnedRowField: sqlmock.NewRows([]string{"id", "template_id", "key"}).
+				AddRow(1, 1, "key1"),
+		},
+		{
+			Name:             "Error No rows in result set",
+			Err:              nil,
+			ExpectedErr:      utils.ErrTemplateNotFound,
+			ReturnedRow:      sqlmock.NewRows([]string{"id", "name", "path", "margin_top", "margin_bottom", "margin_left", "margin_right", "is_active"}),
+			ReturnedRowField: sqlmock.NewRows([]string{"id", "template_id", "key"}),
+		},
+		{
+			Name:        "Error generic error",
+			Err:         errors.New("generic error"),
+			ExpectedErr: errors.New("generic error"),
+		},
+	} {
+		s.SetupTest()
+		s.Run(tc.Name, func() {
+			if tc.Err != nil {
+				s.mock.ExpectQuery(query).WillReturnError(tc.Err)
+			} else {
+				s.mock.ExpectQuery(query).WillReturnRows(tc.ReturnedRow)
+				s.mock.ExpectQuery(preloadField).WillReturnRows(tc.ReturnedRowField)
+			}
+
+			_, err := s.documentRepository.GetAllTemplate(context.Background())
+
+			s.Equal(tc.ExpectedErr, err)
+		})
+		s.TearDownTest()
+	}
+}
+
 func TestDocumentRepository(t *testing.T) {
 	suite.Run(t, new(TestSuiteDocumentRepository))
 }

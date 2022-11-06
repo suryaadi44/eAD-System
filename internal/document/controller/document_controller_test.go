@@ -303,6 +303,101 @@ func (s *TestSuiteDocumentController) TestAddTemplate_Form_data_error() {
 	s.TearDownTest()
 }
 
+func (s *TestSuiteDocumentController) TestGetAllTemplate() {
+	for _, tc := range []struct {
+		Name           string
+		FunctionError  error
+		FunctionReturn *dto.TemplatesResponse
+		ExpectedStatus int
+		ExpectedBody   echo.Map
+		ExpectedError  error
+	}{
+		{
+			Name:          "success",
+			FunctionError: nil,
+			FunctionReturn: &dto.TemplatesResponse{
+				{
+					ID:           1,
+					Name:         "test",
+					MarginTop:    1,
+					MarginBottom: 1,
+					MarginLeft:   1,
+					MarginRight:  1,
+					Keys: dto.KeysResponse{
+						{
+							ID:  1,
+							Key: "test",
+						},
+					},
+				},
+			},
+			ExpectedStatus: http.StatusOK,
+			ExpectedBody: echo.Map{
+				"message": "success getting all template",
+				"data": []interface{}{
+					map[string]interface{}{
+						"id":            float64(1),
+						"name":          "test",
+						"margin_top":    float64(1),
+						"margin_bottom": float64(1),
+						"margin_left":   float64(1),
+						"margin_right":  float64(1),
+						"keys": []interface{}{
+							map[string]interface{}{
+								"id":  float64(1),
+								"key": "test",
+							},
+						},
+					},
+				},
+			},
+			ExpectedError: nil,
+		},
+		{
+			Name:           "failed to get all template: No template in database",
+			FunctionError:  utils.ErrTemplateNotFound,
+			ExpectedStatus: http.StatusNotFound,
+			ExpectedBody:   nil,
+			ExpectedError:  utils.ErrTemplateNotFound,
+		},
+		{
+			Name:           "failed to get all template: generic error from service",
+			FunctionError:  errors.New("failed to get all template"),
+			ExpectedStatus: http.StatusInternalServerError,
+			ExpectedBody:   nil,
+			ExpectedError:  errors.New("failed to get all template"),
+		},
+	} {
+		s.Run(tc.Name, func() {
+			s.SetupTest()
+
+			r := httptest.NewRequest("GET", "/templates", nil)
+			w := httptest.NewRecorder()
+
+			c := s.echoApp.NewContext(r, w)
+
+			s.mockDocumentService.On("GetAllTemplate", mock.Anything).Return(tc.FunctionReturn, tc.FunctionError)
+
+			err := s.documentController.GetAllTemplate(c)
+
+			if tc.ExpectedError != nil {
+				s.Equal(echo.NewHTTPError(tc.ExpectedStatus, tc.ExpectedError.Error()), err)
+			} else {
+				s.NoError(err)
+
+				var response echo.Map
+				err := json.Unmarshal(w.Body.Bytes(), &response)
+				s.NoError(err)
+
+				s.Equal(tc.ExpectedStatus, w.Result().StatusCode)
+				s.Equal(tc.ExpectedBody, response)
+			}
+
+			s.TearDownTest()
+		})
+	}
+}
+
 func TestDocumentController(t *testing.T) {
 	suite.Run(t, new(TestSuiteDocumentController))
 }

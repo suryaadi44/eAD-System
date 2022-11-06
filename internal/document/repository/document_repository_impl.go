@@ -71,7 +71,7 @@ func (d *DocumentRepositoryImpl) GetAllTemplate(ctx context.Context) (*entity.Te
 	}
 
 	if len(templates) == 0 {
-		return nil, utils.ErrDuplicateTemplateName
+		return nil, utils.ErrTemplateNotFound
 	}
 
 	return &templates, nil
