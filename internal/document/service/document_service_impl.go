@@ -4,12 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/suryaadi44/eAD-System/pkg/html"
 	"io"
-	"mime/multipart"
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/suryaadi44/eAD-System/pkg/html"
 
 	"github.com/google/uuid"
 	"github.com/suryaadi44/eAD-System/internal/document/dto"
@@ -33,44 +33,46 @@ func NewDocumentServiceImpl(documentRepository repository.DocumentRepository, pd
 	}
 }
 
-func (d *DocumentServiceImpl) AddTemplate(ctx context.Context, template dto.TemplateRequest, file *multipart.FileHeader) error {
-	src, err := file.Open()
+func (d *DocumentServiceImpl) AddTemplate(ctx context.Context, template *dto.TemplateRequest, file io.Reader, fileName string) error {
+	path, err := d.writeTemplateFile(file, fileName)
 	if err != nil {
-		return err
-	}
-	defer src.Close()
-
-	path := filepath.Join("./template", file.Filename)
-
-	// check if file already exist
-	if _, err := os.Stat(path); err == nil {
-		return fmt.Errorf("file '%s' already exist", file.Filename)
-	} else if !errors.Is(err, os.ErrNotExist) {
-		return err
-	}
-
-	dst, err := os.Create(path)
-	if err != nil {
-		return err
-	}
-
-	if _, err = io.Copy(dst, src); err != nil {
-		return err
-	}
-
-	if err = dst.Close(); err != nil {
 		return err
 	}
 
 	templateEntity := template.ToEntity()
 	templateEntity.Path = path
 
-	err = d.documentRepository.AddTemplate(ctx, templateEntity)
+	return d.addTemplateToRepo(ctx, templateEntity)
+}
+
+func (d *DocumentServiceImpl) addTemplateToRepo(ctx context.Context, template *entity.Template) error {
+	return d.documentRepository.AddTemplate(ctx, template)
+}
+
+func (*DocumentServiceImpl) writeTemplateFile(file io.Reader, fileName string) (string, error) {
+	newFileName := fmt.Sprint(time.Now().UnixNano(), "-", fileName)
+	path := filepath.Join("./template", newFileName)
+
+	// check if file already exist
+	if _, err := os.Stat(path); err == nil {
+		return "", fmt.Errorf("file '%s' already exist", newFileName)
+	} else if !errors.Is(err, os.ErrNotExist) {
+		return "", err
+	}
+	dst, err := os.Create(path)
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	return nil
+	if _, err = io.Copy(dst, file); err != nil {
+		return "", err
+	}
+
+	if err = dst.Close(); err != nil {
+		return "", err
+	}
+
+	return path, nil
 }
 
 func (d *DocumentServiceImpl) GetAllTemplate(ctx context.Context) (*dto.TemplatesResponse, error) {

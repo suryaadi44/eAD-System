@@ -49,6 +49,9 @@ var (
 	// ErrTemplateNotFound is used when the template is not found in the database
 	ErrTemplateNotFound = errors.New("template not found")
 
+	// ErrDuplicateTemplateName is used when the template name is already exist in the database
+	ErrDuplicateTemplateName = errors.New("template name already exist")
+
 	// ErrTemplateFieldNotFound is used when the template field is not found in the database
 	ErrTemplateFieldNotFound = errors.New("template field not found")
 

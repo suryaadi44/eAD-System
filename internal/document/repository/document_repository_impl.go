@@ -52,9 +52,12 @@ func (d *DocumentRepositoryImpl) InitDefaultStage() error {
 }
 
 func (d *DocumentRepositoryImpl) AddTemplate(ctx context.Context, template *entity.Template) error {
-	result := d.db.WithContext(ctx).Create(template)
-	if result.Error != nil {
-		return result.Error
+	err := d.db.WithContext(ctx).Create(template).Error
+	if err != nil {
+		if strings.Contains(err.Error(), "Error 1062: Duplicate entry") {
+			return utils.ErrDuplicateTemplateName
+		}
+		return err
 	}
 
 	return nil
@@ -68,7 +71,7 @@ func (d *DocumentRepositoryImpl) GetAllTemplate(ctx context.Context) (*entity.Te
 	}
 
 	if len(templates) == 0 {
-		return nil, utils.ErrTemplateNotFound
+		return nil, utils.ErrDuplicateTemplateName
 	}
 
 	return &templates, nil
