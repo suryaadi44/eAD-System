@@ -4,12 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/suryaadi44/eAD-System/pkg/html"
 	"io"
-	"mime/multipart"
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/suryaadi44/eAD-System/pkg/html"
 
 	"github.com/google/uuid"
 	"github.com/suryaadi44/eAD-System/internal/document/dto"
@@ -33,18 +33,13 @@ func NewDocumentServiceImpl(documentRepository repository.DocumentRepository, pd
 	}
 }
 
-func (d *DocumentServiceImpl) AddTemplate(ctx context.Context, template dto.TemplateRequest, file *multipart.FileHeader) error {
-	src, err := file.Open()
-	if err != nil {
-		return err
-	}
-	defer src.Close()
-
-	path := filepath.Join("./template", file.Filename)
+func (d *DocumentServiceImpl) AddTemplate(ctx context.Context, template dto.TemplateRequest, file io.Reader, fileName string) error {
+	newFileName := fmt.Sprint(time.Now().UnixNano(), "-", fileName)
+	path := filepath.Join("./template", newFileName)
 
 	// check if file already exist
 	if _, err := os.Stat(path); err == nil {
-		return fmt.Errorf("file '%s' already exist", file.Filename)
+		return fmt.Errorf("file '%s' already exist", newFileName)
 	} else if !errors.Is(err, os.ErrNotExist) {
 		return err
 	}
@@ -54,7 +49,7 @@ func (d *DocumentServiceImpl) AddTemplate(ctx context.Context, template dto.Temp
 		return err
 	}
 
-	if _, err = io.Copy(dst, src); err != nil {
+	if _, err = io.Copy(dst, file); err != nil {
 		return err
 	}
 

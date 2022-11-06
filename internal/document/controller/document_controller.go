@@ -63,8 +63,17 @@ func (d *DocumentController) AddTemplate(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, utils.ErrBadRequestBody.Error())
 	}
 
-	err = d.documentService.AddTemplate(c.Request().Context(), *template, file)
+	fileSrc, err := file.Open()
 	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+	defer fileSrc.Close()
+
+	err = d.documentService.AddTemplate(c.Request().Context(), *template, fileSrc, file.Filename)
+	if err != nil {
+		if err == utils.ErrDuplicateTemplateName {
+			return echo.NewHTTPError(http.StatusConflict, err.Error())
+		}
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
