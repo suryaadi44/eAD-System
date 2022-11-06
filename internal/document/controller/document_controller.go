@@ -1,13 +1,14 @@
 package controller
 
 import (
+	"net/http"
+	"strconv"
+
 	"github.com/golang-jwt/jwt"
 	"github.com/labstack/echo/v4"
 	"github.com/suryaadi44/eAD-System/internal/document/dto"
 	"github.com/suryaadi44/eAD-System/internal/document/service"
 	"github.com/suryaadi44/eAD-System/pkg/utils"
-	"net/http"
-	"strconv"
 )
 
 type (
@@ -50,7 +51,7 @@ func (d *DocumentController) AddTemplate(c echo.Context) error {
 
 	template := new(dto.TemplateRequest)
 	if err := c.Bind(template); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, utils.ErrBadRequestBody)
+		return echo.NewHTTPError(http.StatusBadRequest, utils.ErrBadRequestBody.Error())
 	}
 
 	if err := c.Validate(template); err != nil {
@@ -59,7 +60,7 @@ func (d *DocumentController) AddTemplate(c echo.Context) error {
 
 	file, err := c.FormFile("template")
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, utils.ErrBadRequestBody)
+		return echo.NewHTTPError(http.StatusBadRequest, utils.ErrBadRequestBody.Error())
 	}
 
 	err = d.documentService.AddTemplate(c.Request().Context(), *template, file)
