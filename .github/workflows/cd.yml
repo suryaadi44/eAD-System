@@ -1,0 +1,58 @@
+name: Build and Deploy
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    name: Build and Push to Docker Hub
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v3
+        with:
+          push: true
+          tags: suryawarior44/ead-system:latest
+
+  deploy:
+    name: Deploy to server via SSH
+    needs: build
+    environment: production
+    uses: appleboy/ssh-action@master
+    with:
+      host: ${{ secrets.SERVER_HOST }}
+      username: ${{ secrets.SERVER_USERNAME }}
+      key: ${{ secrets.SERVER_KEY }}
+      port: ${{ secrets.SERVER_PORT }}
+      script: |
+        sudo docker stop ead
+        sudo docker rm ead
+        sudo docker volume create ead
+        sudo docker pull suryawarior44/ead-system:latest
+        sudo docker run -d \
+          -E "ENV=production" \
+          -e "DB_USER=${{ secrets.DB_USER }}" \
+          -e "DB_PASS=${{ secrets.DB_PASS }}" \
+          -e "DB_HOST=${{ secrets.DB_HOST }}" \
+          -e "DB_PORT=${{ secrets.DB_PORT }}" \
+          -e "DB_NAME=${{ secrets.DB_NAME }}" \
+          -e "PORT=${{ secrets.PORT }}" \
+          -e "JWT_SECRET=${{ secrets.JWT_SECRET }}" \
+          -e "QR_PATH"=${{ secrets.QR_PATH }}" \
+          -v ead:/template \
+        -p ${{ secrets.PORT }}:${{ secrets.PORT }} --name ead suryawarior44/ead-system:latest

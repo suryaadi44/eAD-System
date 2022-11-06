@@ -6,11 +6,16 @@ import (
 	"github.com/suryaadi44/eAD-System/pkg/config"
 	"github.com/suryaadi44/eAD-System/pkg/controller"
 	"log"
+	"os"
 
 	"github.com/suryaadi44/eAD-System/pkg/database"
 )
 
 func init() {
+	if os.Getenv("ENV") == "production" {
+		return
+	}
+
 	//	load env variables from .env file for local development
 	err := godotenv.Load()
 	if err != nil {
