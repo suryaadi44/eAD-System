@@ -67,5 +67,6 @@ jobs:
           -e "PORT=${{ secrets.PORT }}" \
           -e "JWT_SECRET=${{ secrets.JWT_SECRET }}" \
           -e "QR_PATH=${{ secrets.QR_PATH }}" \
+          --network=MAIN \
           -v ead:/template \
         -p ${{ secrets.PORT }}:${{ secrets.PORT }} --name ead suryawarior44/ead-system:latest
