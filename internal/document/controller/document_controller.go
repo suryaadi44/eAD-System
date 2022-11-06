@@ -69,7 +69,7 @@ func (d *DocumentController) AddTemplate(c echo.Context) error {
 	}
 	defer fileSrc.Close()
 
-	err = d.documentService.AddTemplate(c.Request().Context(), *template, fileSrc, file.Filename)
+	err = d.documentService.AddTemplate(c.Request().Context(), template, fileSrc, file.Filename)
 	if err != nil {
 		if err == utils.ErrDuplicateTemplateName {
 			return echo.NewHTTPError(http.StatusConflict, err.Error())

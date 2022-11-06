@@ -8,7 +8,7 @@ import (
 )
 
 type DocumentService interface {
-	AddTemplate(ctx context.Context, template dto.TemplateRequest, file io.Reader, fileName string) error
+	AddTemplate(ctx context.Context, template *dto.TemplateRequest, file io.Reader, fileName string) error
 	GetAllTemplate(ctx context.Context) (*dto.TemplatesResponse, error)
 	GetTemplateDetail(ctx context.Context, templateId uint) (*dto.TemplateResponse, error)
 

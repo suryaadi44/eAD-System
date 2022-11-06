@@ -25,8 +25,8 @@ type MockDocumentService struct {
 	mock.Mock
 }
 
-func (m *MockDocumentService) AddTemplate(ctx context.Context, template dto.TemplateRequest, file *multipart.FileHeader) error {
-	args := m.Called(ctx, template, file)
+func (m *MockDocumentService) AddTemplate(ctx context.Context, template *dto.TemplateRequest, file io.Reader, fileName string) error {
+	args := m.Called(ctx, template, file, fileName)
 	return args.Error(0)
 }
 
@@ -250,7 +250,7 @@ func (s *TestSuiteDocumentController) TestAddTemplate() {
 			c := s.echoApp.NewContext(r, w)
 
 			s.mockJWTService.On("GetClaims", mock.Anything).Return(tc.JWTReturn)
-			s.mockDocumentService.On("AddTemplate", mock.Anything, mock.Anything, mock.Anything).Return(tc.FunctionError)
+			s.mockDocumentService.On("AddTemplate", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(tc.FunctionError)
 
 			if tc.ValidationError != nil {
 				s.mockValidator.On("Validate", mock.Anything).Return(tc.ValidationError)
