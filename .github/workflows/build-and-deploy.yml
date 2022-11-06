@@ -58,7 +58,7 @@ jobs:
         sudo docker volume create ead
         sudo docker pull suryawarior44/ead-system:latest
         sudo docker run -d \
-          -E "ENV=production" \
+          -e "ENV=production" \
           -e "DB_USER=${{ secrets.DB_USER }}" \
           -e "DB_PASS=${{ secrets.DB_PASS }}" \
           -e "DB_HOST=${{ secrets.DB_HOST }}" \
