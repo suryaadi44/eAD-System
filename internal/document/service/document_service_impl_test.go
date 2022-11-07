@@ -492,6 +492,7 @@ func (s *TestSuiteDocumentService) TestGetDocument_Success() {
 		},
 		Fields: dto.FieldsResponse{
 			{
+				ID:    1,
 				Key:   "field1",
 				Value: "value1",
 			},
@@ -1291,6 +1292,131 @@ func (s *TestSuiteDocumentService) TestDeleteDocument_ErrorDocumentAlreadySigned
 	err := s.documentService.DeleteDocument(context.Background(), "userid", 1, "documentid")
 
 	s.Equal(utils.ErrAlreadySigned, err)
+}
+
+func (s *TestSuiteDocumentService) TestUpdateDocument_Success() {
+	stageReturned := 1
+	s.mockDocumentRepository.On("GetDocumentStage", mock.Anything, "documentid").Return(&stageReturned, nil)
+
+	s.mockDocumentRepository.On("UpdateDocument", mock.Anything, mock.Anything).Return(nil)
+
+	err := s.documentService.UpdateDocument(context.Background(), &dto.DocumentUpdateRequest{}, "documentid")
+
+	s.NoError(err)
+}
+
+func (s *TestSuiteDocumentService) TestUpdateDocument_ErrorGettingDocumentStage() {
+	s.mockDocumentRepository.On("GetDocumentStage", mock.Anything, "documentid").Return((*int)(nil), errors.New("error"))
+
+	err := s.documentService.UpdateDocument(context.Background(), &dto.DocumentUpdateRequest{}, "documentid")
+
+	s.Equal(errors.New("error"), err)
+}
+
+func (s *TestSuiteDocumentService) TestUpdateDocument_ErrorDocumentAlreadySigned() {
+	stageReturned := 3
+	s.mockDocumentRepository.On("GetDocumentStage", mock.Anything, "documentid").Return(&stageReturned, nil)
+
+	err := s.documentService.UpdateDocument(context.Background(), &dto.DocumentUpdateRequest{}, "documentid")
+
+	s.Equal(utils.ErrAlreadySigned, err)
+}
+
+func (s *TestSuiteDocumentService) TestUpdateDocument_ErrorDocumentAlreadyVerified() {
+	stageReturned := 2
+	s.mockDocumentRepository.On("GetDocumentStage", mock.Anything, "documentid").Return(&stageReturned, nil)
+
+	err := s.documentService.UpdateDocument(context.Background(), &dto.DocumentUpdateRequest{}, "documentid")
+
+	s.Equal(utils.ErrAlreadyVerified, err)
+}
+
+func (s *TestSuiteDocumentService) TestUpdateDocument_RepositoryError() {
+	stageReturned := 1
+	s.mockDocumentRepository.On("GetDocumentStage", mock.Anything, "documentid").Return(&stageReturned, nil)
+
+	s.mockDocumentRepository.On("UpdateDocument", mock.Anything, mock.Anything).Return(errors.New("error"))
+
+	err := s.documentService.UpdateDocument(context.Background(), &dto.DocumentUpdateRequest{}, "documentid")
+
+	s.Equal(errors.New("error"), err)
+}
+
+func (s *TestSuiteDocumentService) TestUpdateDocumentFields_SuccessWithAdminAccess() {
+	stageReturned := 1
+	s.mockDocumentRepository.On("GetDocumentStage", mock.Anything, "documentid").Return(&stageReturned, nil)
+
+	s.mockDocumentRepository.On("UpdateDocumentFields", mock.Anything, mock.Anything).Return(nil)
+
+	err := s.documentService.UpdateDocumentFields(context.Background(), "userid", 3, "documentid", &dto.FieldsUpdateRequest{})
+
+	s.NoError(err)
+}
+
+func (s *TestSuiteDocumentService) TestUpdateDocumentFields_SuccessWithApplicantAccess() {
+	userIDReturned := "userid"
+	s.mockDocumentRepository.On("GetApplicantID", mock.Anything, "documentid").Return(&userIDReturned, nil)
+
+	stageReturned := 1
+	s.mockDocumentRepository.On("GetDocumentStage", mock.Anything, "documentid").Return(&stageReturned, nil)
+
+	s.mockDocumentRepository.On("UpdateDocumentFields", mock.Anything, mock.Anything).Return(nil)
+
+	err := s.documentService.UpdateDocumentFields(context.Background(), "userid", 1, "documentid", &dto.FieldsUpdateRequest{})
+
+	s.NoError(err)
+}
+
+func (s *TestSuiteDocumentService) TestUpdateDocumentFields_ErrorGettingApplicantID() {
+	s.mockDocumentRepository.On("GetApplicantID", mock.Anything, "documentid").Return((*string)(nil), errors.New("error"))
+
+	err := s.documentService.UpdateDocumentFields(context.Background(), "userid", 1, "documentid", &dto.FieldsUpdateRequest{})
+
+	s.Equal(errors.New("error"), err)
+}
+
+func (s *TestSuiteDocumentService) TestUpdateDocumentFields_ErrorRoleNotSufficentToUpdateOtherUserDocument() {
+	userIDReturned := "userid2"
+	s.mockDocumentRepository.On("GetApplicantID", mock.Anything, "documentid").Return(&userIDReturned, nil)
+
+	err := s.documentService.UpdateDocumentFields(context.Background(), "userid", 1, "documentid", &dto.FieldsUpdateRequest{})
+
+	s.Equal(utils.ErrDidntHavePermission, err)
+}
+
+func (s *TestSuiteDocumentService) TestUpdateDocumentFields_ErrorGettingDocumentStage() {
+	userIDReturned := "userid"
+	s.mockDocumentRepository.On("GetApplicantID", mock.Anything, "documentid").Return(&userIDReturned, nil)
+
+	s.mockDocumentRepository.On("GetDocumentStage", mock.Anything, "documentid").Return((*int)(nil), errors.New("error"))
+
+	err := s.documentService.UpdateDocumentFields(context.Background(), "userid", 1, "documentid", &dto.FieldsUpdateRequest{})
+
+	s.Equal(errors.New("error"), err)
+}
+
+func (s *TestSuiteDocumentService) TestUpdateDocumentFields_ErrorDocumentAlreadySigned() {
+	userIDReturned := "userid"
+	s.mockDocumentRepository.On("GetApplicantID", mock.Anything, "documentid").Return(&userIDReturned, nil)
+
+	stageReturned := 3
+	s.mockDocumentRepository.On("GetDocumentStage", mock.Anything, "documentid").Return(&stageReturned, nil)
+
+	err := s.documentService.UpdateDocumentFields(context.Background(), "userid", 1, "documentid", &dto.FieldsUpdateRequest{})
+
+	s.Equal(utils.ErrAlreadySigned, err)
+}
+
+func (s *TestSuiteDocumentService) TestUpdateDocumentFields_ErrorDocumentAlreadyVerified() {
+	userIDReturned := "userid"
+	s.mockDocumentRepository.On("GetApplicantID", mock.Anything, "documentid").Return(&userIDReturned, nil)
+
+	stageReturned := 2
+	s.mockDocumentRepository.On("GetDocumentStage", mock.Anything, "documentid").Return(&stageReturned, nil)
+
+	err := s.documentService.UpdateDocumentFields(context.Background(), "userid", 1, "documentid", &dto.FieldsUpdateRequest{})
+
+	s.Equal(utils.ErrAlreadyVerified, err)
 }
 
 func TestDocumentService(t *testing.T) {

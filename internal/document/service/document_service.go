@@ -22,5 +22,5 @@ type DocumentService interface {
 	SignDocument(ctx context.Context, documentID string, signerID string) error
 	DeleteDocument(ctx context.Context, userID string, role int, documentID string) error
 	UpdateDocument(ctx context.Context, document *dto.DocumentUpdateRequest, documentID string) error
-	UpdateDocumentFields(ctx context.Context, userID string, role int, documentID string, fields dto.FieldsUpdateRequest) error
+	UpdateDocumentFields(ctx context.Context, userID string, role int, documentID string, fields *dto.FieldsUpdateRequest) error
 }

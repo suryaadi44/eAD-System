@@ -314,7 +314,7 @@ func (d *DocumentServiceImpl) UpdateDocument(ctx context.Context, document *dto.
 	return d.documentRepository.UpdateDocument(ctx, documentEntity)
 }
 
-func (d *DocumentServiceImpl) UpdateDocumentFields(ctx context.Context, userID string, role int, documentID string, fields dto.FieldsUpdateRequest) error {
+func (d *DocumentServiceImpl) UpdateDocumentFields(ctx context.Context, userID string, role int, documentID string, fields *dto.FieldsUpdateRequest) error {
 	if role == 1 {
 		applicantID, err := d.documentRepository.GetApplicantID(ctx, documentID)
 		if err != nil {

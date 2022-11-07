@@ -401,7 +401,7 @@ func (d *DocumentController) UpdateDocumentFields(c echo.Context) error {
 		return err
 	}
 
-	err := d.documentService.UpdateDocumentFields(c.Request().Context(), userID, int(role), documentID, fields)
+	err := d.documentService.UpdateDocumentFields(c.Request().Context(), userID, int(role), documentID, &fields)
 	if err != nil {
 		switch err {
 		case utils.ErrDocumentNotFound:
