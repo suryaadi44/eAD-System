@@ -10,9 +10,9 @@ import (
 	userControllerPkg "github.com/suryaadi44/eAD-System/internal/user/controller"
 	userRepositoryPkg "github.com/suryaadi44/eAD-System/internal/user/repository"
 	userServicePkg "github.com/suryaadi44/eAD-System/internal/user/service"
-	renderServicePkg "github.com/suryaadi44/eAD-System/pkg/html"
-	pdfServicePkg "github.com/suryaadi44/eAD-System/pkg/pdf"
-	qrServicePkg "github.com/suryaadi44/eAD-System/pkg/qr"
+	renderServicePkg "github.com/suryaadi44/eAD-System/pkg/utils/html"
+	pdfServicePkg "github.com/suryaadi44/eAD-System/pkg/utils/pdf"
+	qrServicePkg "github.com/suryaadi44/eAD-System/pkg/utils/qr"
 
 	"github.com/suryaadi44/eAD-System/pkg/utils"
 	"gorm.io/gorm"

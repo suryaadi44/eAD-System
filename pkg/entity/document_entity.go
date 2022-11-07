@@ -27,6 +27,8 @@ type Document struct {
 	DeletedAt   gorm.DeletedAt `gorm:"index"`
 }
 
+type Documents []Document
+
 type DocumentField struct {
 	gorm.Model
 	DocumentID      string `gorm:"type:varchar(36)"`

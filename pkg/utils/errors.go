@@ -15,6 +15,9 @@ var (
 
 	// ErrDidntHavePermission is used when the user doesn't have permission to access or modify the resource
 	ErrDidntHavePermission = errors.New("you didn't have permission to do this action")
+
+	// ErrInvalidNumber is used when the number covertion is invalid
+	ErrInvalidNumber = errors.New("invalid number")
 )
 
 // Service errors

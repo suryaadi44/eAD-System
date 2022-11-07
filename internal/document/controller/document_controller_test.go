@@ -6,13 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/golang-jwt/jwt"
-	"github.com/labstack/echo/v4"
-	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/suite"
-	"github.com/suryaadi44/eAD-System/internal/document/dto"
-	dto2 "github.com/suryaadi44/eAD-System/internal/user/dto"
-	"github.com/suryaadi44/eAD-System/pkg/utils"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -20,6 +13,14 @@ import (
 	"os"
 	"testing"
 	"time"
+
+	"github.com/golang-jwt/jwt"
+	"github.com/labstack/echo/v4"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/suite"
+	"github.com/suryaadi44/eAD-System/internal/document/dto"
+	dto2 "github.com/suryaadi44/eAD-System/internal/user/dto"
+	"github.com/suryaadi44/eAD-System/pkg/utils"
 )
 
 type MockDocumentService struct {
@@ -49,6 +50,11 @@ func (m *MockDocumentService) AddDocument(ctx context.Context, document *dto.Doc
 func (m *MockDocumentService) GetDocument(ctx context.Context, documentID string) (*dto.DocumentResponse, error) {
 	args := m.Called(ctx, documentID)
 	return args.Get(0).(*dto.DocumentResponse), args.Error(1)
+}
+
+func (m *MockDocumentService) GetBriefDocuments(ctx context.Context, applicantID string, role int, page int, limit int) (*dto.BriefDocumentsResponse, error) {
+	args := m.Called(ctx, applicantID, role, page, limit)
+	return args.Get(0).(*dto.BriefDocumentsResponse), args.Error(1)
 }
 
 func (m *MockDocumentService) GetDocumentStatus(ctx context.Context, documentID string) (*dto.DocumentStatusResponse, error) {
@@ -889,6 +895,206 @@ func (s *TestSuiteDocumentController) TestGetDocument() {
 			s.mockJWTService.On("GetClaims", mock.Anything).Return(tc.JWTReturn)
 
 			err := s.documentController.GetDocument(c)
+
+			if tc.ExpectedError != nil {
+				s.Equal(echo.NewHTTPError(tc.ExpectedStatus, tc.ExpectedError.Error()), err)
+			} else {
+				s.NoError(err)
+
+				var response echo.Map
+				err := json.Unmarshal(w.Body.Bytes(), &response)
+				s.NoError(err)
+
+				s.Equal(tc.ExpectedStatus, w.Result().StatusCode)
+				s.Equal(tc.ExpectedBody, response)
+			}
+
+			s.TearDownTest()
+		})
+	}
+}
+
+func (s *TestSuiteDocumentController) TestGetBriefDocument() {
+	for _, tc := range []struct {
+		Name           string
+		Page           string
+		Limit          string
+		FunctionError  error
+		FunctionReturn *dto.BriefDocumentsResponse
+		JWTReturn      jwt.MapClaims
+		ExpectedStatus int
+		ExpectedBody   echo.Map
+		ExpectedError  error
+	}{
+		{
+			Name:          "success to get brief document",
+			Page:          "1",
+			Limit:         "10",
+			FunctionError: nil,
+			FunctionReturn: &dto.BriefDocumentsResponse{
+				{
+					ID:          "1",
+					Description: "description",
+					Register:    "123",
+					Applicant: dto2.ApplicantResponse{
+						ID:       "1",
+						Username: "Username",
+						Name:     "name",
+					},
+					Stage:    "approved",
+					Template: "template",
+				},
+			},
+			JWTReturn: jwt.MapClaims{
+				"user_id": "1",
+				"role":    float64(2),
+			},
+			ExpectedStatus: http.StatusOK,
+			ExpectedBody: echo.Map{
+				"message": "success getting document",
+				"data": []interface{}{
+					map[string]interface{}{
+						"id":          "1",
+						"description": "description",
+						"register":    "123",
+						"applicant": map[string]interface{}{
+							"id":       "1",
+							"username": "Username",
+							"name":     "name",
+						},
+						"stage":    "approved",
+						"template": "template",
+					},
+				},
+				"meta": map[string]interface{}{
+					"page":  float64(1),
+					"limit": float64(10),
+				},
+			},
+			ExpectedError: nil,
+		},
+		{
+			Name:          "Success to get brief document: empty parameter",
+			Page:          "",
+			Limit:         "",
+			FunctionError: nil,
+			FunctionReturn: &dto.BriefDocumentsResponse{
+				{
+					ID:          "1",
+					Description: "description",
+					Register:    "123",
+					Applicant: dto2.ApplicantResponse{
+						ID:       "1",
+						Username: "Username",
+						Name:     "name",
+					},
+					Stage:    "approved",
+					Template: "template",
+				},
+			},
+			JWTReturn: jwt.MapClaims{
+				"user_id": "1",
+				"role":    float64(2),
+			},
+			ExpectedStatus: http.StatusOK,
+			ExpectedBody: echo.Map{
+				"message": "success getting document",
+				"data": []interface{}{
+					map[string]interface{}{
+						"id":          "1",
+						"description": "description",
+						"register":    "123",
+						"applicant": map[string]interface{}{
+							"id":       "1",
+							"username": "Username",
+							"name":     "name",
+						},
+						"stage":    "approved",
+						"template": "template",
+					},
+				},
+				"meta": map[string]interface{}{
+					"page":  float64(1),
+					"limit": float64(20),
+				},
+			},
+			ExpectedError: nil,
+		},
+		{
+			Name:           "failed to get brief document: invalid page",
+			Page:           "a",
+			Limit:          "",
+			FunctionError:  nil,
+			FunctionReturn: nil,
+			JWTReturn: jwt.MapClaims{
+				"user_id": "1",
+				"role":    float64(2),
+			},
+			ExpectedStatus: http.StatusBadRequest,
+			ExpectedBody:   nil,
+			ExpectedError:  utils.ErrInvalidNumber,
+		},
+		{
+			Name:           "failed to get brief document: invalid limit",
+			Page:           "",
+			Limit:          "a",
+			FunctionError:  nil,
+			FunctionReturn: nil,
+			JWTReturn: jwt.MapClaims{
+				"user_id": "1",
+				"role":    float64(2),
+			},
+			ExpectedStatus: http.StatusBadRequest,
+			ExpectedBody:   nil,
+			ExpectedError:  utils.ErrInvalidNumber,
+		},
+		{
+			Name:           "failed to get brief document: no document",
+			Page:           "",
+			Limit:          "",
+			FunctionError:  utils.ErrDocumentNotFound,
+			FunctionReturn: nil,
+			JWTReturn: jwt.MapClaims{
+				"user_id": "1",
+				"role":    float64(2),
+			},
+			ExpectedStatus: http.StatusNotFound,
+			ExpectedBody:   nil,
+			ExpectedError:  utils.ErrDocumentNotFound,
+		},
+		{
+			Name:           "failed to get brief document: generec service error",
+			Page:           "",
+			Limit:          "",
+			FunctionError:  errors.New("generic service error"),
+			FunctionReturn: nil,
+			JWTReturn: jwt.MapClaims{
+				"user_id": "1",
+				"role":    float64(2),
+			},
+			ExpectedStatus: http.StatusInternalServerError,
+			ExpectedBody:   nil,
+			ExpectedError:  errors.New("generic service error"),
+		},
+	} {
+		s.Run(tc.Name, func() {
+			s.SetupTest()
+
+			r := httptest.NewRequest("GET", "/documents", nil)
+
+			w := httptest.NewRecorder()
+
+			q := r.URL.Query()
+			q.Add("page", tc.Page)
+			q.Add("limit", tc.Limit)
+			r.URL.RawQuery = q.Encode()
+
+			c := s.echoApp.NewContext(r, w)
+
+			s.mockJWTService.On("GetClaims", mock.Anything).Return(tc.JWTReturn)
+			s.mockDocumentService.On("GetBriefDocuments", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(tc.FunctionReturn, tc.FunctionError)
+
+			err := s.documentController.GetBriefDocument(c)
 
 			if tc.ExpectedError != nil {
 				s.Equal(echo.NewHTTPError(tc.ExpectedStatus, tc.ExpectedError.Error()), err)

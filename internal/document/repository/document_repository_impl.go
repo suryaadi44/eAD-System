@@ -145,6 +145,59 @@ func (d *DocumentRepositoryImpl) GetDocument(ctx context.Context, documentID str
 	return &document, nil
 }
 
+func (d *DocumentRepositoryImpl) GetBriefDocuments(ctx context.Context, limit int, offset int) (*entity.Documents, error) {
+	var documents entity.Documents
+	err := d.db.WithContext(ctx).Model(&entity.Document{}).
+		Select("id, register, description, created_at, applicant_id, template_id, stage_id").
+		Preload("Applicant", func(db *gorm.DB) *gorm.DB {
+			return db.Select("id, username, name")
+		}).
+		Preload("Template", func(db *gorm.DB) *gorm.DB {
+			return db.Select("id, name")
+		}).
+		Preload("Stage").
+		Order("created_at desc").
+		Limit(limit).
+		Offset(offset).
+		Find(&documents).Error
+	if err != nil {
+		return nil, err
+	}
+
+	if len(documents) == 0 {
+		return nil, utils.ErrDocumentNotFound
+	}
+
+	return &documents, nil
+}
+
+func (d *DocumentRepositoryImpl) GetBriefDocumentsByApplicant(ctx context.Context, applicantID string, limit int, offset int) (*entity.Documents, error) {
+	var documents entity.Documents
+	err := d.db.WithContext(ctx).Model(&entity.Document{}).
+		Select("id, register, description, created_at, applicant_id, template_id, stage_id").
+		Preload("Applicant", func(db *gorm.DB) *gorm.DB {
+			return db.Select("id, username, name")
+		}).
+		Preload("Template", func(db *gorm.DB) *gorm.DB {
+			return db.Select("id, name")
+		}).
+		Preload("Stage").
+		Where("applicant_id = ?", applicantID).
+		Order("created_at desc").
+		Limit(limit).
+		Offset(offset).
+		Find(&documents).Error
+	if err != nil {
+		return nil, err
+	}
+
+	if len(documents) == 0 {
+		return nil, utils.ErrDocumentNotFound
+	}
+
+	return &documents, nil
+}
+
 func (d *DocumentRepositoryImpl) GetDocumentStatus(ctx context.Context, documentID string) (*entity.Document, error) {
 	var document entity.Document
 	err := d.db.WithContext(ctx).

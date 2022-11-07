@@ -14,6 +14,7 @@ type DocumentService interface {
 
 	AddDocument(ctx context.Context, document *dto.DocumentRequest, userID string) (string, error)
 	GetDocument(ctx context.Context, documentID string) (*dto.DocumentResponse, error)
+	GetBriefDocuments(ctx context.Context, applicantID string, role int, page int, limit int) (*dto.BriefDocumentsResponse, error)
 	GetDocumentStatus(ctx context.Context, documentID string) (*dto.DocumentStatusResponse, error)
 	GeneratePDFDocument(ctx context.Context, documentID string) ([]byte, error)
 	GetApplicantID(ctx context.Context, documentID string) (*string, error)
