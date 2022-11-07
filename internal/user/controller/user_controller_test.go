@@ -450,7 +450,7 @@ func (s *TestSuiteUserControllers) TestGetBriefUsers() {
 			JWTReturn: jwt.MapClaims{
 				"role": float64(2),
 			},
-			ExpectedStatus: http.StatusInternalServerError,
+			ExpectedStatus: http.StatusNotFound,
 			ExpectedBody:   nil,
 			ExpectedError:  utils.ErrUserNotFound,
 		},
