@@ -1069,16 +1069,9 @@ func (s *TestSuiteDocumentService) TestVerifyDocument_RepositoryError() {
 }
 
 func (s *TestSuiteDocumentService) TestSignDocument_Success() {
-	now := time.Now()
-	docExpected := &entity.Document{}
-	docExpected.ID = "1"
-	docExpected.SignerID = "1"
-	docExpected.SignedAt = now
-	docExpected.StageID = 3
-
 	returnedStage := 2
 	s.mockDocumentRepository.On("GetDocumentStage", mock.Anything, "1").Return(&returnedStage, nil)
-	s.mockDocumentRepository.On("SignDocument", mock.Anything, docExpected).Return(nil)
+	s.mockDocumentRepository.On("SignDocument", mock.Anything, mock.Anything).Return(nil)
 
 	err := s.documentService.SignDocument(context.Background(), "1", "1")
 
