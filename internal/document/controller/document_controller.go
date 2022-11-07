@@ -133,7 +133,7 @@ func (d *DocumentController) AddDocument(c echo.Context) error {
 	claims := d.jwtService.GetClaims(&c)
 	userID := claims["user_id"].(string)
 
-	id, err := d.documentService.AddDocument(c.Request().Context(), *document, userID)
+	id, err := d.documentService.AddDocument(c.Request().Context(), document, userID)
 	if err != nil {
 		switch err {
 		case utils.ErrTemplateNotFound:

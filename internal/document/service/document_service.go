@@ -12,7 +12,7 @@ type DocumentService interface {
 	GetAllTemplate(ctx context.Context) (*dto.TemplatesResponse, error)
 	GetTemplateDetail(ctx context.Context, templateId uint) (*dto.TemplateResponse, error)
 
-	AddDocument(ctx context.Context, document dto.DocumentRequest, userID string) (string, error)
+	AddDocument(ctx context.Context, document *dto.DocumentRequest, userID string) (string, error)
 	GetDocument(ctx context.Context, documentID string) (*dto.DocumentResponse, error)
 	GetDocumentStatus(ctx context.Context, documentID string) (*dto.DocumentStatusResponse, error)
 	GeneratePDFDocument(ctx context.Context, documentID string) ([]byte, error)

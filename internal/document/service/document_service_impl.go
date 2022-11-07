@@ -97,7 +97,7 @@ func (d *DocumentServiceImpl) GetTemplateDetail(ctx context.Context, templateId 
 	return templateResponse, nil
 }
 
-func (d *DocumentServiceImpl) AddDocument(ctx context.Context, document dto.DocumentRequest, userID string) (string, error) {
+func (d *DocumentServiceImpl) AddDocument(ctx context.Context, document *dto.DocumentRequest, userID string) (string, error) {
 	keyList, err := d.documentRepository.GetTemplateFields(ctx, document.TemplateID)
 	if err != nil {
 		return "", err
