@@ -42,7 +42,7 @@ type DocumentResponse struct {
 	ID          string                `json:"id"`
 	Register    string                `json:"register"`
 	Description string                `json:"description"`
-	Applicant   dto.ApplicantResponse `json:"applicant_id"`
+	Applicant   dto.ApplicantResponse `json:"applicant"`
 	Template    TemplateResponse      `json:"template"`
 	Fields      FieldsResponse        `json:"fields"`
 	Stage       string                `json:"stage"`
