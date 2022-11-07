@@ -65,7 +65,9 @@ func (d *DocumentRepositoryImpl) AddTemplate(ctx context.Context, template *enti
 
 func (d *DocumentRepositoryImpl) GetAllTemplate(ctx context.Context) (*entity.Templates, error) {
 	var templates entity.Templates
-	err := d.db.WithContext(ctx).Preload("Fields").Find(&templates).Error
+	err := d.db.WithContext(ctx).
+		Preload("Fields").
+		Find(&templates).Error
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +81,9 @@ func (d *DocumentRepositoryImpl) GetAllTemplate(ctx context.Context) (*entity.Te
 
 func (d *DocumentRepositoryImpl) GetTemplateDetail(ctx context.Context, templateId uint) (*entity.Template, error) {
 	var template entity.Template
-	err := d.db.WithContext(ctx).Preload("Fields").First(&template, "id = ?", templateId).Error
+	err := d.db.WithContext(ctx).
+		Preload("Fields").
+		First(&template, "id = ?", templateId).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, utils.ErrTemplateNotFound
@@ -222,7 +226,10 @@ func (d *DocumentRepositoryImpl) GetDocumentStatus(ctx context.Context, document
 
 func (d *DocumentRepositoryImpl) GetApplicantID(ctx context.Context, documentID string) (*string, error) {
 	var applicantID string
-	err := d.db.WithContext(ctx).Model(&entity.Document{}).Select("applicant_id").First(&applicantID, "id = ?", documentID).Error
+	err := d.db.WithContext(ctx).
+		Model(&entity.Document{}).
+		Select("applicant_id").
+		First(&applicantID, "id = ?", documentID).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, utils.ErrDocumentNotFound
@@ -236,7 +243,10 @@ func (d *DocumentRepositoryImpl) GetApplicantID(ctx context.Context, documentID 
 
 func (d *DocumentRepositoryImpl) GetDocumentStage(ctx context.Context, documentID string) (*int, error) {
 	var stage int
-	err := d.db.WithContext(ctx).Model(&entity.Document{}).Select("stage_id").First(&stage, "id = ?", documentID).Error
+	err := d.db.WithContext(ctx).
+		Model(&entity.Document{}).
+		Select("stage_id").
+		First(&stage, "id = ?", documentID).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, utils.ErrDocumentNotFound
@@ -249,7 +259,12 @@ func (d *DocumentRepositoryImpl) GetDocumentStage(ctx context.Context, documentI
 }
 
 func (d *DocumentRepositoryImpl) VerifyDocument(ctx context.Context, document *entity.Document) error {
-	result := d.db.WithContext(ctx).Model(&entity.Document{}).Where("id = ?", document.ID).Select("VerifierID", "VerifiedAt", "StageID").Updates(document)
+	result := d.db.
+		WithContext(ctx).
+		Model(&entity.Document{}).
+		Where("id = ?", document.ID).
+		Select("VerifierID", "VerifiedAt", "StageID").
+		Updates(document)
 	if result.Error != nil {
 		return result.Error
 	}
@@ -262,7 +277,11 @@ func (d *DocumentRepositoryImpl) VerifyDocument(ctx context.Context, document *e
 }
 
 func (d *DocumentRepositoryImpl) SignDocument(ctx context.Context, document *entity.Document) error {
-	result := d.db.WithContext(ctx).Model(&entity.Document{}).Where("id = ?", document.ID).Select("SignerID", "SignedAt", "StageID").Updates(document)
+	result := d.db.WithContext(ctx).
+		Model(&entity.Document{}).
+		Where("id = ?", document.ID).
+		Select("SignerID", "SignedAt", "StageID").
+		Updates(document)
 	if result.Error != nil {
 		return result.Error
 	}
@@ -275,13 +294,50 @@ func (d *DocumentRepositoryImpl) SignDocument(ctx context.Context, document *ent
 }
 
 func (d *DocumentRepositoryImpl) DeleteDocument(ctx context.Context, documentID string) error {
-	result := d.db.WithContext(ctx).Select("DocumentField").Delete(&entity.Document{}, "id = ?", documentID)
+	result := d.db.WithContext(ctx).
+		Select("DocumentField").
+		Delete(&entity.Document{}, "id = ?", documentID)
 	if result.Error != nil {
 		return result.Error
 	}
 
 	if result.RowsAffected == 0 {
 		return utils.ErrDocumentNotFound
+	}
+
+	return nil
+}
+
+func (d *DocumentRepositoryImpl) UpdateDocument(ctx context.Context, document *entity.Document) error {
+	result := d.db.WithContext(ctx).
+		Model(&entity.Document{}).
+		Where("id = ?", document.ID).
+		Updates(document)
+	if result.Error != nil {
+		return result.Error
+	}
+
+	if result.RowsAffected == 0 {
+		return utils.ErrDocumentNotFound
+	}
+
+	return nil
+}
+
+func (d *DocumentRepositoryImpl) UpdateDocumentFields(ctx context.Context, documentFields *entity.DocumentFields) error {
+	for _, documentField := range *documentFields {
+		result := d.db.WithContext(ctx).
+			Model(&entity.DocumentField{}).
+			Where("id = ?", documentField.ID).
+			Where("document_id = ?", documentField.DocumentID).
+			Updates(documentField)
+		if result.Error != nil {
+			return result.Error
+		}
+
+		if result.RowsAffected == 0 {
+			return utils.ErrFieldNotFound
+		}
 	}
 
 	return nil

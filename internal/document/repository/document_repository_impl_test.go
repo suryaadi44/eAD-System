@@ -891,6 +891,107 @@ func (s *TestSuiteDocumentRepository) TestDeleteDocument() {
 	}
 }
 
+func (s *TestSuiteDocumentRepository) TestUpdateDocument() {
+	query := regexp.QuoteMeta("UPDATE `documents` SET `updated_at`=? WHERE id = ? AND `documents`.`deleted_at` IS NULL")
+
+	for _, tc := range []struct {
+		Name         string
+		Err          error
+		ExpectedErr  error
+		RowsAffected int64
+	}{
+		{
+			Name:         "Success",
+			Err:          nil,
+			ExpectedErr:  nil,
+			RowsAffected: 1,
+		},
+		{
+			Name:         "Error No rows affected",
+			Err:          nil,
+			ExpectedErr:  utils.ErrDocumentNotFound,
+			RowsAffected: 0,
+		},
+		{
+			Name:         "Error generic error",
+			Err:          errors.New("generic error"),
+			ExpectedErr:  errors.New("generic error"),
+			RowsAffected: 0,
+		},
+	} {
+		s.SetupTest()
+		s.Run(tc.Name, func() {
+			if tc.Err != nil {
+				s.mock.ExpectExec(query).WillReturnError(tc.Err)
+			} else {
+				s.mock.ExpectExec(query).WillReturnResult(sqlmock.NewResult(1, tc.RowsAffected))
+			}
+
+			err := s.documentRepository.UpdateDocument(context.Background(), &entity.Document{})
+
+			if tc.ExpectedErr != nil {
+				s.Equal(tc.ExpectedErr, err)
+			}
+		})
+		s.TearDownTest()
+	}
+}
+
+func (s *TestSuiteDocumentRepository) TestUpdateDocumentFields() {
+	query := regexp.QuoteMeta("UPDATE `document_fields` SET `id`=?,`updated_at`=?,`document_id`=?,`template_field_id`=?,`value`=? WHERE id = ? AND document_id = ? AND `document_fields`.`deleted_at` IS NULL")
+
+	for _, tc := range []struct {
+		Name         string
+		Err          error
+		ExpectedErr  error
+		RowsAffected int64
+	}{
+		{
+			Name:         "Success",
+			Err:          nil,
+			ExpectedErr:  nil,
+			RowsAffected: 1,
+		},
+		{
+			Name:         "Error No rows affected",
+			Err:          nil,
+			ExpectedErr:  utils.ErrFieldNotFound,
+			RowsAffected: 0,
+		},
+		{
+			Name:         "Error generic error",
+			Err:          errors.New("generic error"),
+			ExpectedErr:  errors.New("generic error"),
+			RowsAffected: 0,
+		},
+	} {
+		s.SetupTest()
+		s.Run(tc.Name, func() {
+			if tc.Err != nil {
+				s.mock.ExpectExec(query).WillReturnError(tc.Err)
+			} else {
+				s.mock.ExpectExec(query).WillReturnResult(sqlmock.NewResult(1, tc.RowsAffected))
+			}
+
+			err := s.documentRepository.UpdateDocumentFields(context.Background(), &entity.DocumentFields{
+				{
+					Model: gorm.Model{
+						ID: 1,
+					},
+					DocumentID:      "123",
+					TemplateFieldID: 1,
+					Value:           "values",
+				},
+			})
+
+			if tc.ExpectedErr != nil {
+				s.Equal(tc.ExpectedErr, err)
+			}
+		})
+		s.TearDownTest()
+	}
+}
+
 func TestDocumentRepository(t *testing.T) {
 	suite.Run(t, new(TestSuiteDocumentRepository))
 }

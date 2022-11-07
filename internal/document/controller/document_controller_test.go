@@ -87,6 +87,16 @@ func (m *MockDocumentService) DeleteDocument(ctx context.Context, userID string,
 	return args.Error(0)
 }
 
+func (m *MockDocumentService) UpdateDocument(ctx context.Context, document *dto.DocumentUpdateRequest, documentID string) error {
+	args := m.Called(ctx, document, documentID)
+	return args.Error(0)
+}
+
+func (m *MockDocumentService) UpdateDocumentFields(ctx context.Context, userID string, role int, documentID string, fields *dto.FieldsUpdateRequest) error {
+	args := m.Called(ctx, userID, role, documentID, fields)
+	return args.Error(0)
+}
+
 type MockJWTService struct {
 	mock.Mock
 }
@@ -1599,6 +1609,370 @@ func (s *TestSuiteDocumentController) TestDeleteDocument() {
 			s.mockDocumentService.On("DeleteDocument", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(tc.ServiceError)
 
 			err := s.documentController.DeleteDocument(c)
+
+			if tc.ExpectedError != nil {
+				s.Equal(echo.NewHTTPError(tc.ExpectedStatus, tc.ExpectedError.Error()), err)
+			} else {
+				s.NoError(err)
+
+				var response echo.Map
+				err := json.Unmarshal(w.Body.Bytes(), &response)
+				s.NoError(err)
+
+				s.Equal(tc.ExpectedStatus, w.Result().StatusCode)
+				s.Equal(tc.ExpectedBody, response)
+			}
+			s.TearDownTest()
+		})
+	}
+}
+
+func (s *TestSuiteDocumentController) TestUpdateDocument() {
+	for _, tc := range []struct {
+		Name                string
+		RequestBody         *dto.DocumentUpdateRequest
+		RequestContentTypes string
+		ServiceError        error
+		JWTReturn           jwt.MapClaims
+		ExpectedStatus      int
+		ExpectedBody        echo.Map
+		ExpectedError       error
+	}{
+		{
+			Name: "Success to update document",
+			RequestBody: &dto.DocumentUpdateRequest{
+				Register:    "123",
+				Description: "description",
+			},
+			RequestContentTypes: "application/json",
+			ServiceError:        nil,
+			JWTReturn: jwt.MapClaims{
+				"role": float64(3),
+			},
+			ExpectedStatus: http.StatusOK,
+			ExpectedBody: echo.Map{
+				"message": "success updating document",
+			},
+			ExpectedError: nil,
+		},
+		{
+			Name: "Failed to update document : role not sufficient to update document",
+			RequestBody: &dto.DocumentUpdateRequest{
+				Register:    "123",
+				Description: "description",
+			},
+			RequestContentTypes: "application/json",
+			ServiceError:        utils.ErrDidntHavePermission,
+			JWTReturn: jwt.MapClaims{
+				"role": float64(1),
+			},
+			ExpectedStatus: http.StatusForbidden,
+			ExpectedBody:   nil,
+			ExpectedError:  utils.ErrDidntHavePermission,
+		},
+		{
+			Name:                "Failed to update document : invalid request body",
+			RequestBody:         nil,
+			RequestContentTypes: "",
+			ServiceError:        utils.ErrBadRequestBody,
+			JWTReturn: jwt.MapClaims{
+				"role": float64(3),
+			},
+			ExpectedStatus: http.StatusBadRequest,
+			ExpectedBody:   nil,
+			ExpectedError:  utils.ErrBadRequestBody,
+		},
+		{
+			Name: "Failed to update document : generic service error",
+			RequestBody: &dto.DocumentUpdateRequest{
+				Register:    "123",
+				Description: "description",
+			},
+			RequestContentTypes: "application/json",
+			ServiceError:        errors.New("generic error"),
+			JWTReturn: jwt.MapClaims{
+				"role": float64(3),
+			},
+			ExpectedStatus: http.StatusInternalServerError,
+			ExpectedBody:   nil,
+			ExpectedError:  errors.New("generic error"),
+		},
+		{
+			Name: "Failed to update document : document not found",
+			RequestBody: &dto.DocumentUpdateRequest{
+				Register:    "123",
+				Description: "description",
+			},
+			RequestContentTypes: "application/json",
+			ServiceError:        utils.ErrDocumentNotFound,
+			JWTReturn: jwt.MapClaims{
+				"role": float64(3),
+			},
+			ExpectedStatus: http.StatusNotFound,
+			ExpectedBody:   nil,
+			ExpectedError:  utils.ErrDocumentNotFound,
+		},
+		{
+			Name: "Failed to update document : document already signed",
+			RequestBody: &dto.DocumentUpdateRequest{
+				Register:    "123",
+				Description: "description",
+			},
+			RequestContentTypes: "application/json",
+			ServiceError:        utils.ErrAlreadySigned,
+			JWTReturn: jwt.MapClaims{
+				"role": float64(3),
+			},
+			ExpectedStatus: http.StatusForbidden,
+			ExpectedBody:   nil,
+			ExpectedError:  utils.ErrAlreadySigned,
+		},
+		{
+			Name: "Failed to update document : document already Verified",
+			RequestBody: &dto.DocumentUpdateRequest{
+				Register:    "123",
+				Description: "description",
+			},
+			RequestContentTypes: "application/json",
+			ServiceError:        utils.ErrAlreadyVerified,
+			JWTReturn: jwt.MapClaims{
+				"role": float64(3),
+			},
+			ExpectedStatus: http.StatusForbidden,
+			ExpectedBody:   nil,
+			ExpectedError:  utils.ErrAlreadyVerified,
+		},
+	} {
+		s.Run(tc.Name, func() {
+			s.SetupTest()
+
+			jsonBody, err := json.Marshal(tc.RequestBody)
+			s.NoError(err)
+
+			r := httptest.NewRequest("PUT", "/documents", bytes.NewReader(jsonBody))
+			r.Header.Set("Content-Type", tc.RequestContentTypes)
+			w := httptest.NewRecorder()
+
+			c := s.echoApp.NewContext(r, w)
+			c.SetParamNames("document_id")
+			c.SetParamValues("1")
+
+			s.mockJWTService.On("GetClaims", mock.Anything).Return(tc.JWTReturn)
+			s.mockDocumentService.On("UpdateDocument", mock.Anything, mock.Anything, mock.Anything).Return(tc.ServiceError)
+
+			err = s.documentController.UpdateDocument(c)
+
+			if tc.ExpectedError != nil {
+				s.Equal(echo.NewHTTPError(tc.ExpectedStatus, tc.ExpectedError.Error()), err)
+			} else {
+				s.NoError(err)
+
+				var response echo.Map
+				err := json.Unmarshal(w.Body.Bytes(), &response)
+				s.NoError(err)
+
+				s.Equal(tc.ExpectedStatus, w.Result().StatusCode)
+				s.Equal(tc.ExpectedBody, response)
+			}
+			s.TearDownTest()
+		})
+	}
+}
+
+func (s *TestSuiteDocumentController) TestUpdateDocumentFields() {
+	for _, tc := range []struct {
+		Name                string
+		RequestBody         *dto.FieldsUpdateRequest
+		RequestContentTypes string
+		ServiceError        error
+		JWTReturn           jwt.MapClaims
+		ValidationErr       error
+		ExpectedStatus      int
+		ExpectedBody        echo.Map
+		ExpectedError       error
+	}{
+		{
+			Name: "Successfully update document fields",
+			RequestBody: &dto.FieldsUpdateRequest{
+				Fields: []dto.FieldUpdateRequest{
+					{
+						ID:    1,
+						Value: "value1",
+					},
+				},
+			},
+			RequestContentTypes: "application/json",
+			ServiceError:        nil,
+			JWTReturn: jwt.MapClaims{
+				"role":    float64(3),
+				"user_id": "1",
+			},
+			ValidationErr:  nil,
+			ExpectedStatus: http.StatusOK,
+			ExpectedBody: echo.Map{
+				"message": "success updating document fields",
+			},
+			ExpectedError: nil,
+		},
+		{
+			Name:                "Failed to update document fields : bad request body",
+			RequestBody:         nil,
+			RequestContentTypes: "",
+			ServiceError:        nil,
+			JWTReturn: jwt.MapClaims{
+				"role":    float64(3),
+				"user_id": "1",
+			},
+			ValidationErr:  nil,
+			ExpectedStatus: http.StatusBadRequest,
+			ExpectedBody:   nil,
+			ExpectedError:  utils.ErrBadRequestBody,
+		},
+		{
+			Name: "Failed to update document fields : failed to validate request body",
+			RequestBody: &dto.FieldsUpdateRequest{
+				Fields: []dto.FieldUpdateRequest{
+					{
+						ID: 1,
+					},
+				},
+			},
+			RequestContentTypes: "application/json",
+			ServiceError:        nil,
+			JWTReturn: jwt.MapClaims{
+				"role":    float64(3),
+				"user_id": "1",
+			},
+			ValidationErr:  echo.NewHTTPError(http.StatusBadRequest, "Value is required"),
+			ExpectedStatus: http.StatusBadRequest,
+			ExpectedBody:   nil,
+			ExpectedError:  errors.New("Value is required"),
+		},
+		{
+			Name: "Failed to update document fields : no document found",
+			RequestBody: &dto.FieldsUpdateRequest{
+				Fields: []dto.FieldUpdateRequest{
+					{
+						ID:    1,
+						Value: "value1",
+					},
+				},
+			},
+			RequestContentTypes: "application/json",
+			ServiceError:        utils.ErrDocumentNotFound,
+			JWTReturn: jwt.MapClaims{
+				"role":    float64(3),
+				"user_id": "1",
+			},
+			ValidationErr:  nil,
+			ExpectedStatus: http.StatusNotFound,
+			ExpectedBody:   nil,
+			ExpectedError:  utils.ErrDocumentNotFound,
+		},
+		{
+			Name: "Failed to update document fields : err already verified",
+			RequestBody: &dto.FieldsUpdateRequest{
+				Fields: []dto.FieldUpdateRequest{
+					{
+						ID:    1,
+						Value: "value1",
+					},
+				},
+			},
+			RequestContentTypes: "application/json",
+			ServiceError:        utils.ErrAlreadyVerified,
+			JWTReturn: jwt.MapClaims{
+				"role":    float64(3),
+				"user_id": "1",
+			},
+			ValidationErr:  nil,
+			ExpectedStatus: http.StatusForbidden,
+			ExpectedBody:   nil,
+			ExpectedError:  utils.ErrAlreadyVerified,
+		},
+		{
+			Name: "Failed to update document fields : err already verified",
+			RequestBody: &dto.FieldsUpdateRequest{
+				Fields: []dto.FieldUpdateRequest{
+					{
+						ID:    1,
+						Value: "value1",
+					},
+				},
+			},
+			RequestContentTypes: "application/json",
+			ServiceError:        utils.ErrAlreadySigned,
+			JWTReturn: jwt.MapClaims{
+				"role":    float64(3),
+				"user_id": "1",
+			},
+			ValidationErr:  nil,
+			ExpectedStatus: http.StatusForbidden,
+			ExpectedBody:   nil,
+			ExpectedError:  utils.ErrAlreadySigned,
+		},
+		{
+			Name: "Failed to update document fields : err user role not sufficient to update document fields of other user",
+			RequestBody: &dto.FieldsUpdateRequest{
+				Fields: []dto.FieldUpdateRequest{
+					{
+						ID:    1,
+						Value: "value1",
+					},
+				},
+			},
+			RequestContentTypes: "application/json",
+			ServiceError:        utils.ErrDidntHavePermission,
+			JWTReturn: jwt.MapClaims{
+				"role":    float64(1),
+				"user_id": "1",
+			},
+			ValidationErr:  nil,
+			ExpectedStatus: http.StatusForbidden,
+			ExpectedBody:   nil,
+			ExpectedError:  utils.ErrDidntHavePermission,
+		},
+		{
+			Name: "Failed to update document fields : generic error from service",
+			RequestBody: &dto.FieldsUpdateRequest{
+				Fields: []dto.FieldUpdateRequest{
+					{
+						ID:    1,
+						Value: "value1",
+					},
+				},
+			},
+			RequestContentTypes: "application/json",
+			ServiceError:        errors.New("generic error"),
+			JWTReturn: jwt.MapClaims{
+				"role":    float64(1),
+				"user_id": "1",
+			},
+			ValidationErr:  nil,
+			ExpectedStatus: http.StatusInternalServerError,
+			ExpectedBody:   nil,
+			ExpectedError:  errors.New("generic error"),
+		},
+	} {
+		s.Run(tc.Name, func() {
+			s.SetupTest()
+
+			jsonBody, err := json.Marshal(tc.RequestBody)
+			s.NoError(err)
+
+			r := httptest.NewRequest("PUT", "/documents", bytes.NewReader(jsonBody))
+			r.Header.Set("Content-Type", tc.RequestContentTypes)
+			w := httptest.NewRecorder()
+
+			c := s.echoApp.NewContext(r, w)
+			c.SetParamNames("document_id")
+			c.SetParamValues("1")
+
+			s.mockJWTService.On("GetClaims", mock.Anything).Return(tc.JWTReturn)
+			s.mockValidator.On("Validate", mock.Anything).Return(tc.ValidationErr)
+			s.mockDocumentService.On("UpdateDocumentFields", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(tc.ServiceError)
+
+			err = s.documentController.UpdateDocumentFields(c)
 
 			if tc.ExpectedError != nil {
 				s.Equal(echo.NewHTTPError(tc.ExpectedStatus, tc.ExpectedError.Error()), err)
