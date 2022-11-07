@@ -37,8 +37,8 @@ func InitController(e *echo.Echo, db *gorm.DB, conf map[string]string) {
 
 	userRepository := userRepositoryPkg.NewUserRepositoryImpl(db)
 	userService := userServicePkg.NewUserServiceImpl(userRepository, utils.PasswordFunc{}, jwtService)
-	userController := userControllerPkg.NewUserController(userService)
-	userController.InitRoute(v1)
+	userController := userControllerPkg.NewUserController(userService, jwtService)
+	userController.InitRoute(v1, secureV1)
 
 	pdfService := pdfServicePkg.NewPDFService()
 	documentRepository := documentRepositoryPkg.NewDocumentRepositoryImpl(db)

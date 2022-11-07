@@ -64,3 +64,27 @@ func NewEmployeeResponse(user *entity.User) *EmployeeResponse {
 		Position: user.Position,
 	}
 }
+
+type BriefUserResponse struct {
+	ID       string `json:"id"`
+	Username string `json:"username"`
+	Name     string `json:"name"`
+}
+
+func NewBriefUserResponse(user *entity.User) *BriefUserResponse {
+	return &BriefUserResponse{
+		ID:       user.ID,
+		Username: user.Username,
+		Name:     user.Name,
+	}
+}
+
+type BriefUsersResponse []BriefUserResponse
+
+func NewBriefUsersResponse(users *entity.Users) *BriefUsersResponse {
+	var briefUsersResponse BriefUsersResponse
+	for _, user := range *users {
+		briefUsersResponse = append(briefUsersResponse, *NewBriefUserResponse(&user))
+	}
+	return &briefUsersResponse
+}

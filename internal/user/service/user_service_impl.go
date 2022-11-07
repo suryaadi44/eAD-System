@@ -76,3 +76,14 @@ func (u *UserServiceImpl) LogInUser(ctx context.Context, user *dto.UserLoginRequ
 
 	return token, nil
 }
+
+func (u *UserServiceImpl) GetBriefUsers(ctx context.Context, page int, limit int) (*dto.BriefUsersResponse, error) {
+	offset := (page - 1) * limit
+
+	users, err := u.userRepository.GetBriefUsers(ctx, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+
+	return dto.NewBriefUsersResponse(users), nil
+}
