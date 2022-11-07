@@ -97,3 +97,28 @@ func (u *UserRepositoryImpl) GetBriefUsers(ctx context.Context, limit int, offse
 
 	return &users, nil
 }
+
+func (u *UserRepositoryImpl) UpdateUser(ctx context.Context, user *entity.User) error {
+	result := u.db.WithContext(ctx).Model(&entity.User{}).Where("id = ?", user.ID).Updates(user)
+	if result.Error != nil {
+		errStr := result.Error.Error()
+		if strings.Contains(errStr, "Error 1062: Duplicate entry") {
+			switch {
+			case strings.Contains(errStr, "username"):
+				return utils.ErrUsernameAlreadyExist
+			case strings.Contains(errStr, "n_ip"):
+				return utils.ErrNIPAlreadyExist
+			case strings.Contains(errStr, "nik"):
+				return utils.ErrNIKAlreadyExist
+			}
+		}
+
+		return result.Error
+	}
+
+	if result.RowsAffected == 0 {
+		return utils.ErrUserNotFound
+	}
+
+	return nil
+}

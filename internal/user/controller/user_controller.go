@@ -33,6 +33,7 @@ func (u *UserController) InitRoute(api *echo.Group, secureApi *echo.Group) {
 	api.POST("/login", u.LoginUser)
 
 	secureApi.GET("/users", u.GetBriefUsers)
+	secureApi.PUT("/users", u.UpdateUser)
 }
 
 func (u *UserController) SignUpUser(c echo.Context) error {
@@ -131,5 +132,39 @@ func (u *UserController) GetBriefUsers(c echo.Context) error {
 			"page":  pageInt,
 			"limit": limitInt,
 		},
+	})
+}
+
+func (u *UserController) UpdateUser(c echo.Context) error {
+	claims := u.jwtService.GetClaims(&c)
+	userID := claims["user_id"].(string)
+
+	user := new(dto.UserUpdateRequest)
+	if err := c.Bind(user); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, utils.ErrBadRequestBody.Error())
+	}
+
+	if err := c.Validate(user); err != nil {
+		return err
+	}
+
+	err := u.userService.UpdateUser(c.Request().Context(), userID, user)
+	if err != nil {
+		switch err {
+		case utils.ErrUserNotFound:
+			return echo.NewHTTPError(http.StatusNotFound, err.Error())
+		case utils.ErrUsernameAlreadyExist:
+			fallthrough
+		case utils.ErrNIKAlreadyExist:
+			fallthrough
+		case utils.ErrNIPAlreadyExist:
+			return echo.NewHTTPError(http.StatusConflict, err.Error())
+		default:
+			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		}
+	}
+
+	return c.JSON(http.StatusOK, echo.Map{
+		"message": "success update user",
 	})
 }

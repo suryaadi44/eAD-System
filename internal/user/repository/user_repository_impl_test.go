@@ -28,7 +28,9 @@ func (s *TestSuiteUserRepository) SetupTest() {
 	DB, _ := gorm.Open(mysql.New(mysql.Config{
 		Conn:                      dbMock,
 		SkipInitializeWithVersion: true,
-	}), &gorm.Config{})
+	}), &gorm.Config{
+		SkipDefaultTransaction: true,
+	})
 
 	s.userRepository = &UserRepositoryImpl{db: DB}
 }
@@ -73,13 +75,10 @@ func (s *TestSuiteUserRepository) TestCreateUser() {
 	} {
 		s.SetupTest()
 		s.Run(tc.Name, func() {
-			s.mock.ExpectBegin()
 			if tc.Err != nil {
 				s.mock.ExpectExec(query).WillReturnError(tc.Err)
-				s.mock.ExpectRollback()
 			} else {
 				s.mock.ExpectExec(query).WillReturnResult(sqlmock.NewResult(1, 1))
-				s.mock.ExpectCommit()
 			}
 
 			err := s.userRepository.CreateUser(context.Background(), &entity.User{})
@@ -193,6 +192,67 @@ func (s *TestSuiteUserRepository) TestGetBriefUsers() {
 			} else {
 				s.Equal(tc.ExpectedReturn, result)
 			}
+		})
+		s.TeardownTest()
+	}
+}
+
+func (s *TestSuiteUserRepository) TestUpdateUser() {
+	query := regexp.QuoteMeta("UPDATE `users` SET `updated_at`=? WHERE id = ? AND `users`.`deleted_at` IS NULL")
+	for _, tc := range []struct {
+		Name         string
+		Err          error
+		ExpectedErr  error
+		RowsAffected int64
+	}{
+		{
+			Name:         "Success",
+			Err:          nil,
+			ExpectedErr:  nil,
+			RowsAffected: 1,
+		},
+		{
+			Name:         "Error no record found",
+			Err:          nil,
+			ExpectedErr:  utils.ErrUserNotFound,
+			RowsAffected: 0,
+		},
+		{
+			Name:         "Error duplicate username",
+			Err:          errors.New("Error 1062: Duplicate entry '' for key 'username'"),
+			ExpectedErr:  utils.ErrUsernameAlreadyExist,
+			RowsAffected: 0,
+		},
+		{
+			Name:         "Error duplicate nip",
+			Err:          errors.New("Error 1062: Duplicate entry '' for key 'n_ip'"),
+			ExpectedErr:  utils.ErrNIPAlreadyExist,
+			RowsAffected: 0,
+		},
+		{
+			Name:         "Error duplicate nik",
+			Err:          errors.New("Error 1062: Duplicate entry '' for key 'nik'"),
+			ExpectedErr:  utils.ErrNIKAlreadyExist,
+			RowsAffected: 0,
+		},
+		{
+			Name:         "Generic error",
+			Err:          errors.New("Generic error"),
+			ExpectedErr:  errors.New("Generic error"),
+			RowsAffected: 0,
+		},
+	} {
+		s.SetupTest()
+		s.Run(tc.Name, func() {
+			if tc.Err != nil {
+				s.mock.ExpectExec(query).WillReturnError(tc.Err)
+			} else {
+				s.mock.ExpectExec(query).WillReturnResult(sqlmock.NewResult(1, tc.RowsAffected))
+			}
+
+			err := s.userRepository.UpdateUser(context.Background(), &entity.User{})
+
+			s.Equal(tc.ExpectedErr, err)
 		})
 		s.TeardownTest()
 	}
