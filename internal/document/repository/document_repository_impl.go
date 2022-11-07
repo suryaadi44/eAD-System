@@ -273,3 +273,16 @@ func (d *DocumentRepositoryImpl) SignDocument(ctx context.Context, document *ent
 
 	return nil
 }
+
+func (d *DocumentRepositoryImpl) DeleteDocument(ctx context.Context, documentID string) error {
+	result := d.db.WithContext(ctx).Select("DocumentField").Delete(&entity.Document{}, "id = ?", documentID)
+	if result.Error != nil {
+		return result.Error
+	}
+
+	if result.RowsAffected == 0 {
+		return utils.ErrDocumentNotFound
+	}
+
+	return nil
+}

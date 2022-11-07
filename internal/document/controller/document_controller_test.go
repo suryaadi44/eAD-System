@@ -82,6 +82,11 @@ func (m *MockDocumentService) SignDocument(ctx context.Context, documentID strin
 	return args.Error(0)
 }
 
+func (m *MockDocumentService) DeleteDocument(ctx context.Context, userID string, role int, documentID string) error {
+	args := m.Called(ctx, userID, role, documentID)
+	return args.Error(0)
+}
+
 type MockJWTService struct {
 	mock.Mock
 }
@@ -1495,6 +1500,105 @@ func (s *TestSuiteDocumentController) TestSignDocument() {
 			s.mockDocumentService.On("SignDocument", mock.Anything, "1", mock.Anything).Return(tc.ServiceError)
 
 			err := s.documentController.SignDocument(c)
+
+			if tc.ExpectedError != nil {
+				s.Equal(echo.NewHTTPError(tc.ExpectedStatus, tc.ExpectedError.Error()), err)
+			} else {
+				s.NoError(err)
+
+				var response echo.Map
+				err := json.Unmarshal(w.Body.Bytes(), &response)
+				s.NoError(err)
+
+				s.Equal(tc.ExpectedStatus, w.Result().StatusCode)
+				s.Equal(tc.ExpectedBody, response)
+			}
+			s.TearDownTest()
+		})
+	}
+}
+
+func (s *TestSuiteDocumentController) TestDeleteDocument() {
+	for _, tc := range []struct {
+		Name           string
+		ServiceError   error
+		JWTReturn      jwt.MapClaims
+		ExpectedStatus int
+		ExpectedBody   echo.Map
+		ExpectedError  error
+	}{
+		{
+			Name:         "Success to delete document",
+			ServiceError: nil,
+			JWTReturn: jwt.MapClaims{
+				"role":    float64(3),
+				"user_id": "1",
+			},
+			ExpectedStatus: http.StatusOK,
+			ExpectedBody: echo.Map{
+				"message": "success deleting document",
+			},
+			ExpectedError: nil,
+		},
+		{
+			Name:         "Failed to delete document : document already signed",
+			ServiceError: utils.ErrAlreadySigned,
+			JWTReturn: jwt.MapClaims{
+				"role":    float64(3),
+				"user_id": "1",
+			},
+			ExpectedStatus: http.StatusForbidden,
+			ExpectedBody:   nil,
+			ExpectedError:  utils.ErrAlreadySigned,
+		},
+		{
+			Name:         "Failed to delete document : document not found",
+			ServiceError: utils.ErrDocumentNotFound,
+			JWTReturn: jwt.MapClaims{
+				"role":    float64(3),
+				"user_id": "1",
+			},
+			ExpectedStatus: http.StatusNotFound,
+			ExpectedBody:   nil,
+			ExpectedError:  utils.ErrDocumentNotFound,
+		},
+		{
+			Name:         "Failed to delete document : generic service error",
+			ServiceError: errors.New("generic error"),
+			JWTReturn: jwt.MapClaims{
+				"role":    float64(3),
+				"user_id": "1",
+			},
+			ExpectedStatus: http.StatusInternalServerError,
+			ExpectedBody:   nil,
+			ExpectedError:  errors.New("generic error"),
+		},
+		{
+			Name:         "Failed to delete document : role not sufficient to delete other user document",
+			ServiceError: utils.ErrDidntHavePermission,
+			JWTReturn: jwt.MapClaims{
+				"role":    float64(1),
+				"user_id": "1",
+			},
+			ExpectedStatus: http.StatusForbidden,
+			ExpectedBody:   nil,
+			ExpectedError:  utils.ErrDidntHavePermission,
+		},
+	} {
+		s.Run(tc.Name, func() {
+			s.SetupTest()
+
+			r := httptest.NewRequest("DELETE", "/documents", nil)
+			w := httptest.NewRecorder()
+
+			c := s.echoApp.NewContext(r, w)
+			c.SetParamNames("document_id")
+			c.SetParamValues("1")
+
+			s.mockJWTService.On("GetClaims", mock.Anything).Return(tc.JWTReturn)
+			s.mockDocumentService.On("DeleteDocument", mock.Anything, "1", mock.Anything).Return(tc.ServiceError)
+
+			err := s.documentController.DeleteDocument(c)
 
 			if tc.ExpectedError != nil {
 				s.Equal(echo.NewHTTPError(tc.ExpectedStatus, tc.ExpectedError.Error()), err)
