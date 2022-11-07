@@ -4,18 +4,18 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/suryaadi44/eAD-System/pkg/html"
 	"io"
-	"mime/multipart"
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/suryaadi44/eAD-System/pkg/utils/html"
+	"github.com/suryaadi44/eAD-System/pkg/utils/pdf"
 
 	"github.com/google/uuid"
 	"github.com/suryaadi44/eAD-System/internal/document/dto"
 	"github.com/suryaadi44/eAD-System/internal/document/repository"
 	"github.com/suryaadi44/eAD-System/pkg/entity"
-	"github.com/suryaadi44/eAD-System/pkg/pdf"
 	"github.com/suryaadi44/eAD-System/pkg/utils"
 )
 
@@ -33,44 +33,46 @@ func NewDocumentServiceImpl(documentRepository repository.DocumentRepository, pd
 	}
 }
 
-func (d *DocumentServiceImpl) AddTemplate(ctx context.Context, template dto.TemplateRequest, file *multipart.FileHeader) error {
-	src, err := file.Open()
+func (d *DocumentServiceImpl) AddTemplate(ctx context.Context, template *dto.TemplateRequest, file io.Reader, fileName string) error {
+	path, err := d.writeTemplateFile(file, fileName)
 	if err != nil {
-		return err
-	}
-	defer src.Close()
-
-	path := filepath.Join("./template", file.Filename)
-
-	// check if file already exist
-	if _, err := os.Stat(path); err == nil {
-		return fmt.Errorf("file '%s' already exist", file.Filename)
-	} else if !errors.Is(err, os.ErrNotExist) {
-		return err
-	}
-
-	dst, err := os.Create(path)
-	if err != nil {
-		return err
-	}
-
-	if _, err = io.Copy(dst, src); err != nil {
-		return err
-	}
-
-	if err = dst.Close(); err != nil {
 		return err
 	}
 
 	templateEntity := template.ToEntity()
 	templateEntity.Path = path
 
-	err = d.documentRepository.AddTemplate(ctx, templateEntity)
+	return d.addTemplateToRepo(ctx, templateEntity)
+}
+
+func (d *DocumentServiceImpl) addTemplateToRepo(ctx context.Context, template *entity.Template) error {
+	return d.documentRepository.AddTemplate(ctx, template)
+}
+
+func (*DocumentServiceImpl) writeTemplateFile(file io.Reader, fileName string) (string, error) {
+	newFileName := fmt.Sprint(time.Now().UnixNano(), "-", fileName)
+	path := filepath.Join("./template", newFileName)
+
+	// check if file already exist
+	if _, err := os.Stat(path); err == nil {
+		return "", fmt.Errorf("file '%s' already exist", newFileName)
+	} else if !errors.Is(err, os.ErrNotExist) {
+		return "", err
+	}
+	dst, err := os.Create(path)
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	return nil
+	if _, err = io.Copy(dst, file); err != nil {
+		return "", err
+	}
+
+	if err = dst.Close(); err != nil {
+		return "", err
+	}
+
+	return path, nil
 }
 
 func (d *DocumentServiceImpl) GetAllTemplate(ctx context.Context) (*dto.TemplatesResponse, error) {
@@ -95,7 +97,7 @@ func (d *DocumentServiceImpl) GetTemplateDetail(ctx context.Context, templateId 
 	return templateResponse, nil
 }
 
-func (d *DocumentServiceImpl) AddDocument(ctx context.Context, document dto.DocumentRequest, userID string) (string, error) {
+func (d *DocumentServiceImpl) AddDocument(ctx context.Context, document *dto.DocumentRequest, userID string) (string, error) {
 	keyList, err := d.documentRepository.GetTemplateFields(ctx, document.TemplateID)
 	if err != nil {
 		return "", err
@@ -136,6 +138,27 @@ func (d *DocumentServiceImpl) GetDocument(ctx context.Context, documentID string
 	var documentResponse = dto.NewDocumentResponse(document)
 
 	return documentResponse, nil
+}
+
+func (d *DocumentServiceImpl) GetBriefDocuments(ctx context.Context, applicantID string, role int, page int, limit int) (*dto.BriefDocumentsResponse, error) {
+	offset := (page - 1) * limit
+
+	var documents *entity.Documents
+	var err error
+
+	if role == 1 {
+		documents, err = d.documentRepository.GetBriefDocumentsByApplicant(ctx, applicantID, limit, offset)
+	} else {
+		documents, err = d.documentRepository.GetBriefDocuments(ctx, limit, offset)
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	var response = dto.NewBriefDocumentsResponse(documents)
+
+	return response, nil
 }
 
 func (d *DocumentServiceImpl) GetDocumentStatus(ctx context.Context, documentID string) (*dto.DocumentStatusResponse, error) {
@@ -245,4 +268,77 @@ func (d *DocumentServiceImpl) SignDocument(ctx context.Context, documentID strin
 	documentEntity.StageID = 3
 
 	return d.documentRepository.SignDocument(ctx, &documentEntity)
+}
+
+func (d *DocumentServiceImpl) DeleteDocument(ctx context.Context, userID string, role int, documentID string) error {
+	if role == 1 {
+		applicantID, err := d.documentRepository.GetApplicantID(ctx, documentID)
+		if err != nil {
+			return err
+		}
+
+		if *applicantID != userID {
+			return utils.ErrDidntHavePermission
+		}
+	}
+
+	stage, err := d.documentRepository.GetDocumentStage(ctx, documentID)
+	if err != nil {
+		return err
+	}
+
+	if *stage == 3 {
+		return utils.ErrAlreadySigned
+	}
+
+	return d.documentRepository.DeleteDocument(ctx, documentID)
+}
+
+func (d *DocumentServiceImpl) UpdateDocument(ctx context.Context, document *dto.DocumentUpdateRequest, documentID string) error {
+	stage, err := d.documentRepository.GetDocumentStage(ctx, documentID)
+	if err != nil {
+		return err
+	}
+
+	if *stage == 2 {
+		return utils.ErrAlreadyVerified
+	}
+
+	if *stage == 3 {
+		return utils.ErrAlreadySigned
+	}
+
+	documentEntity := document.ToEntity()
+	documentEntity.ID = documentID
+
+	return d.documentRepository.UpdateDocument(ctx, documentEntity)
+}
+
+func (d *DocumentServiceImpl) UpdateDocumentFields(ctx context.Context, userID string, role int, documentID string, fields *dto.FieldsUpdateRequest) error {
+	if role == 1 {
+		applicantID, err := d.documentRepository.GetApplicantID(ctx, documentID)
+		if err != nil {
+			return err
+		}
+
+		if *applicantID != userID {
+			return utils.ErrDidntHavePermission
+		}
+	}
+
+	stage, err := d.documentRepository.GetDocumentStage(ctx, documentID)
+	if err != nil {
+		return err
+	}
+
+	if *stage == 2 {
+		return utils.ErrAlreadyVerified
+	}
+
+	if *stage == 3 {
+		return utils.ErrAlreadySigned
+	}
+
+	fieldsEntity := fields.ToEntity(documentID)
+	return d.documentRepository.UpdateDocumentFields(ctx, fieldsEntity)
 }

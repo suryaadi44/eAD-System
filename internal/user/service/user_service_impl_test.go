@@ -27,6 +27,16 @@ func (m *MockUserRepository) FindByUsername(ctx context.Context, username string
 	return args.Get(0).(*entity.User), args.Error(1)
 }
 
+func (m *MockUserRepository) GetBriefUsers(ctx context.Context, limit int, offset int) (*entity.Users, error) {
+	args := m.Called(ctx, limit, offset)
+	return args.Get(0).(*entity.Users), args.Error(1)
+}
+
+func (m *MockUserRepository) UpdateUser(ctx context.Context, user *entity.User) error {
+	args := m.Called(ctx, user)
+	return args.Error(0)
+}
+
 type MockPasswordHashFunction struct {
 	mock.Mock
 }
@@ -170,6 +180,65 @@ func (t *TestSuiteUserService) TestLoginUser_FailedGenerateToken() {
 	t.mockJWTService.On("GenerateToken", mock.Anything).Return("", errors.New("error"))
 
 	_, err := t.userService.LogInUser(context.Background(), &dto.UserLoginRequest{
+		Username: "username",
+		Password: "password",
+	})
+
+	t.Error(err)
+}
+
+func (t *TestSuiteUserService) TestGetBriefUsers_Success() {
+	t.mockUserRepository.On("GetBriefUsers", mock.Anything, mock.Anything, mock.Anything).Return(&entity.Users{
+		{
+			Username: "username1",
+		},
+	}, nil)
+
+	resp, err := t.userService.GetBriefUsers(context.Background(), 1, 1)
+
+	t.NoError(err)
+	t.Equal(&dto.BriefUsersResponse{
+		{
+			Username: "username1",
+		},
+	}, resp)
+}
+
+func (t *TestSuiteUserService) TestGetBriefUsers_RepoError() {
+	t.mockUserRepository.On("GetBriefUsers", mock.Anything, mock.Anything, mock.Anything).Return(&entity.Users{}, errors.New("error"))
+
+	_, err := t.userService.GetBriefUsers(context.Background(), 1, 1)
+
+	t.Error(err)
+}
+
+func (t *TestSuiteUserService) TestUpdateUser_Success() {
+	t.mockUserRepository.On("UpdateUser", mock.Anything, mock.Anything).Return(nil)
+
+	err := t.userService.UpdateUser(context.Background(), "userid", &dto.UserUpdateRequest{
+		Username: "username",
+	})
+
+	t.NoError(err)
+}
+
+func (t *TestSuiteUserService) TestUpdateUser_SuccessWithPassword() {
+	t.mockUserRepository.On("UpdateUser", mock.Anything, mock.Anything).Return(nil)
+	t.mockPasswordHash.On("GenerateFromPassword", mock.Anything, 10).Return([]byte("hashedPassword"), nil)
+
+	err := t.userService.UpdateUser(context.Background(), "userid", &dto.UserUpdateRequest{
+		Username: "username",
+		Password: "password",
+	})
+
+	t.NoError(err)
+}
+
+func (t *TestSuiteUserService) TestUpdateUser_PasswordHashError() {
+	t.mockUserRepository.On("UpdateUser", mock.Anything, mock.Anything).Return(nil)
+	t.mockPasswordHash.On("GenerateFromPassword", mock.Anything, 10).Return(([]byte)(nil), errors.New("error"))
+
+	err := t.userService.UpdateUser(context.Background(), "userid", &dto.UserUpdateRequest{
 		Username: "username",
 		Password: "password",
 	})

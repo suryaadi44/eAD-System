@@ -10,9 +10,9 @@ import (
 	userControllerPkg "github.com/suryaadi44/eAD-System/internal/user/controller"
 	userRepositoryPkg "github.com/suryaadi44/eAD-System/internal/user/repository"
 	userServicePkg "github.com/suryaadi44/eAD-System/internal/user/service"
-	renderServicePkg "github.com/suryaadi44/eAD-System/pkg/html"
-	pdfServicePkg "github.com/suryaadi44/eAD-System/pkg/pdf"
-	qrServicePkg "github.com/suryaadi44/eAD-System/pkg/qr"
+	renderServicePkg "github.com/suryaadi44/eAD-System/pkg/utils/html"
+	pdfServicePkg "github.com/suryaadi44/eAD-System/pkg/utils/pdf"
+	qrServicePkg "github.com/suryaadi44/eAD-System/pkg/utils/qr"
 
 	"github.com/suryaadi44/eAD-System/pkg/utils"
 	"gorm.io/gorm"
@@ -37,8 +37,8 @@ func InitController(e *echo.Echo, db *gorm.DB, conf map[string]string) {
 
 	userRepository := userRepositoryPkg.NewUserRepositoryImpl(db)
 	userService := userServicePkg.NewUserServiceImpl(userRepository, utils.PasswordFunc{}, jwtService)
-	userController := userControllerPkg.NewUserController(userService)
-	userController.InitRoute(v1)
+	userController := userControllerPkg.NewUserController(userService, jwtService)
+	userController.InitRoute(v1, secureV1)
 
 	pdfService := pdfServicePkg.NewPDFService()
 	documentRepository := documentRepositoryPkg.NewDocumentRepositoryImpl(db)

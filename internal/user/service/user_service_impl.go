@@ -76,3 +76,30 @@ func (u *UserServiceImpl) LogInUser(ctx context.Context, user *dto.UserLoginRequ
 
 	return token, nil
 }
+
+func (u *UserServiceImpl) GetBriefUsers(ctx context.Context, page int, limit int) (*dto.BriefUsersResponse, error) {
+	offset := (page - 1) * limit
+
+	users, err := u.userRepository.GetBriefUsers(ctx, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+
+	return dto.NewBriefUsersResponse(users), nil
+}
+
+func (u *UserServiceImpl) UpdateUser(ctx context.Context, userID string, request *dto.UserUpdateRequest) error {
+	user := request.ToEntity()
+	user.ID = userID
+
+	if user.Password != "" {
+		hashedPassword, err := u.passwordHash.GenerateFromPassword([]byte(user.Password), 10)
+		if err != nil {
+			return err
+		}
+
+		user.Password = string(hashedPassword)
+	}
+
+	return u.userRepository.UpdateUser(ctx, user)
+}

@@ -15,6 +15,9 @@ var (
 
 	// ErrDidntHavePermission is used when the user doesn't have permission to access or modify the resource
 	ErrDidntHavePermission = errors.New("you didn't have permission to do this action")
+
+	// ErrInvalidNumber is used when the number covertion is invalid
+	ErrInvalidNumber = errors.New("invalid number")
 )
 
 // Service errors
@@ -49,6 +52,9 @@ var (
 	// ErrTemplateNotFound is used when the template is not found in the database
 	ErrTemplateNotFound = errors.New("template not found")
 
+	// ErrDuplicateTemplateName is used when the template name is already exist in the database
+	ErrDuplicateTemplateName = errors.New("template name already exist")
+
 	// ErrTemplateFieldNotFound is used when the template field is not found in the database
 	ErrTemplateFieldNotFound = errors.New("template field not found")
 
@@ -57,4 +63,7 @@ var (
 
 	// ErrDocumentNotFound is used when the document is not found in the database
 	ErrDocumentNotFound = errors.New("document not found")
+
+	// ErrFieldNotFound is used when document field is not found in the database
+	ErrFieldNotFound = errors.New("field not found")
 )

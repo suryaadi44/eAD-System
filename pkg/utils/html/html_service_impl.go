@@ -2,9 +2,8 @@ package html
 
 import (
 	"bytes"
+	"github.com/suryaadi44/eAD-System/pkg/utils/qr"
 	"html/template"
-
-	"github.com/suryaadi44/eAD-System/pkg/qr"
 
 	"github.com/suryaadi44/eAD-System/pkg/entity"
 )

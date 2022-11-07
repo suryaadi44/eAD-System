@@ -1,6 +1,7 @@
 package dto
 
 import (
+	"gorm.io/gorm"
 	"time"
 
 	"github.com/suryaadi44/eAD-System/internal/user/dto"
@@ -42,7 +43,7 @@ type DocumentResponse struct {
 	ID          string                `json:"id"`
 	Register    string                `json:"register"`
 	Description string                `json:"description"`
-	Applicant   dto.ApplicantResponse `json:"applicant_id"`
+	Applicant   dto.ApplicantResponse `json:"applicant"`
 	Template    TemplateResponse      `json:"template"`
 	Fields      FieldsResponse        `json:"fields"`
 	Stage       string                `json:"stage"`
@@ -73,12 +74,14 @@ func NewDocumentResponse(document *entity.Document) *DocumentResponse {
 }
 
 type FieldResponse struct {
+	ID    uint   `json:"id"`
 	Key   string `json:"key"`
 	Value string `json:"value"`
 }
 
 func NewFieldResponse(fields *entity.DocumentField) *FieldResponse {
 	return &FieldResponse{
+		ID:    fields.ID,
 		Key:   fields.TemplateField.Key,
 		Value: fields.Value,
 	}
@@ -130,4 +133,75 @@ func NewDocumentStatusResponse(document *entity.Document) *DocumentStatusRespons
 		CreatedAt:   document.CreatedAt,
 		UpdatedAt:   document.UpdatedAt,
 	}
+}
+
+type BriefDocumentResponse struct {
+	ID          string                `json:"id"`
+	Description string                `json:"description"`
+	Register    string                `json:"register"`
+	Applicant   dto.ApplicantResponse `json:"applicant"`
+	Stage       string                `json:"stage"`
+	Template    string                `json:"template"`
+}
+
+func NewBriefDocumentResponse(document *entity.Document) *BriefDocumentResponse {
+	return &BriefDocumentResponse{
+		ID:          document.ID,
+		Description: document.Description,
+		Register:    document.Register,
+		Applicant:   *dto.NewApplicantResponse(&document.Applicant),
+		Stage:       document.Stage.Status,
+		Template:    document.Template.Name,
+	}
+}
+
+type BriefDocumentsResponse []BriefDocumentResponse
+
+func NewBriefDocumentsResponse(documents *entity.Documents) *BriefDocumentsResponse {
+	var documentsResponse BriefDocumentsResponse
+	for _, document := range *documents {
+		documentsResponse = append(documentsResponse, *NewBriefDocumentResponse(&document))
+	}
+
+	return &documentsResponse
+}
+
+type DocumentUpdateRequest struct {
+	Register    string `json:"register"`
+	Description string `json:"description"`
+}
+
+func (d *DocumentUpdateRequest) ToEntity() *entity.Document {
+	return &entity.Document{
+		Register:    d.Register,
+		Description: d.Description,
+	}
+}
+
+type FieldUpdateRequest struct {
+	ID    uint   `json:"id" validate:"required"`
+	Value string `json:"value" validate:"required"`
+}
+
+func (f *FieldUpdateRequest) ToEntity(docID string) *entity.DocumentField {
+	return &entity.DocumentField{
+		Model: gorm.Model{
+			ID: f.ID,
+		},
+		DocumentID: docID,
+		Value:      f.Value,
+	}
+}
+
+type FieldsUpdateRequest struct {
+	Fields []FieldUpdateRequest `json:"fields" validate:"dive"`
+}
+
+func (f *FieldsUpdateRequest) ToEntity(docID string) *entity.DocumentFields {
+	var fields entity.DocumentFields
+	for _, field := range f.Fields {
+		fields = append(fields, *field.ToEntity(docID))
+	}
+
+	return &fields
 }
