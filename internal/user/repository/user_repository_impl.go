@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"github.com/suryaadi44/eAD-System/pkg/config"
 	"github.com/suryaadi44/eAD-System/pkg/entity"
 	"github.com/suryaadi44/eAD-System/pkg/utils"
 	"gorm.io/gorm"
@@ -13,7 +14,35 @@ type UserRepositoryImpl struct {
 }
 
 func NewUserRepositoryImpl(db *gorm.DB) UserRepository {
-	return &UserRepositoryImpl{db: db}
+	userRepository := &UserRepositoryImpl{
+		db: db,
+	}
+
+	err := userRepository.InitDefaultUser()
+	if err != nil {
+		panic(err)
+	}
+
+	return userRepository
+}
+
+func (u *UserRepositoryImpl) InitDefaultUser() error {
+	var count int64
+	err := u.db.Model(&entity.User{}).Count(&count).Error
+	if err != nil {
+		return err
+	}
+
+	if count != 0 {
+		return nil
+	}
+
+	err = u.db.Create(config.DefaultUser).Error
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (u *UserRepositoryImpl) CreateUser(ctx context.Context, user *entity.User) error {
@@ -38,7 +67,7 @@ func (u *UserRepositoryImpl) CreateUser(ctx context.Context, user *entity.User) 
 
 func (u *UserRepositoryImpl) FindByUsername(ctx context.Context, username string) (*entity.User, error) {
 	var user entity.User
-	err := u.db.WithContext(ctx).Select([]string{"id", "username", "password"}).Where("username = ?", username).First(&user).Error
+	err := u.db.WithContext(ctx).Select([]string{"id", "username", "password", "role"}).Where("username = ?", username).First(&user).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, utils.ErrUserNotFound

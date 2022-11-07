@@ -1,6 +1,25 @@
 package config
 
-import "os"
+import (
+	"github.com/google/uuid"
+	"github.com/suryaadi44/eAD-System/pkg/entity"
+	"os"
+)
+
+var (
+	DefaultDocumentStage = []string{
+		"Sent",
+		"Verified",
+		"Approved",
+	}
+
+	DefaultUser = &entity.User{
+		ID:       uuid.New().String(),
+		Username: "admin",
+		Password: "admin",
+		Role:     3,
+	}
+)
 
 func LoadConfig() map[string]string {
 	env := make(map[string]string)
@@ -12,6 +31,7 @@ func LoadConfig() map[string]string {
 	env["DB_NAME"] = os.Getenv("DB_NAME")
 	env["PORT"] = os.Getenv("PORT")
 	env["JWT_SECRET"] = os.Getenv("JWT_SECRET")
+	env["QR_PATH"] = os.Getenv("QR_PATH")
 
 	return env
 }
