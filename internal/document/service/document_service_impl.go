@@ -4,18 +4,17 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/suryaadi44/eAD-System/pkg/utils/html"
+	"github.com/suryaadi44/eAD-System/pkg/utils/pdf"
 	"io"
 	"os"
 	"path/filepath"
 	"time"
 
-	"github.com/suryaadi44/eAD-System/pkg/html"
-
 	"github.com/google/uuid"
 	"github.com/suryaadi44/eAD-System/internal/document/dto"
 	"github.com/suryaadi44/eAD-System/internal/document/repository"
 	"github.com/suryaadi44/eAD-System/pkg/entity"
-	"github.com/suryaadi44/eAD-System/pkg/pdf"
 	"github.com/suryaadi44/eAD-System/pkg/utils"
 )
 
