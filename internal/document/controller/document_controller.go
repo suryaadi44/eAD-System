@@ -364,7 +364,7 @@ func (d *DocumentController) UpdateDocument(c echo.Context) error {
 	documentID := c.Param("document_id")
 	var document dto.DocumentUpdateRequest
 	if err := c.Bind(&document); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+		return echo.NewHTTPError(http.StatusBadRequest, utils.ErrBadRequestBody.Error())
 	}
 
 	err := d.documentService.UpdateDocument(c.Request().Context(), &document, documentID)

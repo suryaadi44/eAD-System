@@ -1627,6 +1627,158 @@ func (s *TestSuiteDocumentController) TestDeleteDocument() {
 	}
 }
 
+func (s *TestSuiteDocumentController) TestUpdateDocument() {
+	for _, tc := range []struct {
+		Name                string
+		RequestBody         *dto.DocumentUpdateRequest
+		RequestContentTypes string
+		ServiceError        error
+		JWTReturn           jwt.MapClaims
+		ExpectedStatus      int
+		ExpectedBody        echo.Map
+		ExpectedError       error
+	}{
+		{
+			Name: "Success to update document",
+			RequestBody: &dto.DocumentUpdateRequest{
+				Register:    "123",
+				Description: "description",
+			},
+			RequestContentTypes: "application/json",
+			ServiceError:        nil,
+			JWTReturn: jwt.MapClaims{
+				"role": float64(3),
+			},
+			ExpectedStatus: http.StatusOK,
+			ExpectedBody: echo.Map{
+				"message": "success updating document",
+			},
+			ExpectedError: nil,
+		},
+		{
+			Name: "Failed to update document : role not sufficient to update document",
+			RequestBody: &dto.DocumentUpdateRequest{
+				Register:    "123",
+				Description: "description",
+			},
+			RequestContentTypes: "application/json",
+			ServiceError:        utils.ErrDidntHavePermission,
+			JWTReturn: jwt.MapClaims{
+				"role": float64(1),
+			},
+			ExpectedStatus: http.StatusForbidden,
+			ExpectedBody:   nil,
+			ExpectedError:  utils.ErrDidntHavePermission,
+		},
+		{
+			Name:                "Failed to update document : invalid request body",
+			RequestBody:         nil,
+			RequestContentTypes: "",
+			ServiceError:        utils.ErrBadRequestBody,
+			JWTReturn: jwt.MapClaims{
+				"role": float64(3),
+			},
+			ExpectedStatus: http.StatusBadRequest,
+			ExpectedBody:   nil,
+			ExpectedError:  utils.ErrBadRequestBody,
+		},
+		{
+			Name: "Failed to update document : generic service error",
+			RequestBody: &dto.DocumentUpdateRequest{
+				Register:    "123",
+				Description: "description",
+			},
+			RequestContentTypes: "application/json",
+			ServiceError:        errors.New("generic error"),
+			JWTReturn: jwt.MapClaims{
+				"role": float64(3),
+			},
+			ExpectedStatus: http.StatusInternalServerError,
+			ExpectedBody:   nil,
+			ExpectedError:  errors.New("generic error"),
+		},
+		{
+			Name: "Failed to update document : document not found",
+			RequestBody: &dto.DocumentUpdateRequest{
+				Register:    "123",
+				Description: "description",
+			},
+			RequestContentTypes: "application/json",
+			ServiceError:        utils.ErrDocumentNotFound,
+			JWTReturn: jwt.MapClaims{
+				"role": float64(3),
+			},
+			ExpectedStatus: http.StatusNotFound,
+			ExpectedBody:   nil,
+			ExpectedError:  utils.ErrDocumentNotFound,
+		},
+		{
+			Name: "Failed to update document : document already signed",
+			RequestBody: &dto.DocumentUpdateRequest{
+				Register:    "123",
+				Description: "description",
+			},
+			RequestContentTypes: "application/json",
+			ServiceError:        utils.ErrAlreadySigned,
+			JWTReturn: jwt.MapClaims{
+				"role": float64(3),
+			},
+			ExpectedStatus: http.StatusForbidden,
+			ExpectedBody:   nil,
+			ExpectedError:  utils.ErrAlreadySigned,
+		},
+		{
+			Name: "Failed to update document : document already Verified",
+			RequestBody: &dto.DocumentUpdateRequest{
+				Register:    "123",
+				Description: "description",
+			},
+			RequestContentTypes: "application/json",
+			ServiceError:        utils.ErrAlreadyVerified,
+			JWTReturn: jwt.MapClaims{
+				"role": float64(3),
+			},
+			ExpectedStatus: http.StatusForbidden,
+			ExpectedBody:   nil,
+			ExpectedError:  utils.ErrAlreadyVerified,
+		},
+	} {
+		s.Run(tc.Name, func() {
+			s.SetupTest()
+
+			jsonBody, err := json.Marshal(tc.RequestBody)
+			s.NoError(err)
+
+			r := httptest.NewRequest("DELETE", "/documents", bytes.NewReader(jsonBody))
+			r.Header.Set("Content-Type", tc.RequestContentTypes)
+			w := httptest.NewRecorder()
+
+			c := s.echoApp.NewContext(r, w)
+			c.SetParamNames("document_id")
+			c.SetParamValues("1")
+
+			s.mockJWTService.On("GetClaims", mock.Anything).Return(tc.JWTReturn)
+			s.mockDocumentService.On("UpdateDocument", mock.Anything, mock.Anything, mock.Anything).Return(tc.ServiceError)
+
+			err = s.documentController.UpdateDocument(c)
+
+			if tc.ExpectedError != nil {
+				s.Equal(echo.NewHTTPError(tc.ExpectedStatus, tc.ExpectedError.Error()), err)
+			} else {
+				s.NoError(err)
+
+				var response echo.Map
+				err := json.Unmarshal(w.Body.Bytes(), &response)
+				s.NoError(err)
+
+				s.Equal(tc.ExpectedStatus, w.Result().StatusCode)
+				s.Equal(tc.ExpectedBody, response)
+			}
+			s.TearDownTest()
+		})
+	}
+}
+
 func TestDocumentController(t *testing.T) {
 	suite.Run(t, new(TestSuiteDocumentController))
 }
