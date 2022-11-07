@@ -1596,7 +1596,7 @@ func (s *TestSuiteDocumentController) TestDeleteDocument() {
 			c.SetParamValues("1")
 
 			s.mockJWTService.On("GetClaims", mock.Anything).Return(tc.JWTReturn)
-			s.mockDocumentService.On("DeleteDocument", mock.Anything, "1", mock.Anything).Return(tc.ServiceError)
+			s.mockDocumentService.On("DeleteDocument", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(tc.ServiceError)
 
 			err := s.documentController.DeleteDocument(c)
 
