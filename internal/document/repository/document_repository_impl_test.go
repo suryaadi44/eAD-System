@@ -849,6 +849,48 @@ func (s *TestSuiteDocumentRepository) TestSignDocument() {
 	}
 }
 
+func (s *TestSuiteDocumentRepository) TestDeleteDocument() {
+	query := regexp.QuoteMeta("UPDATE `documents` SET `deleted_at`=? WHERE id = ? AND `documents`.`deleted_at` IS NULL")
+
+	for _, tc := range []struct {
+		Name         string
+		Err          error
+		ExpectedErr  error
+		RowsAffected int64
+	}{
+		{
+			Name:         "Success",
+			RowsAffected: 1,
+		},
+		{
+			Name:         "Error No rows affected",
+			RowsAffected: 0,
+			ExpectedErr:  utils.ErrDocumentNotFound,
+		},
+		{
+			Name:        "Error generic error",
+			Err:         errors.New("generic error"),
+			ExpectedErr: errors.New("generic error"),
+		},
+	} {
+		s.SetupTest()
+		s.Run(tc.Name, func() {
+			if tc.Err != nil {
+				s.mock.ExpectExec(query).WillReturnError(tc.Err)
+			} else {
+				s.mock.ExpectExec(query).WillReturnResult(sqlmock.NewResult(1, tc.RowsAffected))
+			}
+
+			err := s.documentRepository.DeleteDocument(context.Background(), "1")
+
+			if tc.ExpectedErr != nil {
+				s.Equal(tc.ExpectedErr, err)
+			}
+		})
+		s.TearDownTest()
+	}
+}
+
 func TestDocumentRepository(t *testing.T) {
 	suite.Run(t, new(TestSuiteDocumentRepository))
 }

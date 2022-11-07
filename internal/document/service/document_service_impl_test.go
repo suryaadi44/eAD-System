@@ -87,6 +87,11 @@ func (m *MockDocumentRepository) SignDocument(ctx context.Context, document *ent
 	return args.Error(0)
 }
 
+func (m *MockDocumentRepository) DeleteDocument(ctx context.Context, documentID string) error {
+	args := m.Called(ctx, documentID)
+	return args.Error(0)
+}
+
 type MockPDFService struct {
 	mock.Mock
 }
@@ -1211,6 +1216,71 @@ func (s *TestSuiteDocumentService) TestSignDocument_RepositoryError() {
 	err := s.documentService.SignDocument(context.Background(), "1", "1")
 
 	s.Equal(errors.New("error"), err)
+}
+
+func (s *TestSuiteDocumentService) TestDeleteDocument_SuccesWitUserRole() {
+	userIDReturned := "userid"
+	s.mockDocumentRepository.On("GetApplicantID", mock.Anything, "documentid").Return(&userIDReturned, nil)
+
+	stageReturned := 1
+	s.mockDocumentRepository.On("GetDocumentStage", mock.Anything, "documentid").Return(&stageReturned, nil)
+
+	s.mockDocumentRepository.On("DeleteDocument", mock.Anything, "documentid").Return(nil)
+
+	err := s.documentService.DeleteDocument(context.Background(), "userid", 1, "documentid")
+
+	s.NoError(err)
+}
+
+func (s *TestSuiteDocumentService) TestDeleteDocument_SuccesWithAdminRole() {
+	stageReturned := 1
+	s.mockDocumentRepository.On("GetDocumentStage", mock.Anything, "documentid").Return(&stageReturned, nil)
+
+	s.mockDocumentRepository.On("DeleteDocument", mock.Anything, "documentid").Return(nil)
+
+	err := s.documentService.DeleteDocument(context.Background(), "userid", 2, "documentid")
+
+	s.NoError(err)
+}
+
+func (s *TestSuiteDocumentService) TestDeleteDocument_ErrorGettingApplicantID() {
+	s.mockDocumentRepository.On("GetApplicantID", mock.Anything, "documentid").Return((*string)(nil), errors.New("error"))
+
+	err := s.documentService.DeleteDocument(context.Background(), "userid", 1, "documentid")
+
+	s.Equal(errors.New("error"), err)
+}
+
+func (s *TestSuiteDocumentService) TestDeleteDocument_ErrorRoleNotSufficentToDeleteOtherUserDocument() {
+	userIDReturned := "userid2"
+	s.mockDocumentRepository.On("GetApplicantID", mock.Anything, "documentid").Return(&userIDReturned, nil)
+
+	err := s.documentService.DeleteDocument(context.Background(), "userid", 1, "documentid")
+
+	s.Equal(utils.ErrDidntHavePermission, err)
+}
+
+func (s *TestSuiteDocumentService) TestDeleteDocument_ErrorGettingDocumentStage() {
+	userIDReturned := "userid"
+	s.mockDocumentRepository.On("GetApplicantID", mock.Anything, "documentid").Return(&userIDReturned, nil)
+
+	s.mockDocumentRepository.On("GetDocumentStage", mock.Anything, "documentid").Return((*int)(nil), errors.New("error"))
+
+	err := s.documentService.DeleteDocument(context.Background(), "userid", 1, "documentid")
+
+	s.Equal(errors.New("error"), err)
+}
+
+func (s *TestSuiteDocumentService) TestDeleteDocument_ErrorDocumentAlreadySigned() {
+	userIDReturned := "userid"
+	s.mockDocumentRepository.On("GetApplicantID", mock.Anything, "documentid").Return(&userIDReturned, nil)
+
+	stageReturned := 3
+	s.mockDocumentRepository.On("GetDocumentStage", mock.Anything, "documentid").Return(&stageReturned, nil)
+
+	err := s.documentService.DeleteDocument(context.Background(), "userid", 1, "documentid")
+
+	s.Equal(utils.ErrAlreadySigned, err)
 }
 
 func TestDocumentService(t *testing.T) {

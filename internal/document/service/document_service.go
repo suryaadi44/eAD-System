@@ -20,4 +20,5 @@ type DocumentService interface {
 	GetApplicantID(ctx context.Context, documentID string) (*string, error)
 	VerifyDocument(ctx context.Context, documentID string, verifierID string) error
 	SignDocument(ctx context.Context, documentID string, signerID string) error
+	DeleteDocument(ctx context.Context, userID string, role int, documentID string) error
 }

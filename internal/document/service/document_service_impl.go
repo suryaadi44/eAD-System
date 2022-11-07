@@ -4,12 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/suryaadi44/eAD-System/pkg/utils/html"
-	"github.com/suryaadi44/eAD-System/pkg/utils/pdf"
 	"io"
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/suryaadi44/eAD-System/pkg/utils/html"
+	"github.com/suryaadi44/eAD-System/pkg/utils/pdf"
 
 	"github.com/google/uuid"
 	"github.com/suryaadi44/eAD-System/internal/document/dto"
@@ -267,4 +268,28 @@ func (d *DocumentServiceImpl) SignDocument(ctx context.Context, documentID strin
 	documentEntity.StageID = 3
 
 	return d.documentRepository.SignDocument(ctx, &documentEntity)
+}
+
+func (d *DocumentServiceImpl) DeleteDocument(ctx context.Context, userID string, role int, documentID string) error {
+	if role == 1 {
+		applicantID, err := d.documentRepository.GetApplicantID(ctx, documentID)
+		if err != nil {
+			return err
+		}
+
+		if *applicantID != userID {
+			return utils.ErrDidntHavePermission
+		}
+	}
+
+	stage, err := d.documentRepository.GetDocumentStage(ctx, documentID)
+	if err != nil {
+		return err
+	}
+
+	if *stage == 3 {
+		return utils.ErrAlreadySigned
+	}
+
+	return d.documentRepository.DeleteDocument(ctx, documentID)
 }

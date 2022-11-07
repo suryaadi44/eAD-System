@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+
 	"github.com/suryaadi44/eAD-System/pkg/entity"
 )
 
@@ -20,4 +21,5 @@ type DocumentRepository interface {
 	GetDocumentStage(ctx context.Context, documentID string) (*int, error)
 	VerifyDocument(ctx context.Context, document *entity.Document) error
 	SignDocument(ctx context.Context, document *entity.Document) error
+	DeleteDocument(ctx context.Context, documentID string) error
 }

@@ -41,6 +41,7 @@ func (d *DocumentController) InitRoute(api *echo.Group, secureApi *echo.Group) {
 	secureApi.GET("/documents/:document_id/pdf", d.GetPDFDocument)
 	secureApi.PATCH("/documents/:document_id/verify", d.VerifyDocument)
 	secureApi.PATCH("/documents/:document_id/sign", d.SignDocument)
+	secureApi.DELETE("/documents/:document_id", d.DeleteDocument)
 }
 
 func (d *DocumentController) AddTemplate(c echo.Context) error {
@@ -323,5 +324,30 @@ func (d *DocumentController) SignDocument(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, echo.Map{
 		"message": "success signing document",
+	})
+}
+
+func (d *DocumentController) DeleteDocument(c echo.Context) error {
+	claims := d.jwtService.GetClaims(&c)
+	role := claims["role"].(float64)
+	userID := claims["user_id"].(string)
+
+	documentID := c.Param("document_id")
+	err := d.documentService.DeleteDocument(c.Request().Context(), userID, int(role), documentID)
+	if err != nil {
+		switch err {
+		case utils.ErrDocumentNotFound:
+			return echo.NewHTTPError(http.StatusNotFound, err.Error())
+		case utils.ErrDidntHavePermission:
+			return echo.NewHTTPError(http.StatusForbidden, err.Error())
+		case utils.ErrAlreadySigned:
+			return echo.NewHTTPError(http.StatusForbidden, err.Error())
+		default:
+			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		}
+	}
+
+	return c.JSON(http.StatusOK, echo.Map{
+		"message": "success deleting document",
 	})
 }
