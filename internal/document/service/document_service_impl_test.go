@@ -52,6 +52,16 @@ func (m *MockDocumentRepository) GetDocument(ctx context.Context, documentID str
 	return args.Get(0).(*entity.Document), args.Error(1)
 }
 
+func (m *MockDocumentRepository) GetBriefDocuments(ctx context.Context, limit int, offset int) (*entity.Documents, error) {
+	args := m.Called(ctx, limit, offset)
+	return args.Get(0).(*entity.Documents), args.Error(1)
+}
+
+func (m *MockDocumentRepository) GetBriefDocumentsByApplicant(ctx context.Context, applicantID string, limit int, offset int) (*entity.Documents, error) {
+	args := m.Called(ctx, applicantID, limit, offset)
+	return args.Get(0).(*entity.Documents), args.Error(1)
+}
+
 func (m *MockDocumentRepository) GetDocumentStatus(ctx context.Context, documentID string) (*entity.Document, error) {
 	args := m.Called(ctx, documentID)
 	return args.Get(0).(*entity.Document), args.Error(1)
@@ -129,6 +139,10 @@ func (s *TestSuiteDocumentService) TearDownTest() {
 	s.mockPDFService = nil
 	s.mockRenderService = nil
 	s.documentService = nil
+}
+
+func (s *TestSuiteDocumentService) TestNewDocumentServiceImpl() {
+	s.NotNil(NewDocumentServiceImpl(s.mockDocumentRepository, s.mockPDFService, s.mockRenderService))
 }
 
 func (s *TestSuiteDocumentService) TestAddTemplateToRepo_Success() {
@@ -487,6 +501,98 @@ func (s *TestSuiteDocumentService) TestGetDocument_ErrorRepository() {
 	doc, err := s.documentService.GetDocument(context.Background(), "1")
 	s.Equal(err, errors.New("error"))
 	s.Nil(doc)
+}
+
+func (s *TestSuiteDocumentService) TestGetBriefDocuments_Success() {
+	s.mockDocumentRepository.On("GetBriefDocuments", mock.Anything, mock.Anything, mock.Anything).Return(&entity.Documents{
+		{
+			ID:          "1",
+			Register:    "register",
+			Description: "description",
+			Applicant: entity.User{
+				ID:       "1",
+				Username: "username",
+				Name:     "name",
+			},
+			Template: entity.Template{
+				Name: "Test Template",
+			},
+			Stage: entity.Stage{
+				ID:     1,
+				Status: "Test Stage",
+			},
+			CreatedAt: time.Time{},
+		},
+	}, nil)
+
+	expectedReturn := &dto.BriefDocumentsResponse{
+		{
+			ID:          "1",
+			Register:    "register",
+			Description: "description",
+			Applicant: dto2.ApplicantResponse{
+				ID:       "1",
+				Username: "username",
+				Name:     "name",
+			},
+			Template: "Test Template",
+			Stage:    "Test Stage",
+		},
+	}
+
+	docs, err := s.documentService.GetBriefDocuments(context.Background(), "1", 3, 0, 0)
+	s.NoError(err)
+	s.Equal(expectedReturn, docs)
+}
+
+func (s *TestSuiteDocumentService) TestGetBriefDocuments_SuccessWithUserRole() {
+	s.mockDocumentRepository.On("GetBriefDocumentsByApplicant", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(&entity.Documents{
+		{
+			ID:          "1",
+			Register:    "register",
+			Description: "description",
+			Applicant: entity.User{
+				ID:       "1",
+				Username: "username",
+				Name:     "name",
+			},
+			Template: entity.Template{
+				Name: "Test Template",
+			},
+			Stage: entity.Stage{
+				ID:     1,
+				Status: "Test Stage",
+			},
+			CreatedAt: time.Time{},
+		},
+	}, nil)
+
+	expectedReturn := &dto.BriefDocumentsResponse{
+		{
+			ID:          "1",
+			Register:    "register",
+			Description: "description",
+			Applicant: dto2.ApplicantResponse{
+				ID:       "1",
+				Username: "username",
+				Name:     "name",
+			},
+			Template: "Test Template",
+			Stage:    "Test Stage",
+		},
+	}
+
+	docs, err := s.documentService.GetBriefDocuments(context.Background(), "1", 1, 0, 0)
+	s.NoError(err)
+	s.Equal(expectedReturn, docs)
+}
+
+func (s *TestSuiteDocumentService) TestGetBriefDocuments_ErrorRepository() {
+	s.mockDocumentRepository.On("GetBriefDocuments", mock.Anything, mock.Anything, mock.Anything).Return(&entity.Documents{}, errors.New("error"))
+
+	docs, err := s.documentService.GetBriefDocuments(context.Background(), "1", 3, 0, 0)
+	s.Equal(err, errors.New("error"))
+	s.Nil(docs)
 }
 
 func (s *TestSuiteDocumentService) TestGetDocumentStatus_Success() {

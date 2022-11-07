@@ -36,6 +36,7 @@ func (d *DocumentController) InitRoute(api *echo.Group, secureApi *echo.Group) {
 
 	secureApi.POST("/templates", d.AddTemplate)
 	secureApi.POST("/documents", d.AddDocument)
+	secureApi.GET("/documents", d.GetBriefDocument)
 	secureApi.GET("/documents/:document_id", d.GetDocument)
 	secureApi.GET("/documents/:document_id/pdf", d.GetPDFDocument)
 	secureApi.PATCH("/documents/:document_id/verify", d.VerifyDocument)
@@ -181,6 +182,48 @@ func (d *DocumentController) GetDocument(c echo.Context) error {
 	default:
 		return echo.NewHTTPError(http.StatusForbidden, utils.ErrDidntHavePermission.Error())
 	}
+}
+
+func (d *DocumentController) GetBriefDocument(c echo.Context) error {
+	claims := d.jwtService.GetClaims(&c)
+	role := claims["role"].(float64)
+	userID := claims["user_id"].(string)
+
+	page := c.QueryParam("page")
+	if page == "" {
+		page = "1"
+	}
+	pageInt, err := strconv.ParseInt(page, 10, 64)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, utils.ErrInvalidNumber.Error())
+	}
+
+	limit := c.QueryParam("limit")
+	if limit == "" {
+		limit = "20"
+	}
+	limitInt, err := strconv.ParseInt(limit, 10, 64)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, utils.ErrInvalidNumber.Error())
+	}
+
+	documents, err := d.documentService.GetBriefDocuments(c.Request().Context(), userID, int(role), int(pageInt), int(limitInt))
+	if err != nil {
+		if err == utils.ErrDocumentNotFound {
+			return echo.NewHTTPError(http.StatusNotFound, err.Error())
+		}
+
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	return c.JSON(http.StatusOK, echo.Map{
+		"message": "success getting document",
+		"data":    documents,
+		"meta": echo.Map{
+			"page":  pageInt,
+			"limit": limitInt,
+		},
+	})
 }
 
 func (d *DocumentController) GetDocumentStatus(c echo.Context) error {

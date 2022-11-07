@@ -131,3 +131,34 @@ func NewDocumentStatusResponse(document *entity.Document) *DocumentStatusRespons
 		UpdatedAt:   document.UpdatedAt,
 	}
 }
+
+type BriefDocumentResponse struct {
+	ID          string                `json:"id"`
+	Description string                `json:"description"`
+	Register    string                `json:"register"`
+	Applicant   dto.ApplicantResponse `json:"applicant"`
+	Stage       string                `json:"stage"`
+	Template    string                `json:"template"`
+}
+
+func NewBriefDocumentResponse(document *entity.Document) *BriefDocumentResponse {
+	return &BriefDocumentResponse{
+		ID:          document.ID,
+		Description: document.Description,
+		Register:    document.Register,
+		Applicant:   *dto.NewApplicantResponse(&document.Applicant),
+		Stage:       document.Stage.Status,
+		Template:    document.Template.Name,
+	}
+}
+
+type BriefDocumentsResponse []BriefDocumentResponse
+
+func NewBriefDocumentsResponse(documents *entity.Documents) *BriefDocumentsResponse {
+	var documentsResponse BriefDocumentsResponse
+	for _, document := range *documents {
+		documentsResponse = append(documentsResponse, *NewBriefDocumentResponse(&document))
+	}
+
+	return &documentsResponse
+}

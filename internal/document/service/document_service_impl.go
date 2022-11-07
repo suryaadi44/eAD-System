@@ -139,6 +139,27 @@ func (d *DocumentServiceImpl) GetDocument(ctx context.Context, documentID string
 	return documentResponse, nil
 }
 
+func (d *DocumentServiceImpl) GetBriefDocuments(ctx context.Context, applicantID string, role int, page int, limit int) (*dto.BriefDocumentsResponse, error) {
+	offset := (page - 1) * limit
+
+	var documents *entity.Documents
+	var err error
+
+	if role == 1 {
+		documents, err = d.documentRepository.GetBriefDocumentsByApplicant(ctx, applicantID, limit, offset)
+	} else {
+		documents, err = d.documentRepository.GetBriefDocuments(ctx, limit, offset)
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	var response = dto.NewBriefDocumentsResponse(documents)
+
+	return response, nil
+}
+
 func (d *DocumentServiceImpl) GetDocumentStatus(ctx context.Context, documentID string) (*dto.DocumentStatusResponse, error) {
 	document, err := d.documentRepository.GetDocumentStatus(ctx, documentID)
 	if err != nil {
