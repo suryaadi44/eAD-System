@@ -87,3 +87,19 @@ func (u *UserServiceImpl) GetBriefUsers(ctx context.Context, page int, limit int
 
 	return dto.NewBriefUsersResponse(users), nil
 }
+
+func (u *UserServiceImpl) UpdateUser(ctx context.Context, userID string, request *dto.UserUpdateRequest) error {
+	user := request.ToEntity()
+	user.ID = userID
+
+	if user.Password != "" {
+		hashedPassword, err := u.passwordHash.GenerateFromPassword([]byte(user.Password), 10)
+		if err != nil {
+			return err
+		}
+
+		user.Password = string(hashedPassword)
+	}
+
+	return u.userRepository.UpdateUser(ctx, user)
+}

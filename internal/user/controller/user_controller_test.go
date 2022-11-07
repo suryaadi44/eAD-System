@@ -34,6 +34,11 @@ func (m *MockUserService) GetBriefUsers(ctx context.Context, page int, limit int
 	return args.Get(0).(*dto.BriefUsersResponse), args.Error(1)
 }
 
+func (m *MockUserService) UpdateUser(ctx context.Context, userID string, request *dto.UserUpdateRequest) error {
+	args := m.Called(ctx, userID, request)
+	return args.Error(0)
+}
+
 type MockJWTService struct {
 	mock.Mock
 }
@@ -83,109 +88,126 @@ func (s *TestSuiteUserControllers) TestInitRoute() {
 	})
 }
 
-func (s *TestSuiteUserControllers) TestSignUpUser() {
+func (s *TestSuiteUserControllers) TestUpdateUser() {
 	for _, tc := range []struct {
 		Name            string
 		RequestBody     interface{}
 		FunctionError   error
 		ValidationError error
+		JWTReturn       jwt.MapClaims
 		ExpectedStatus  int
 		ExpectedBody    echo.Map
 		ExpectedError   error
 	}{
 		{
-			Name: "Success creating user",
+			Name: "Success updating user",
 			RequestBody: &dto.UserSignUpRequest{
 				Username: "suryaadi",
-				Password: "123456",
-				NIK:      "1234567890123456",
-				NIP:      "123456789012345678",
-				Name:     "Surya Adi",
-				Telp:     "081234567890",
-				Sex:      "L",
-				Address:  "Jl. Jalan",
 			},
-			ExpectedStatus: http.StatusCreated,
+			FunctionError:   nil,
+			ValidationError: nil,
+			JWTReturn: jwt.MapClaims{
+				"user_id": "1",
+			},
+			ExpectedStatus: http.StatusOK,
 			ExpectedBody: echo.Map{
-				"message": "success creating user",
+				"message": "success update user",
 			},
+			ExpectedError: nil,
 		},
 		{
-			Name: "Failed creating user : Username already exist",
+			Name: "Failed updating user: user not found",
 			RequestBody: &dto.UserSignUpRequest{
 				Username: "suryaadi",
-				Password: "123456",
-				NIK:      "1234567890123456",
-				NIP:      "123456789012345678",
-				Name:     "Surya Adi",
-				Telp:     "081234567890",
-				Sex:      "L",
-				Address:  "Jl. Jalan",
 			},
-			FunctionError:  utils.ErrUsernameAlreadyExist,
+			FunctionError:   utils.ErrUserNotFound,
+			ValidationError: nil,
+			JWTReturn: jwt.MapClaims{
+				"user_id": "1",
+			},
+			ExpectedStatus: http.StatusNotFound,
+			ExpectedBody:   nil,
+			ExpectedError:  utils.ErrUserNotFound,
+		},
+		{
+			Name: "Failed updating user : Username already exist",
+			RequestBody: &dto.UserSignUpRequest{
+				Username: "suryaadi",
+			},
+			FunctionError:   utils.ErrUsernameAlreadyExist,
+			ValidationError: nil,
+			JWTReturn: jwt.MapClaims{
+				"user_id": "1",
+			},
 			ExpectedStatus: http.StatusConflict,
+			ExpectedBody:   nil,
 			ExpectedError:  utils.ErrUsernameAlreadyExist,
 		},
 		{
-			Name: "Failed creating user : NIK already exist",
+			Name: "Failed updating user : NIK already exist",
 			RequestBody: &dto.UserSignUpRequest{
-				Username: "suryaadi",
-				Password: "123456",
-				NIK:      "1234567890123456",
-				NIP:      "123456789012345678",
-				Name:     "Surya Adi",
-				Telp:     "081234567890",
-				Sex:      "L",
-				Address:  "Jl. Jalan",
+				NIK: "1234567890123456",
 			},
-			FunctionError:  utils.ErrNIKAlreadyExist,
+			FunctionError:   utils.ErrNIKAlreadyExist,
+			ValidationError: nil,
+			JWTReturn: jwt.MapClaims{
+				"user_id": "1",
+			},
 			ExpectedStatus: http.StatusConflict,
+			ExpectedBody:   nil,
 			ExpectedError:  utils.ErrNIKAlreadyExist,
 		},
 		{
-			Name: "Failed creating user : NIP already exist",
+			Name: "Failed updating user : NIP already exist",
 			RequestBody: &dto.UserSignUpRequest{
-				Username: "suryaadi",
-				Password: "123456",
-				NIK:      "1234567890123456",
-				NIP:      "123456789012345678",
-				Name:     "Surya Adi",
-				Telp:     "081234567890",
-				Sex:      "L",
-				Address:  "Jl. Jalan",
+				NIP: "123456789012345678",
 			},
-			FunctionError:  utils.ErrNIPAlreadyExist,
+			FunctionError:   utils.ErrNIPAlreadyExist,
+			ValidationError: nil,
+			JWTReturn: jwt.MapClaims{
+				"user_id": "1",
+			},
 			ExpectedStatus: http.StatusConflict,
+			ExpectedBody:   nil,
 			ExpectedError:  utils.ErrNIPAlreadyExist,
 		},
 		{
-			Name: "Failed creating user : Generic error",
+			Name: "Failed updating user : Generic error",
 			RequestBody: &dto.UserSignUpRequest{
 				Username: "suryaadi",
-				Password: "123456",
-				NIK:      "1234567890123456",
-				NIP:      "123456789012345678",
-				Name:     "Surya Adi",
-				Telp:     "081234567890",
-				Sex:      "L",
-				Address:  "Jl. Jalan",
 			},
-			FunctionError:  errors.New("generic error"),
+			FunctionError:   errors.New("generic error"),
+			ValidationError: nil,
+			JWTReturn: jwt.MapClaims{
+				"user_id": "1",
+			},
 			ExpectedStatus: http.StatusInternalServerError,
+			ExpectedBody:   nil,
 			ExpectedError:  errors.New("generic error"),
 		},
 		{
-			Name:           "Failed creating user : Invalid request body",
-			RequestBody:    "invalid request body",
+			Name:            "Failed updating user : Invalid request body",
+			RequestBody:     "invalid request body",
+			FunctionError:   nil,
+			ValidationError: nil,
+			JWTReturn: jwt.MapClaims{
+				"user_id": "1",
+			},
 			ExpectedStatus: http.StatusBadRequest,
+			ExpectedBody:   nil,
 			ExpectedError:  utils.ErrBadRequestBody,
 		},
 		{
-			Name:            "Failed creating user : Validation error",
+			Name:            "Failed updating user : Validation error",
 			RequestBody:     &dto.UserSignUpRequest{},
+			FunctionError:   nil,
 			ValidationError: echo.NewHTTPError(http.StatusBadRequest, "validation error"),
-			ExpectedStatus:  http.StatusBadRequest,
-			ExpectedError:   errors.New("validation error"),
+			JWTReturn: jwt.MapClaims{
+				"user_id": "1",
+			},
+			ExpectedStatus: http.StatusBadRequest,
+			ExpectedBody:   nil,
+			ExpectedError:  errors.New("validation error"),
 		},
 	} {
 		s.Run(tc.Name, func() {
@@ -194,21 +216,17 @@ func (s *TestSuiteUserControllers) TestSignUpUser() {
 			jsonBody, err := json.Marshal(tc.RequestBody)
 			s.NoError(err)
 
-			r := httptest.NewRequest("POST", "/signup", bytes.NewBuffer(jsonBody))
+			r := httptest.NewRequest("POST", "/users", bytes.NewBuffer(jsonBody))
 			r.Header.Set("Content-Type", "application/json")
 			w := httptest.NewRecorder()
 
 			c := s.echoApp.NewContext(r, w)
 
-			s.mockUserService.On("SignUpUser", mock.Anything, tc.RequestBody).Return(tc.FunctionError)
+			s.mockJWT.On("GetClaims", mock.Anything).Return(tc.JWTReturn)
+			s.mockValidator.On("Validate", mock.Anything).Return(tc.ValidationError)
+			s.mockUserService.On("UpdateUser", mock.Anything, mock.Anything, mock.Anything).Return(tc.FunctionError)
 
-			if tc.ValidationError != nil {
-				s.mockValidator.On("Validate", tc.RequestBody).Return(tc.ValidationError)
-			} else {
-				s.mockValidator.On("Validate", tc.RequestBody).Return(nil)
-			}
-
-			err = s.userController.SignUpUser(c)
+			err = s.userController.UpdateUser(c)
 
 			if tc.ExpectedError != nil {
 				s.Equal(echo.NewHTTPError(tc.ExpectedStatus, tc.ExpectedError.Error()), err)
@@ -486,6 +504,151 @@ func (s *TestSuiteUserControllers) TestGetBriefUsers() {
 			s.mockUserService.On("GetBriefUsers", mock.Anything, mock.Anything, mock.Anything).Return(tc.FunctionReturn, tc.FunctionError)
 
 			err := s.userController.GetBriefUsers(c)
+
+			if tc.ExpectedError != nil {
+				s.Equal(echo.NewHTTPError(tc.ExpectedStatus, tc.ExpectedError.Error()), err)
+			} else {
+				s.NoError(err)
+
+				var response echo.Map
+				err := json.Unmarshal(w.Body.Bytes(), &response)
+				s.NoError(err)
+
+				s.Equal(tc.ExpectedStatus, w.Result().StatusCode)
+				s.Equal(tc.ExpectedBody, response)
+			}
+
+			s.TearDownTest()
+		})
+	}
+}
+
+func (s *TestSuiteUserControllers) TestSignUpUser() {
+	for _, tc := range []struct {
+		Name            string
+		RequestBody     interface{}
+		FunctionError   error
+		ValidationError error
+		ExpectedStatus  int
+		ExpectedBody    echo.Map
+		ExpectedError   error
+	}{
+		{
+			Name: "Success creating user",
+			RequestBody: &dto.UserSignUpRequest{
+				Username: "suryaadi",
+				Password: "123456",
+				NIK:      "1234567890123456",
+				NIP:      "123456789012345678",
+				Name:     "Surya Adi",
+				Telp:     "081234567890",
+				Sex:      "L",
+				Address:  "Jl. Jalan",
+			},
+			ExpectedStatus: http.StatusCreated,
+			ExpectedBody: echo.Map{
+				"message": "success creating user",
+			},
+		},
+		{
+			Name: "Failed creating user : Username already exist",
+			RequestBody: &dto.UserSignUpRequest{
+				Username: "suryaadi",
+				Password: "123456",
+				NIK:      "1234567890123456",
+				NIP:      "123456789012345678",
+				Name:     "Surya Adi",
+				Telp:     "081234567890",
+				Sex:      "L",
+				Address:  "Jl. Jalan",
+			},
+			FunctionError:  utils.ErrUsernameAlreadyExist,
+			ExpectedStatus: http.StatusConflict,
+			ExpectedError:  utils.ErrUsernameAlreadyExist,
+		},
+		{
+			Name: "Failed creating user : NIK already exist",
+			RequestBody: &dto.UserSignUpRequest{
+				Username: "suryaadi",
+				Password: "123456",
+				NIK:      "1234567890123456",
+				NIP:      "123456789012345678",
+				Name:     "Surya Adi",
+				Telp:     "081234567890",
+				Sex:      "L",
+				Address:  "Jl. Jalan",
+			},
+			FunctionError:  utils.ErrNIKAlreadyExist,
+			ExpectedStatus: http.StatusConflict,
+			ExpectedError:  utils.ErrNIKAlreadyExist,
+		},
+		{
+			Name: "Failed creating user : NIP already exist",
+			RequestBody: &dto.UserSignUpRequest{
+				Username: "suryaadi",
+				Password: "123456",
+				NIK:      "1234567890123456",
+				NIP:      "123456789012345678",
+				Name:     "Surya Adi",
+				Telp:     "081234567890",
+				Sex:      "L",
+				Address:  "Jl. Jalan",
+			},
+			FunctionError:  utils.ErrNIPAlreadyExist,
+			ExpectedStatus: http.StatusConflict,
+			ExpectedError:  utils.ErrNIPAlreadyExist,
+		},
+		{
+			Name: "Failed creating user : Generic error",
+			RequestBody: &dto.UserSignUpRequest{
+				Username: "suryaadi",
+				Password: "123456",
+				NIK:      "1234567890123456",
+				NIP:      "123456789012345678",
+				Name:     "Surya Adi",
+				Telp:     "081234567890",
+				Sex:      "L",
+				Address:  "Jl. Jalan",
+			},
+			FunctionError:  errors.New("generic error"),
+			ExpectedStatus: http.StatusInternalServerError,
+			ExpectedError:  errors.New("generic error"),
+		},
+		{
+			Name:           "Failed creating user : Invalid request body",
+			RequestBody:    "invalid request body",
+			ExpectedStatus: http.StatusBadRequest,
+			ExpectedError:  utils.ErrBadRequestBody,
+		},
+		{
+			Name:            "Failed creating user : Validation error",
+			RequestBody:     &dto.UserSignUpRequest{},
+			ValidationError: echo.NewHTTPError(http.StatusBadRequest, "validation error"),
+			ExpectedStatus:  http.StatusBadRequest,
+			ExpectedError:   errors.New("validation error"),
+		},
+	} {
+		s.Run(tc.Name, func() {
+			s.SetupTest()
+
+			jsonBody, err := json.Marshal(tc.RequestBody)
+			s.NoError(err)
+
+			r := httptest.NewRequest("POST", "/signup", bytes.NewBuffer(jsonBody))
+			r.Header.Set("Content-Type", "application/json")
+			w := httptest.NewRecorder()
+
+			c := s.echoApp.NewContext(r, w)
+
+			s.mockUserService.On("SignUpUser", mock.Anything, tc.RequestBody).Return(tc.FunctionError)
+
+			if tc.ValidationError != nil {
+				s.mockValidator.On("Validate", tc.RequestBody).Return(tc.ValidationError)
+			} else {
+				s.mockValidator.On("Validate", tc.RequestBody).Return(nil)
+			}
+
+			err = s.userController.SignUpUser(c)
 
 			if tc.ExpectedError != nil {
 				s.Equal(echo.NewHTTPError(tc.ExpectedStatus, tc.ExpectedError.Error()), err)

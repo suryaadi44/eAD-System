@@ -6,8 +6,8 @@ type UserSignUpRequest struct {
 	Username string `json:"username" validate:"required"`
 	Password string `json:"password" validate:"required"`
 	NIP      string `json:"nip" validate:"omitempty,len=18"`
-	NIK      string `json:"nik" Validate:"required,len=16"`
-	Name     string `json:"name" Validate:"required"`
+	NIK      string `json:"nik" validate:"required,len=16"`
+	Name     string `json:"name" validate:"required"`
 	Position string `json:"position"`
 	Telp     string `json:"telp" validate:"required"`
 	Sex      string `json:"sex" validate:"required"`
@@ -31,6 +31,32 @@ func (u *UserSignUpRequest) ToEntity() *entity.User {
 type UserLoginRequest struct {
 	Username string `json:"username" validate:"required"`
 	Password string `json:"password" validate:"required"`
+}
+
+type UserUpdateRequest struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+	NIP      string `json:"nip" validate:"omitempty,len=18"`
+	NIK      string `json:"nik" validate:"omitempty,len=16"`
+	Name     string `json:"name"`
+	Position string `json:"position"`
+	Telp     string `json:"telp"`
+	Sex      string `json:"sex"`
+	Address  string `json:"address"`
+}
+
+func (u *UserUpdateRequest) ToEntity() *entity.User {
+	return &entity.User{
+		Username: u.Username,
+		Password: u.Password,
+		NIP:      u.NIP,
+		NIK:      u.NIK,
+		Name:     u.Name,
+		Position: u.Position,
+		Telp:     u.Telp,
+		Sex:      u.Sex,
+		Address:  u.Address,
+	}
 }
 
 type ApplicantResponse struct {
