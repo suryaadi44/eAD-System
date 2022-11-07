@@ -123,7 +123,7 @@ func (d *DocumentController) GetTemplateDetail(c echo.Context) error {
 func (d *DocumentController) AddDocument(c echo.Context) error {
 	document := new(dto.DocumentRequest)
 	if err := c.Bind(document); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, utils.ErrBadRequestBody)
+		return echo.NewHTTPError(http.StatusBadRequest, utils.ErrBadRequestBody.Error())
 	}
 
 	if err := c.Validate(document); err != nil {
@@ -268,11 +268,14 @@ func (d *DocumentController) SignDocument(c echo.Context) error {
 	documentID := c.Param("document_id")
 	err := d.documentService.SignDocument(c.Request().Context(), documentID, userID)
 	if err != nil {
-		if err == utils.ErrDocumentNotFound {
+		switch err {
+		case utils.ErrDocumentNotFound:
 			return echo.NewHTTPError(http.StatusNotFound, err.Error())
+		case utils.ErrNotVerifiedYet:
+			return echo.NewHTTPError(http.StatusConflict, err.Error())
+		default:
+			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 		}
-
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
 	return c.JSON(http.StatusOK, echo.Map{
