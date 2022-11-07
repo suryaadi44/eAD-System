@@ -43,6 +43,7 @@ func (d *DocumentController) InitRoute(api *echo.Group, secureApi *echo.Group) {
 	secureApi.PATCH("/documents/:document_id/sign", d.SignDocument)
 	secureApi.DELETE("/documents/:document_id", d.DeleteDocument)
 	secureApi.PUT("/documents/:document_id", d.UpdateDocument)
+	secureApi.PUT("/documents/:document_id/fields", d.UpdateDocumentFields)
 }
 
 func (d *DocumentController) AddTemplate(c echo.Context) error {
@@ -374,6 +375,42 @@ func (d *DocumentController) UpdateDocument(c echo.Context) error {
 		case utils.ErrAlreadySigned:
 			return echo.NewHTTPError(http.StatusForbidden, err.Error())
 		case utils.ErrAlreadyVerified:
+			return echo.NewHTTPError(http.StatusForbidden, err.Error())
+		default:
+			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		}
+	}
+
+	return c.JSON(http.StatusOK, echo.Map{
+		"message": "success updating document",
+	})
+}
+
+func (d *DocumentController) UpdateDocumentFields(c echo.Context) error {
+	claims := d.jwtService.GetClaims(&c)
+	role := claims["role"].(float64)
+	userID := claims["user_id"].(string)
+
+	documentID := c.Param("document_id")
+	var fields dto.FieldsUpdateRequest
+	if err := c.Bind(&fields); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+
+	if err := c.Validate(fields); err != nil {
+		return err
+	}
+
+	err := d.documentService.UpdateDocumentFields(c.Request().Context(), userID, int(role), documentID, fields)
+	if err != nil {
+		switch err {
+		case utils.ErrDocumentNotFound:
+			return echo.NewHTTPError(http.StatusNotFound, err.Error())
+		case utils.ErrAlreadySigned:
+			return echo.NewHTTPError(http.StatusForbidden, err.Error())
+		case utils.ErrAlreadyVerified:
+			return echo.NewHTTPError(http.StatusForbidden, err.Error())
+		case utils.ErrDidntHavePermission:
 			return echo.NewHTTPError(http.StatusForbidden, err.Error())
 		default:
 			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())

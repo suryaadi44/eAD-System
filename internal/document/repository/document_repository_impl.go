@@ -328,3 +328,22 @@ func (d *DocumentRepositoryImpl) UpdateDocument(ctx context.Context, document *e
 
 	return nil
 }
+
+func (d *DocumentRepositoryImpl) UpdateDocumentFields(ctx context.Context, documentFields *entity.DocumentFields) error {
+	for _, documentField := range *documentFields {
+		result := d.db.WithContext(ctx).
+			Model(&entity.DocumentField{}).
+			Where("id = ?", documentField.ID).
+			Where("document_id = ?", documentField.DocumentID).
+			Updates(documentField)
+		if result.Error != nil {
+			return result.Error
+		}
+
+		if result.RowsAffected == 0 {
+			return utils.ErrFieldNotFound
+		}
+	}
+
+	return nil
+}

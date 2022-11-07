@@ -92,6 +92,11 @@ func (m *MockDocumentService) UpdateDocument(ctx context.Context, document *dto.
 	return args.Error(0)
 }
 
+func (m *MockDocumentService) UpdateDocumentFields(ctx context.Context, userID string, role int, documentID string, fields dto.FieldsUpdateRequest) error {
+	args := m.Called(ctx, userID, role, documentID, fields)
+	return args.Error(0)
+}
+
 type MockJWTService struct {
 	mock.Mock
 }

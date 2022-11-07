@@ -179,8 +179,8 @@ func (d *DocumentUpdateRequest) ToEntity() *entity.Document {
 }
 
 type FieldUpdateRequest struct {
-	ID    uint   `json:"id"`
-	Value string `json:"value"`
+	ID    uint   `json:"id" validate:"required"`
+	Value string `json:"value" validate:"required"`
 }
 
 func (f *FieldUpdateRequest) ToEntity(docID string) *entity.DocumentField {
@@ -193,11 +193,13 @@ func (f *FieldUpdateRequest) ToEntity(docID string) *entity.DocumentField {
 	}
 }
 
-type FieldsUpdateRequest []FieldUpdateRequest
+type FieldsUpdateRequest struct {
+	Fields []FieldUpdateRequest `json:"fields"`
+}
 
 func (f *FieldsUpdateRequest) ToEntity(docID string) *entity.DocumentFields {
 	var fields entity.DocumentFields
-	for _, field := range *f {
+	for _, field := range f.Fields {
 		fields = append(fields, *field.ToEntity(docID))
 	}
 

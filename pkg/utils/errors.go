@@ -63,4 +63,7 @@ var (
 
 	// ErrDocumentNotFound is used when the document is not found in the database
 	ErrDocumentNotFound = errors.New("document not found")
+
+	// ErrFieldNotFound is used when document field is not found in the database
+	ErrFieldNotFound = errors.New("field not found")
 )

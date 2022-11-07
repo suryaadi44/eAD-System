@@ -97,6 +97,11 @@ func (m *MockDocumentRepository) UpdateDocument(ctx context.Context, document *e
 	return args.Error(0)
 }
 
+func (m *MockDocumentRepository) UpdateDocumentFields(ctx context.Context, documentFields *entity.DocumentFields) error {
+	args := m.Called(ctx, documentFields)
+	return args.Error(0)
+}
+
 type MockPDFService struct {
 	mock.Mock
 }

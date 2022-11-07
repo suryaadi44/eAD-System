@@ -313,3 +313,32 @@ func (d *DocumentServiceImpl) UpdateDocument(ctx context.Context, document *dto.
 
 	return d.documentRepository.UpdateDocument(ctx, documentEntity)
 }
+
+func (d *DocumentServiceImpl) UpdateDocumentFields(ctx context.Context, userID string, role int, documentID string, fields dto.FieldsUpdateRequest) error {
+	if role == 1 {
+		applicantID, err := d.documentRepository.GetApplicantID(ctx, documentID)
+		if err != nil {
+			return err
+		}
+
+		if *applicantID != userID {
+			return utils.ErrDidntHavePermission
+		}
+	}
+
+	stage, err := d.documentRepository.GetDocumentStage(ctx, documentID)
+	if err != nil {
+		return err
+	}
+
+	if *stage == 2 {
+		return utils.ErrAlreadyVerified
+	}
+
+	if *stage == 3 {
+		return utils.ErrAlreadySigned
+	}
+
+	fieldsEntity := fields.ToEntity(documentID)
+	return d.documentRepository.UpdateDocumentFields(ctx, fieldsEntity)
+}
