@@ -4,14 +4,17 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"github.com/suryaadi44/eAD-System/internal/document/dto"
 	"html/template"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
+	"github.com/suryaadi44/eAD-System/internal/document/dto"
+	dto2 "github.com/suryaadi44/eAD-System/internal/user/dto"
 	"github.com/suryaadi44/eAD-System/pkg/entity"
+	"github.com/suryaadi44/eAD-System/pkg/utils"
 	"gorm.io/gorm"
 )
 
@@ -248,6 +251,865 @@ func (s *TestSuiteDocumentService) TestGetAllTemplate_RepositoryGenericError() {
 
 	_, err := s.documentService.GetAllTemplate(context.Background())
 	s.Equal(err, errors.New("error"))
+}
+
+func (s *TestSuiteDocumentService) TestGetTemplateDetail() {
+	tmp := &entity.Template{
+		Model: gorm.Model{
+			ID: 1,
+		},
+		Name:         "Test Template",
+		Path:         "test.html",
+		MarginTop:    10,
+		MarginBottom: 10,
+		MarginLeft:   10,
+		MarginRight:  10,
+		Fields: []entity.TemplateField{
+			{
+				Model: gorm.Model{
+					ID: 1,
+				},
+				Key: "field1",
+			},
+		},
+	}
+
+	expectedReturn := &dto.TemplateResponse{
+		ID:           1,
+		Name:         "Test Template",
+		MarginTop:    10,
+		MarginBottom: 10,
+		MarginLeft:   10,
+		MarginRight:  10,
+		Keys: dto.KeysResponse{
+			{
+				ID:  1,
+				Key: "field1",
+			},
+		},
+	}
+
+	s.mockDocumentRepository.On("GetTemplateDetail", mock.Anything, mock.Anything).Return(tmp, nil)
+
+	actualTmp, err := s.documentService.GetTemplateDetail(context.Background(), 1)
+	s.NoError(err)
+	s.Equal(expectedReturn, actualTmp)
+}
+
+func (s *TestSuiteDocumentService) TestGetTemplateDetail_RepositoryGenericError() {
+	s.mockDocumentRepository.On("GetTemplateDetail", mock.Anything, mock.Anything).Return(&entity.Template{}, errors.New("error"))
+
+	_, err := s.documentService.GetTemplateDetail(context.Background(), 1)
+	s.Equal(err, errors.New("error"))
+}
+
+func (s *TestSuiteDocumentService) TestAddDocument_Success() {
+	doc := &dto.DocumentRequest{
+		TemplateID: 1,
+		Fields: dto.FieldsRequest{
+			{
+				FieldID: 1,
+				Value:   "value1",
+			},
+		},
+	}
+
+	s.mockDocumentRepository.On("GetTemplateFields", mock.Anything, uint(1)).Return(&entity.TemplateFields{
+		{
+			Model: gorm.Model{
+				ID: 1,
+			},
+			TemplateID: 1,
+			Key:        "field1",
+		},
+	}, nil)
+	s.mockDocumentRepository.On("AddDocument", mock.Anything, mock.Anything).Return("123", nil)
+
+	id, err := s.documentService.AddDocument(context.Background(), doc, "123")
+	s.NoError(err)
+	s.Equal(id, "123")
+}
+
+func (s *TestSuiteDocumentService) TestAddDocument_ErrorNoTemplate() {
+	doc := &dto.DocumentRequest{
+		TemplateID: 1,
+		Fields: dto.FieldsRequest{
+			{
+				FieldID: 1,
+				Value:   "value1",
+			},
+		},
+	}
+
+	s.mockDocumentRepository.On("GetTemplateFields", mock.Anything, uint(1)).Return(&entity.TemplateFields{}, utils.ErrTemplateFieldNotFound)
+
+	id, err := s.documentService.AddDocument(context.Background(), doc, "123")
+	s.Equal(err, utils.ErrTemplateFieldNotFound)
+	s.Equal(id, "")
+}
+
+func (s *TestSuiteDocumentService) TestAddDocument_ErrorFieldMissing() {
+	doc := &dto.DocumentRequest{
+		TemplateID: 1,
+		Fields: dto.FieldsRequest{
+			{
+				FieldID: 1,
+				Value:   "value1",
+			},
+		},
+	}
+
+	s.mockDocumentRepository.On("GetTemplateFields", mock.Anything, uint(1)).Return(&entity.TemplateFields{
+		{
+			Model: gorm.Model{
+				ID: 1,
+			},
+			TemplateID: 1,
+			Key:        "field1",
+		},
+		{
+			Model: gorm.Model{
+				ID: 2,
+			},
+			TemplateID: 1,
+			Key:        "field2",
+		},
+	}, nil)
+
+	id, err := s.documentService.AddDocument(context.Background(), doc, "123")
+	s.Equal(err, utils.ErrFieldNotMatch)
+	s.Equal(id, "")
+}
+
+func (s *TestSuiteDocumentService) TestAddDocument_ErrorRepository() {
+	doc := &dto.DocumentRequest{
+		TemplateID: 1,
+		Fields: dto.FieldsRequest{
+			{
+				FieldID: 1,
+				Value:   "value1",
+			},
+		},
+	}
+
+	s.mockDocumentRepository.On("GetTemplateFields", mock.Anything, uint(1)).Return(&entity.TemplateFields{
+		{
+			Model: gorm.Model{
+				ID: 1,
+			},
+			TemplateID: 1,
+			Key:        "field1",
+		},
+	}, nil)
+	s.mockDocumentRepository.On("AddDocument", mock.Anything, mock.Anything).Return("", errors.New("error"))
+
+	id, err := s.documentService.AddDocument(context.Background(), doc, "123")
+	s.Equal(err, errors.New("error"))
+	s.Equal(id, "")
+}
+
+func (s *TestSuiteDocumentService) TestGetDocument_Success() {
+	s.mockDocumentRepository.On("GetDocument", mock.Anything, mock.Anything).Return(&entity.Document{
+		ID:          "1",
+		Register:    "",
+		Description: "",
+		ApplicantID: "",
+		Applicant:   entity.User{},
+		TemplateID:  1,
+		Template: entity.Template{
+			Model: gorm.Model{
+				ID: 1,
+			},
+			Name: "Test Template",
+		},
+		Fields: []entity.DocumentField{
+			{
+				Model: gorm.Model{
+					ID: 1,
+				},
+				DocumentID:      "1",
+				TemplateFieldID: 1,
+				TemplateField: entity.TemplateField{
+					Model: gorm.Model{
+						ID: 1,
+					},
+					TemplateID: 1,
+					Key:        "field1",
+				},
+				Value: "value1",
+			},
+		},
+		StageID:    0,
+		Stage:      entity.Stage{},
+		VerifierID: "",
+		Verifier:   entity.User{},
+		VerifiedAt: time.Time{},
+		SignerID:   "",
+		Signer:     entity.User{},
+		SignedAt:   time.Time{},
+		CreatedAt:  time.Time{},
+		UpdatedAt:  time.Time{},
+		DeletedAt:  gorm.DeletedAt{},
+	}, nil)
+
+	expectedReturn := &dto.DocumentResponse{
+		ID:          "1",
+		Register:    "",
+		Description: "",
+		Applicant:   dto2.ApplicantResponse{},
+		Template: dto.TemplateResponse{
+			ID:   1,
+			Name: "Test Template",
+		},
+		Fields: dto.FieldsResponse{
+			{
+				Key:   "field1",
+				Value: "value1",
+			},
+		},
+		Stage:      "",
+		Verifier:   dto2.EmployeeResponse{},
+		VerifiedAt: time.Time{},
+		Signer:     dto2.EmployeeResponse{},
+		SignedAt:   time.Time{},
+		CreatedAt:  time.Time{},
+		UpdatedAt:  time.Time{},
+	}
+
+	doc, err := s.documentService.GetDocument(context.Background(), "1")
+	s.NoError(err)
+	s.Equal(expectedReturn, doc)
+}
+
+func (s *TestSuiteDocumentService) TestGetDocument_ErrorRepository() {
+	s.mockDocumentRepository.On("GetDocument", mock.Anything, mock.Anything).Return(&entity.Document{}, errors.New("error"))
+
+	doc, err := s.documentService.GetDocument(context.Background(), "1")
+	s.Equal(err, errors.New("error"))
+	s.Nil(doc)
+}
+
+func (s *TestSuiteDocumentService) TestGetDocumentStatus_Success() {
+	s.mockDocumentRepository.On("GetDocumentStatus", mock.Anything, mock.Anything).Return(&entity.Document{
+		ID:          "1",
+		Register:    "",
+		Description: "",
+		ApplicantID: "",
+		Applicant:   entity.User{},
+		TemplateID:  1,
+		Template: entity.Template{
+			Model: gorm.Model{
+				ID: 1,
+			},
+			Name: "Test Template",
+		},
+		Fields: []entity.DocumentField{
+			{
+				Model: gorm.Model{
+					ID: 1,
+				},
+				DocumentID:      "1",
+				TemplateFieldID: 1,
+				TemplateField: entity.TemplateField{
+					Model: gorm.Model{
+						ID: 1,
+					},
+					TemplateID: 1,
+					Key:        "field1",
+				},
+				Value: "value1",
+			},
+		},
+		StageID:    0,
+		Stage:      entity.Stage{},
+		VerifierID: "",
+		Verifier:   entity.User{},
+		VerifiedAt: time.Time{},
+		SignerID:   "",
+		Signer:     entity.User{},
+		SignedAt:   time.Time{},
+		CreatedAt:  time.Time{},
+		UpdatedAt:  time.Time{},
+		DeletedAt:  gorm.DeletedAt{},
+	}, nil)
+
+	expectedReturn := &dto.DocumentStatusResponse{
+		ID:          "1",
+		Description: "",
+		Register:    "",
+		Stage:       "",
+		Verifier:    dto2.EmployeeResponse{},
+		VerifiedAt:  time.Time{},
+		Signer:      dto2.EmployeeResponse{},
+		SignedAt:    time.Time{},
+		CreatedAt:   time.Time{},
+		UpdatedAt:   time.Time{},
+	}
+
+	doc, err := s.documentService.GetDocumentStatus(context.Background(), "1")
+	s.NoError(err)
+	s.Equal(expectedReturn, doc)
+}
+
+func (s *TestSuiteDocumentService) TestGetDocumentStatus_ErrorRepository() {
+	s.mockDocumentRepository.On("GetDocumentStatus", mock.Anything, mock.Anything).Return(&entity.Document{}, errors.New("error"))
+
+	doc, err := s.documentService.GetDocumentStatus(context.Background(), "1")
+	s.Equal(err, errors.New("error"))
+	s.Nil(doc)
+}
+
+func (s *TestSuiteDocumentService) TestGeneratePDFDocument_Success() {
+	s.mockDocumentRepository.On("GetDocument", mock.Anything, mock.Anything).Return(&entity.Document{
+		ID:          "1",
+		Register:    "",
+		Description: "",
+		ApplicantID: "",
+		Applicant:   entity.User{},
+		TemplateID:  1,
+		Template: entity.Template{
+			Model: gorm.Model{
+				ID: 1,
+			},
+			Name: "Test Template",
+		},
+		Fields: []entity.DocumentField{
+			{
+				Model: gorm.Model{
+					ID: 1,
+				},
+				DocumentID:      "1",
+				TemplateFieldID: 1,
+				TemplateField: entity.TemplateField{
+					Model: gorm.Model{
+						ID: 1,
+					},
+					TemplateID: 1,
+					Key:        "field1",
+				},
+				Value: "value1",
+			},
+		},
+		StageID:    0,
+		Stage:      entity.Stage{},
+		VerifierID: "",
+		Verifier:   entity.User{},
+		VerifiedAt: time.Time{},
+		SignerID:   "",
+		Signer:     entity.User{},
+		SignedAt:   time.Time{},
+		CreatedAt:  time.Time{},
+		UpdatedAt:  time.Time{},
+		DeletedAt:  gorm.DeletedAt{},
+	}, nil)
+
+	html := `<!DOCTYPE html>`
+	buf := bytes.NewBufferString(html)
+
+	s.mockRenderService.On("GenerateHTMLDocument", mock.Anything, mock.Anything).Return(buf, nil)
+	s.mockPDFService.On("GeneratePDF", buf, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return([]byte("pdf"), nil)
+
+	doc, err := s.documentService.GeneratePDFDocument(context.Background(), "1")
+	s.NoError(err)
+	s.Equal([]byte("pdf"), doc)
+}
+
+func (s *TestSuiteDocumentService) TestGeneratePDFDocument_ErrorDocumentNotFound() {
+	s.mockDocumentRepository.On("GetDocument", mock.Anything, mock.Anything).Return(&entity.Document{}, utils.ErrDocumentNotFound)
+
+	doc, err := s.documentService.GeneratePDFDocument(context.Background(), "1")
+	s.Equal(err, utils.ErrDocumentNotFound)
+	s.Nil(doc)
+}
+
+func (s *TestSuiteDocumentService) TestGeneratePDFDocument_ErrorGenerateHTMLDocument() {
+	s.mockDocumentRepository.On("GetDocument", mock.Anything, mock.Anything).Return(&entity.Document{
+		ID:          "1",
+		Register:    "",
+		Description: "",
+		ApplicantID: "",
+		Applicant:   entity.User{},
+		TemplateID:  1,
+		Template: entity.Template{
+			Model: gorm.Model{
+				ID: 1,
+			},
+			Name: "Test Template",
+		},
+		Fields: []entity.DocumentField{
+			{
+				Model: gorm.Model{
+					ID: 1,
+				},
+				DocumentID:      "1",
+				TemplateFieldID: 1,
+				TemplateField: entity.TemplateField{
+					Model: gorm.Model{
+						ID: 1,
+					},
+					TemplateID: 1,
+					Key:        "field1",
+				},
+				Value: "value1",
+			},
+		},
+		StageID:    0,
+		Stage:      entity.Stage{},
+		VerifierID: "",
+		Verifier:   entity.User{},
+		VerifiedAt: time.Time{},
+		SignerID:   "",
+		Signer:     entity.User{},
+		SignedAt:   time.Time{},
+		CreatedAt:  time.Time{},
+		UpdatedAt:  time.Time{},
+		DeletedAt:  gorm.DeletedAt{},
+	}, nil)
+
+	s.mockRenderService.On("GenerateHTMLDocument", mock.Anything, mock.Anything).Return(&bytes.Buffer{}, errors.New("error"))
+
+	doc, err := s.documentService.GeneratePDFDocument(context.Background(), "1")
+	s.Equal(errors.New("error"), err)
+	s.Nil(doc)
+}
+
+func (s *TestSuiteDocumentService) TestGeneratePDFDocument_ErrorGeneratePDF() {
+	s.mockDocumentRepository.On("GetDocument", mock.Anything, "1").Return(&entity.Document{
+		ID:          "1",
+		Register:    "",
+		Description: "",
+		ApplicantID: "",
+		Applicant:   entity.User{},
+		TemplateID:  1,
+		Template: entity.Template{
+			Model: gorm.Model{
+				ID: 1,
+			},
+			Name: "Test Template",
+		},
+		Fields: []entity.DocumentField{
+			{
+				Model: gorm.Model{
+					ID: 1,
+				},
+				DocumentID:      "1",
+				TemplateFieldID: 1,
+				TemplateField: entity.TemplateField{
+					Model: gorm.Model{
+						ID: 1,
+					},
+					TemplateID: 1,
+					Key:        "field1",
+				},
+				Value: "value1",
+			},
+		},
+		StageID:    0,
+		Stage:      entity.Stage{},
+		VerifierID: "",
+		Verifier:   entity.User{},
+		VerifiedAt: time.Time{},
+		SignerID:   "",
+		Signer:     entity.User{},
+		SignedAt:   time.Time{},
+		CreatedAt:  time.Time{},
+		UpdatedAt:  time.Time{},
+		DeletedAt:  gorm.DeletedAt{},
+	}, nil)
+
+	html := `<!DOCTYPE html>`
+	buf := bytes.NewBufferString(html)
+
+	s.mockRenderService.On("GenerateHTMLDocument", mock.Anything, mock.Anything).Return(buf, nil)
+	s.mockPDFService.On("GeneratePDF", buf, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return([]byte(nil), errors.New("error"))
+
+	doc, err := s.documentService.GeneratePDFDocument(context.Background(), "1")
+	s.Equal(errors.New("error"), err)
+	s.Nil(doc)
+}
+
+func (s *TestSuiteDocumentService) TestFillMapFields_NotSignedYet() {
+	doc := &entity.Document{
+		ID:          "1",
+		Register:    "register",
+		Description: "",
+		ApplicantID: "",
+		Applicant: entity.User{
+			ID:       "1",
+			Username: "",
+			Name:     "",
+		},
+		TemplateID: 0,
+		Template: entity.Template{
+			Model: gorm.Model{
+				ID: 1,
+			},
+		},
+		Fields: []entity.DocumentField{
+			{
+				Model: gorm.Model{
+					ID: 1,
+				},
+				DocumentID:      "1",
+				TemplateFieldID: 1,
+				TemplateField: entity.TemplateField{
+					Model: gorm.Model{
+						ID: 1,
+					},
+					TemplateID: 1,
+					Key:        "field1",
+				},
+				Value: "value1",
+			},
+		},
+		StageID:    0,
+		Stage:      entity.Stage{},
+		VerifierID: "",
+		Verifier:   entity.User{},
+		VerifiedAt: time.Time{},
+		SignerID:   "",
+		Signer:     entity.User{},
+		SignedAt:   time.Time{},
+		CreatedAt:  time.Time{},
+		UpdatedAt:  time.Time{},
+		DeletedAt:  gorm.DeletedAt{},
+	}
+
+	expectedMap := &map[string]interface{}{
+		"field1":     "value1",
+		"register":   "register",
+		"signedDate": "",
+		"signature":  "",
+		"footer":     "",
+	}
+
+	m, err := s.documentService.fillMapFields(doc)
+
+	s.Equal(expectedMap, m)
+	s.NoError(err)
+}
+
+func (s *TestSuiteDocumentService) TestFillMapFields_SignatureError() {
+	now := time.Now()
+
+	doc := &entity.Document{
+		ID:          "1",
+		Register:    "register",
+		Description: "",
+		ApplicantID: "",
+		Applicant: entity.User{
+			ID:       "1",
+			Username: "",
+			Name:     "",
+		},
+		TemplateID: 0,
+		Template: entity.Template{
+			Model: gorm.Model{
+				ID: 1,
+			},
+		},
+		Fields: []entity.DocumentField{
+			{
+				Model: gorm.Model{
+					ID: 1,
+				},
+				DocumentID:      "1",
+				TemplateFieldID: 1,
+				TemplateField: entity.TemplateField{
+					Model: gorm.Model{
+						ID: 1,
+					},
+					TemplateID: 1,
+					Key:        "field1",
+				},
+				Value: "value1",
+			},
+		},
+		StageID:    2,
+		Stage:      entity.Stage{},
+		VerifierID: "1",
+		Verifier: entity.User{
+			ID:       "1",
+			NIP:      "1234567890",
+			Username: "",
+			Name:     "",
+			Position: "position",
+		},
+		VerifiedAt: now,
+		SignerID:   "1",
+		Signer: entity.User{
+			ID:       "1",
+			NIP:      "1234567890",
+			Username: "",
+			Name:     "",
+			Position: "position",
+		},
+		SignedAt:  now,
+		CreatedAt: time.Time{},
+		UpdatedAt: time.Time{},
+		DeletedAt: gorm.DeletedAt{},
+	}
+
+	s.mockRenderService.On("GenerateSignature", mock.Anything, mock.Anything).Return((*template.HTML)(nil), errors.New("error"))
+
+	m, err := s.documentService.fillMapFields(doc)
+	s.Nil(m)
+	s.Equal(errors.New("error"), err)
+}
+
+func (s *TestSuiteDocumentService) TestFillMapFields_FooterError() {
+	now := time.Now()
+
+	doc := &entity.Document{
+		ID:          "1",
+		Register:    "register",
+		Description: "",
+		ApplicantID: "",
+		Applicant: entity.User{
+			ID:       "1",
+			Username: "",
+			Name:     "",
+		},
+		TemplateID: 0,
+		Template: entity.Template{
+			Model: gorm.Model{
+				ID: 1,
+			},
+		},
+		Fields: []entity.DocumentField{
+			{
+				Model: gorm.Model{
+					ID: 1,
+				},
+				DocumentID:      "1",
+				TemplateFieldID: 1,
+				TemplateField: entity.TemplateField{
+					Model: gorm.Model{
+						ID: 1,
+					},
+					TemplateID: 1,
+					Key:        "field1",
+				},
+				Value: "value1",
+			},
+		},
+		StageID:    2,
+		Stage:      entity.Stage{},
+		VerifierID: "1",
+		Verifier: entity.User{
+			ID:       "1",
+			NIP:      "1234567890",
+			Username: "",
+			Name:     "",
+			Position: "position",
+		},
+		VerifiedAt: now,
+		SignerID:   "1",
+		Signer: entity.User{
+			ID:       "1",
+			NIP:      "1234567890",
+			Username: "",
+			Name:     "",
+			Position: "position",
+		},
+		SignedAt:  now,
+		CreatedAt: time.Time{},
+		UpdatedAt: time.Time{},
+		DeletedAt: gorm.DeletedAt{},
+	}
+	templateHtml := template.HTML(`<!DOCTYPE html>`)
+	s.mockRenderService.On("GenerateSignature", mock.Anything, mock.Anything).Return(&templateHtml, nil)
+	s.mockRenderService.On("GenerateFooter", mock.Anything, mock.Anything).Return((*template.HTML)(nil), errors.New("error"))
+
+	m, err := s.documentService.fillMapFields(doc)
+	s.Nil(m)
+	s.Equal(errors.New("error"), err)
+}
+
+func (s *TestSuiteDocumentService) TestFillMapFields_Success() {
+	now := time.Now()
+
+	doc := &entity.Document{
+		ID:          "1",
+		Register:    "register",
+		Description: "",
+		ApplicantID: "",
+		Applicant: entity.User{
+			ID:       "1",
+			Username: "",
+			Name:     "",
+		},
+		TemplateID: 0,
+		Template: entity.Template{
+			Model: gorm.Model{
+				ID: 1,
+			},
+		},
+		Fields: []entity.DocumentField{
+			{
+				Model: gorm.Model{
+					ID: 1,
+				},
+				DocumentID:      "1",
+				TemplateFieldID: 1,
+				TemplateField: entity.TemplateField{
+					Model: gorm.Model{
+						ID: 1,
+					},
+					TemplateID: 1,
+					Key:        "field1",
+				},
+				Value: "value1",
+			},
+		},
+		StageID:    2,
+		Stage:      entity.Stage{},
+		VerifierID: "1",
+		Verifier: entity.User{
+			ID:       "1",
+			NIP:      "1234567890",
+			Username: "",
+			Name:     "",
+			Position: "position",
+		},
+		VerifiedAt: now,
+		SignerID:   "1",
+		Signer: entity.User{
+			ID:       "1",
+			NIP:      "1234567890",
+			Username: "",
+			Name:     "",
+			Position: "position",
+		},
+		SignedAt:  now,
+		CreatedAt: time.Time{},
+		UpdatedAt: time.Time{},
+		DeletedAt: gorm.DeletedAt{},
+	}
+
+	templateHtml := template.HTML(`<!DOCTYPE html>`)
+	expectedMap := &map[string]interface{}{
+		"field1":     "value1",
+		"register":   "register",
+		"signedDate": now.Format("02 January 2006"),
+		"signature":  &templateHtml,
+		"footer":     &templateHtml,
+	}
+
+	s.mockRenderService.On("GenerateSignature", mock.Anything, mock.Anything).Return(&templateHtml, nil)
+	s.mockRenderService.On("GenerateFooter", mock.Anything, mock.Anything).Return(&templateHtml, nil)
+
+	m, err := s.documentService.fillMapFields(doc)
+
+	s.Equal(expectedMap, m)
+	s.NoError(err)
+}
+
+func (s *TestSuiteDocumentService) TestGetApplicantID_Success() {
+	returnedID := "1"
+	s.mockDocumentRepository.On("GetApplicantID", mock.Anything, "1").Return(&returnedID, nil)
+
+	id, err := s.documentService.GetApplicantID(context.Background(), "1")
+
+	s.Equal(&returnedID, id)
+	s.NoError(err)
+}
+
+func (s *TestSuiteDocumentService) TestGetApplicantID_Error() {
+	s.mockDocumentRepository.On("GetApplicantID", mock.Anything, "1").Return((*string)(nil), errors.New("error"))
+
+	id, err := s.documentService.GetApplicantID(context.Background(), "1")
+
+	s.Equal((*string)(nil), id)
+	s.Equal(errors.New("error"), err)
+}
+
+func (s *TestSuiteDocumentService) TestVerifyDocument_Success() {
+	now := time.Now()
+	docExpected := &entity.Document{}
+	docExpected.ID = "1"
+	docExpected.VerifierID = "1"
+	docExpected.VerifiedAt = now
+	docExpected.StageID = 2
+
+	returnedStage := 1
+	s.mockDocumentRepository.On("GetDocumentStage", mock.Anything, "1").Return(&returnedStage, nil)
+	s.mockDocumentRepository.On("VerifyDocument", mock.Anything, docExpected).Return(nil)
+
+	err := s.documentService.VerifyDocument(context.Background(), "1", "1")
+
+	s.NoError(err)
+}
+
+func (s *TestSuiteDocumentService) TestVerifyDocument_ErrorGettingStage() {
+	s.mockDocumentRepository.On("GetDocumentStage", mock.Anything, "1").Return((*int)(nil), errors.New("error"))
+
+	err := s.documentService.VerifyDocument(context.Background(), "1", "1")
+
+	s.Equal(errors.New("error"), err)
+}
+
+func (s *TestSuiteDocumentService) TestVerifyDocument_ErrorAlreadyVerified() {
+	returnedStage := 2
+	s.mockDocumentRepository.On("GetDocumentStage", mock.Anything, "1").Return(&returnedStage, nil)
+
+	err := s.documentService.VerifyDocument(context.Background(), "1", "1")
+
+	s.Equal(utils.ErrAlreadyVerified, err)
+}
+
+func (s *TestSuiteDocumentService) TestVerifyDocument_RepositoryError() {
+	returnedStage := 1
+	s.mockDocumentRepository.On("GetDocumentStage", mock.Anything, "1").Return(&returnedStage, nil)
+	s.mockDocumentRepository.On("VerifyDocument", mock.Anything, mock.Anything).Return(errors.New("error"))
+
+	err := s.documentService.VerifyDocument(context.Background(), "1", "1")
+
+	s.Equal(errors.New("error"), err)
+}
+
+func (s *TestSuiteDocumentService) TestSignDocument_Success() {
+	now := time.Now()
+	docExpected := &entity.Document{}
+	docExpected.ID = "1"
+	docExpected.SignerID = "1"
+	docExpected.SignedAt = now
+	docExpected.StageID = 3
+
+	returnedStage := 2
+	s.mockDocumentRepository.On("GetDocumentStage", mock.Anything, "1").Return(&returnedStage, nil)
+	s.mockDocumentRepository.On("SignDocument", mock.Anything, docExpected).Return(nil)
+
+	err := s.documentService.SignDocument(context.Background(), "1", "1")
+
+	s.NoError(err)
+}
+
+func (s *TestSuiteDocumentService) TestSignDocument_ErrorGettingStage() {
+	s.mockDocumentRepository.On("GetDocumentStage", mock.Anything, "1").Return((*int)(nil), errors.New("error"))
+
+	err := s.documentService.SignDocument(context.Background(), "1", "1")
+
+	s.Equal(errors.New("error"), err)
+}
+
+func (s *TestSuiteDocumentService) TestSignDocument_ErrorAlreadySigned() {
+	returnedStage := 3
+	s.mockDocumentRepository.On("GetDocumentStage", mock.Anything, "1").Return(&returnedStage, nil)
+
+	err := s.documentService.SignDocument(context.Background(), "1", "1")
+
+	s.Equal(utils.ErrAlreadySigned, err)
+}
+
+func (s *TestSuiteDocumentService) TestSignDocument_RepositoryError() {
+	returnedStage := 2
+	s.mockDocumentRepository.On("GetDocumentStage", mock.Anything, "1").Return(&returnedStage, nil)
+	s.mockDocumentRepository.On("SignDocument", mock.Anything, mock.Anything).Return(errors.New("error"))
+
+	err := s.documentService.SignDocument(context.Background(), "1", "1")
+
+	s.Equal(errors.New("error"), err)
 }
 
 func TestUserService(t *testing.T) {
