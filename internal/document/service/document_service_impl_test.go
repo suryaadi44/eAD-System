@@ -1102,6 +1102,15 @@ func (s *TestSuiteDocumentService) TestSignDocument_ErrorAlreadySigned() {
 	s.Equal(utils.ErrAlreadySigned, err)
 }
 
+func (s *TestSuiteDocumentService) TestSignDocument_ErrorNotVerified() {
+	returnedStage := 1
+	s.mockDocumentRepository.On("GetDocumentStage", mock.Anything, "1").Return(&returnedStage, nil)
+
+	err := s.documentService.SignDocument(context.Background(), "1", "1")
+
+	s.Equal(utils.ErrNotVerifiedYet, err)
+}
+
 func (s *TestSuiteDocumentService) TestSignDocument_RepositoryError() {
 	returnedStage := 2
 	s.mockDocumentRepository.On("GetDocumentStage", mock.Anything, "1").Return(&returnedStage, nil)

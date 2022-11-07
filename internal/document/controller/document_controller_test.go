@@ -40,7 +40,7 @@ func (m *MockDocumentService) GetTemplateDetail(ctx context.Context, templateId 
 	return args.Get(0).(*dto.TemplateResponse), args.Error(1)
 }
 
-func (m *MockDocumentService) AddDocument(ctx context.Context, document dto.DocumentRequest, userID string) (string, error) {
+func (m *MockDocumentService) AddDocument(ctx context.Context, document *dto.DocumentRequest, userID string) (string, error) {
 	args := m.Called(ctx, document, userID)
 	return args.String(0), args.Error(1)
 }
