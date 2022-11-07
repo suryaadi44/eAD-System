@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/golang-jwt/jwt"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
@@ -28,6 +29,20 @@ func (m *MockUserService) LogInUser(ctx context.Context, user *dto.UserLoginRequ
 	return args.String(0), args.Error(1)
 }
 
+func (m *MockUserService) GetBriefUsers(ctx context.Context, page int, limit int) (*dto.BriefUsersResponse, error) {
+	args := m.Called(ctx, page, limit)
+	return args.Get(0).(*dto.BriefUsersResponse), args.Error(1)
+}
+
+type MockJWTService struct {
+	mock.Mock
+}
+
+func (m *MockJWTService) GetClaims(c *echo.Context) jwt.MapClaims {
+	args := m.Called(c)
+	return args.Get(0).(jwt.MapClaims)
+}
+
 type MockValidator struct {
 	mock.Mock
 }
@@ -40,17 +55,19 @@ func (m *MockValidator) Validate(a0 interface{}) error {
 type TestSuiteUserControllers struct {
 	suite.Suite
 	mockUserService *MockUserService
-	MockValidator   *MockValidator
+	mockValidator   *MockValidator
+	mockJWT         *MockJWTService
 	userController  *UserController
 	echoApp         *echo.Echo
 }
 
 func (s *TestSuiteUserControllers) SetupTest() {
 	s.mockUserService = new(MockUserService)
-	s.MockValidator = new(MockValidator)
-	s.userController = NewUserController(s.mockUserService)
+	s.mockValidator = new(MockValidator)
+	s.mockJWT = new(MockJWTService)
+	s.userController = NewUserController(s.mockUserService, s.mockJWT)
 	s.echoApp = echo.New()
-	s.echoApp.Validator = s.MockValidator
+	s.echoApp.Validator = s.mockValidator
 }
 
 func (s *TestSuiteUserControllers) TearDownTest() {
@@ -62,7 +79,7 @@ func (s *TestSuiteUserControllers) TearDownTest() {
 func (s *TestSuiteUserControllers) TestInitRoute() {
 	group := s.echoApp.Group("/user")
 	s.NotPanics(func() {
-		s.userController.InitRoute(group)
+		s.userController.InitRoute(group, group)
 	})
 }
 
@@ -186,9 +203,9 @@ func (s *TestSuiteUserControllers) TestSignUpUser() {
 			s.mockUserService.On("SignUpUser", mock.Anything, tc.RequestBody).Return(tc.FunctionError)
 
 			if tc.ValidationError != nil {
-				s.MockValidator.On("Validate", tc.RequestBody).Return(tc.ValidationError)
+				s.mockValidator.On("Validate", tc.RequestBody).Return(tc.ValidationError)
 			} else {
-				s.MockValidator.On("Validate", tc.RequestBody).Return(nil)
+				s.mockValidator.On("Validate", tc.RequestBody).Return(nil)
 			}
 
 			err = s.userController.SignUpUser(c)
@@ -284,12 +301,191 @@ func (s *TestSuiteUserControllers) TestLogInUser() {
 			s.mockUserService.On("LogInUser", mock.Anything, tc.RequestBody).Return(tc.FunctionReturn, tc.FunctionError)
 
 			if tc.ValidationError != nil {
-				s.MockValidator.On("Validate", tc.RequestBody).Return(tc.ValidationError)
+				s.mockValidator.On("Validate", tc.RequestBody).Return(tc.ValidationError)
 			} else {
-				s.MockValidator.On("Validate", tc.RequestBody).Return(nil)
+				s.mockValidator.On("Validate", tc.RequestBody).Return(nil)
 			}
 
 			err = s.userController.LoginUser(c)
+
+			if tc.ExpectedError != nil {
+				s.Equal(echo.NewHTTPError(tc.ExpectedStatus, tc.ExpectedError.Error()), err)
+			} else {
+				s.NoError(err)
+
+				var response echo.Map
+				err := json.Unmarshal(w.Body.Bytes(), &response)
+				s.NoError(err)
+
+				s.Equal(tc.ExpectedStatus, w.Result().StatusCode)
+				s.Equal(tc.ExpectedBody, response)
+			}
+
+			s.TearDownTest()
+		})
+	}
+}
+
+func (s *TestSuiteUserControllers) TestGetBriefUsers() {
+	for _, tc := range []struct {
+		Name           string
+		Page           string
+		Limit          string
+		FunctionError  error
+		FunctionReturn *dto.BriefUsersResponse
+		JWTReturn      jwt.MapClaims
+		ExpectedStatus int
+		ExpectedBody   echo.Map
+		ExpectedError  error
+	}{
+		{
+			Name:          "Success getting brief users",
+			Page:          "1",
+			Limit:         "10",
+			FunctionError: nil,
+			FunctionReturn: &dto.BriefUsersResponse{
+				{
+					ID:       "1",
+					Username: "user",
+					Name:     "user",
+				},
+			},
+			JWTReturn: jwt.MapClaims{
+				"role": float64(2),
+			},
+			ExpectedStatus: http.StatusOK,
+			ExpectedBody: echo.Map{
+				"message": "success get users",
+				"data": []interface{}{
+					map[string]interface{}{
+						"id":       "1",
+						"username": "user",
+						"name":     "user",
+					},
+				},
+				"meta": map[string]interface{}{
+					"page":  float64(1),
+					"limit": float64(10),
+				},
+			},
+			ExpectedError: nil,
+		},
+		{
+			Name:          "Success getting brief users: blank page and limit",
+			Page:          "",
+			Limit:         "",
+			FunctionError: nil,
+			FunctionReturn: &dto.BriefUsersResponse{
+				{
+					ID:       "1",
+					Username: "user",
+					Name:     "user",
+				},
+			},
+			JWTReturn: jwt.MapClaims{
+				"role": float64(2),
+			},
+			ExpectedStatus: http.StatusOK,
+			ExpectedBody: echo.Map{
+				"message": "success get users",
+				"data": []interface{}{
+					map[string]interface{}{
+						"id":       "1",
+						"username": "user",
+						"name":     "user",
+					},
+				},
+				"meta": map[string]interface{}{
+					"page":  float64(1),
+					"limit": float64(20),
+				},
+			},
+			ExpectedError: nil,
+		},
+		{
+			Name:           "Failed getting brief users : Invalid page",
+			Page:           "invalid",
+			Limit:          "10",
+			FunctionError:  nil,
+			FunctionReturn: nil,
+			JWTReturn: jwt.MapClaims{
+				"role": float64(2),
+			},
+			ExpectedStatus: http.StatusBadRequest,
+			ExpectedBody:   nil,
+			ExpectedError:  utils.ErrInvalidNumber,
+		},
+		{
+			Name:           "Failed getting brief users : Invalid limit",
+			Page:           "1",
+			Limit:          "invalid",
+			FunctionError:  nil,
+			FunctionReturn: nil,
+			JWTReturn: jwt.MapClaims{
+				"role": float64(2),
+			},
+			ExpectedStatus: http.StatusBadRequest,
+			ExpectedBody:   nil,
+			ExpectedError:  utils.ErrInvalidNumber,
+		},
+		{
+			Name:           "Failed getting brief users : role is not employee",
+			Page:           "1",
+			Limit:          "10",
+			FunctionError:  nil,
+			FunctionReturn: nil,
+			JWTReturn: jwt.MapClaims{
+				"role": float64(1),
+			},
+			ExpectedStatus: http.StatusForbidden,
+			ExpectedBody:   nil,
+			ExpectedError:  utils.ErrDidntHavePermission,
+		},
+		{
+			Name:           "Failed getting brief users : error no user found",
+			Page:           "",
+			Limit:          "",
+			FunctionError:  utils.ErrUserNotFound,
+			FunctionReturn: nil,
+			JWTReturn: jwt.MapClaims{
+				"role": float64(2),
+			},
+			ExpectedStatus: http.StatusInternalServerError,
+			ExpectedBody:   nil,
+			ExpectedError:  utils.ErrUserNotFound,
+		},
+		{
+			Name:           "Failed getting brief users : error from service",
+			Page:           "",
+			Limit:          "",
+			FunctionError:  errors.New("error from service"),
+			FunctionReturn: nil,
+			JWTReturn: jwt.MapClaims{
+				"role": float64(2),
+			},
+			ExpectedStatus: http.StatusInternalServerError,
+			ExpectedBody:   nil,
+			ExpectedError:  errors.New("error from service"),
+		},
+	} {
+		s.Run(tc.Name, func() {
+			s.SetupTest()
+
+			r := httptest.NewRequest("GET", "/users", nil)
+
+			w := httptest.NewRecorder()
+
+			q := r.URL.Query()
+			q.Add("page", tc.Page)
+			q.Add("limit", tc.Limit)
+			r.URL.RawQuery = q.Encode()
+
+			c := s.echoApp.NewContext(r, w)
+
+			s.mockJWT.On("GetClaims", mock.Anything).Return(tc.JWTReturn)
+			s.mockUserService.On("GetBriefUsers", mock.Anything, mock.Anything, mock.Anything).Return(tc.FunctionReturn, tc.FunctionError)
+
+			err := s.userController.GetBriefUsers(c)
 
 			if tc.ExpectedError != nil {
 				s.Equal(echo.NewHTTPError(tc.ExpectedStatus, tc.ExpectedError.Error()), err)

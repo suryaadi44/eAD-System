@@ -79,9 +79,14 @@ func (u *UserRepositoryImpl) FindByUsername(ctx context.Context, username string
 	return &user, nil
 }
 
-func (u *UserRepositoryImpl) GetAllUser(ctx context.Context) (*entity.Users, error) {
+func (u *UserRepositoryImpl) GetBriefUsers(ctx context.Context, limit int, offset int) (*entity.Users, error) {
 	var users entity.Users
-	err := u.db.WithContext(ctx).Find(&users).Error
+	err := u.db.WithContext(ctx).
+		Select([]string{"id", "username", "name"}).
+		Order("created_at DESC").
+		Offset(offset).
+		Limit(limit).
+		Find(&users).Error
 	if err != nil {
 		return nil, err
 	}

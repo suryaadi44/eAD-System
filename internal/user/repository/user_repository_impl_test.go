@@ -129,8 +129,8 @@ func (s *TestSuiteUserRepository) TestFindByUsername() {
 	}
 }
 
-func (s *TestSuiteUserRepository) TestGetAllUser() {
-	query := regexp.QuoteMeta("SELECT * FROM `users` WHERE `users`.`deleted_at` IS NULL")
+func (s *TestSuiteUserRepository) TestGetBriefUsers() {
+	query := regexp.QuoteMeta("SELECT `id`,`username`,`name` FROM `users` WHERE `users`.`deleted_at` IS NULL ORDER BY created_at DESC LIMIT 0")
 	for _, tc := range []struct {
 		Name           string
 		Err            error
@@ -186,7 +186,7 @@ func (s *TestSuiteUserRepository) TestGetAllUser() {
 				s.mock.ExpectQuery(query).WillReturnRows(tc.ReturnedRows)
 			}
 
-			result, err := s.userRepository.GetAllUser(context.Background())
+			result, err := s.userRepository.GetBriefUsers(context.Background(), 0, 0)
 
 			if tc.ExpectedErr != nil {
 				s.Equal(tc.ExpectedErr, err)

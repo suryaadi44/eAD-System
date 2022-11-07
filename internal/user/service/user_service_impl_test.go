@@ -27,6 +27,11 @@ func (m *MockUserRepository) FindByUsername(ctx context.Context, username string
 	return args.Get(0).(*entity.User), args.Error(1)
 }
 
+func (m *MockUserRepository) GetBriefUsers(ctx context.Context, limit int, offset int) (*entity.Users, error) {
+	args := m.Called(ctx, limit, offset)
+	return args.Get(0).(*entity.Users), args.Error(1)
+}
+
 type MockPasswordHashFunction struct {
 	mock.Mock
 }
@@ -173,6 +178,31 @@ func (t *TestSuiteUserService) TestLoginUser_FailedGenerateToken() {
 		Username: "username",
 		Password: "password",
 	})
+
+	t.Error(err)
+}
+
+func (t *TestSuiteUserService) TestGetBriefUsers_Success() {
+	t.mockUserRepository.On("GetBriefUsers", mock.Anything, mock.Anything, mock.Anything).Return(&entity.Users{
+		{
+			Username: "username1",
+		},
+	}, nil)
+
+	resp, err := t.userService.GetBriefUsers(context.Background(), 1, 1)
+
+	t.NoError(err)
+	t.Equal(&dto.BriefUsersResponse{
+		{
+			Username: "username1",
+		},
+	}, resp)
+}
+
+func (t *TestSuiteUserService) TestGetBriefUsers_RepoError() {
+	t.mockUserRepository.On("GetBriefUsers", mock.Anything, mock.Anything, mock.Anything).Return(&entity.Users{}, errors.New("error"))
+
+	_, err := t.userService.GetBriefUsers(context.Background(), 1, 1)
 
 	t.Error(err)
 }
