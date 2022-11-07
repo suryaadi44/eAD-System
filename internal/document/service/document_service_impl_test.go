@@ -1025,16 +1025,9 @@ func (s *TestSuiteDocumentService) TestGetApplicantID_Error() {
 }
 
 func (s *TestSuiteDocumentService) TestVerifyDocument_Success() {
-	now := time.Now()
-	docExpected := &entity.Document{}
-	docExpected.ID = "1"
-	docExpected.VerifierID = "1"
-	docExpected.VerifiedAt = now
-	docExpected.StageID = 2
-
 	returnedStage := 1
 	s.mockDocumentRepository.On("GetDocumentStage", mock.Anything, "1").Return(&returnedStage, nil)
-	s.mockDocumentRepository.On("VerifyDocument", mock.Anything, docExpected).Return(nil)
+	s.mockDocumentRepository.On("VerifyDocument", mock.Anything, mock.Anything).Return(nil)
 
 	err := s.documentService.VerifyDocument(context.Background(), "1", "1")
 
@@ -1114,6 +1107,6 @@ func (s *TestSuiteDocumentService) TestSignDocument_RepositoryError() {
 	s.Equal(errors.New("error"), err)
 }
 
-func TestUserService(t *testing.T) {
+func TestDocumentService(t *testing.T) {
 	suite.Run(t, new(TestSuiteDocumentService))
 }
