@@ -372,9 +372,9 @@ func (d *DocumentController) UpdateDocument(c echo.Context) error {
 		switch err {
 		case utils.ErrDocumentNotFound:
 			return echo.NewHTTPError(http.StatusNotFound, err.Error())
-		case utils.ErrAlreadySigned:
-			return echo.NewHTTPError(http.StatusForbidden, err.Error())
 		case utils.ErrAlreadyVerified:
+			fallthrough
+		case utils.ErrAlreadySigned:
 			return echo.NewHTTPError(http.StatusForbidden, err.Error())
 		default:
 			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
@@ -394,7 +394,7 @@ func (d *DocumentController) UpdateDocumentFields(c echo.Context) error {
 	documentID := c.Param("document_id")
 	var fields dto.FieldsUpdateRequest
 	if err := c.Bind(&fields); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+		return echo.NewHTTPError(http.StatusBadRequest, utils.ErrBadRequestBody.Error())
 	}
 
 	if err := c.Validate(fields); err != nil {
@@ -406,10 +406,10 @@ func (d *DocumentController) UpdateDocumentFields(c echo.Context) error {
 		switch err {
 		case utils.ErrDocumentNotFound:
 			return echo.NewHTTPError(http.StatusNotFound, err.Error())
-		case utils.ErrAlreadySigned:
-			return echo.NewHTTPError(http.StatusForbidden, err.Error())
 		case utils.ErrAlreadyVerified:
-			return echo.NewHTTPError(http.StatusForbidden, err.Error())
+			fallthrough
+		case utils.ErrAlreadySigned:
+			fallthrough
 		case utils.ErrDidntHavePermission:
 			return echo.NewHTTPError(http.StatusForbidden, err.Error())
 		default:
@@ -418,6 +418,6 @@ func (d *DocumentController) UpdateDocumentFields(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, echo.Map{
-		"message": "success updating document",
+		"message": "success updating document fields",
 	})
 }

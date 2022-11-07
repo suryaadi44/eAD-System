@@ -194,7 +194,7 @@ func (f *FieldUpdateRequest) ToEntity(docID string) *entity.DocumentField {
 }
 
 type FieldsUpdateRequest struct {
-	Fields []FieldUpdateRequest `json:"fields"`
+	Fields []FieldUpdateRequest `json:"fields" validate:"dive"`
 }
 
 func (f *FieldsUpdateRequest) ToEntity(docID string) *entity.DocumentFields {
