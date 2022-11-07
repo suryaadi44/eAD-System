@@ -2,8 +2,6 @@ package repository
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"strings"
 
 	"github.com/suryaadi44/eAD-System/pkg/config"
@@ -311,9 +309,6 @@ func (d *DocumentRepositoryImpl) DeleteDocument(ctx context.Context, documentID 
 }
 
 func (d *DocumentRepositoryImpl) UpdateDocument(ctx context.Context, document *entity.Document) error {
-	res, _ := json.Marshal(document)
-	fmt.Println(string(res))
-
 	result := d.db.WithContext(ctx).
 		Model(&entity.Document{}).
 		Where("id = ?", document.ID).
