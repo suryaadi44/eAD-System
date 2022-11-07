@@ -87,6 +87,11 @@ func (m *MockDocumentService) DeleteDocument(ctx context.Context, userID string,
 	return args.Error(0)
 }
 
+func (m *MockDocumentService) UpdateDocument(ctx context.Context, document *dto.DocumentUpdateRequest, documentID string) error {
+	args := m.Called(ctx, document, documentID)
+	return args.Error(0)
+}
+
 type MockJWTService struct {
 	mock.Mock
 }

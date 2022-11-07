@@ -22,4 +22,5 @@ type DocumentRepository interface {
 	VerifyDocument(ctx context.Context, document *entity.Document) error
 	SignDocument(ctx context.Context, document *entity.Document) error
 	DeleteDocument(ctx context.Context, documentID string) error
+	UpdateDocument(ctx context.Context, document *entity.Document) error
 }

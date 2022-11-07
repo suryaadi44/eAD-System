@@ -92,6 +92,11 @@ func (m *MockDocumentRepository) DeleteDocument(ctx context.Context, documentID 
 	return args.Error(0)
 }
 
+func (m *MockDocumentRepository) UpdateDocument(ctx context.Context, document *entity.Document) error {
+	args := m.Called(ctx, document)
+	return args.Error(0)
+}
+
 type MockPDFService struct {
 	mock.Mock
 }

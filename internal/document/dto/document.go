@@ -1,6 +1,7 @@
 package dto
 
 import (
+	"gorm.io/gorm"
 	"time"
 
 	"github.com/suryaadi44/eAD-System/internal/user/dto"
@@ -73,12 +74,14 @@ func NewDocumentResponse(document *entity.Document) *DocumentResponse {
 }
 
 type FieldResponse struct {
+	ID    uint   `json:"id"`
 	Key   string `json:"key"`
 	Value string `json:"value"`
 }
 
 func NewFieldResponse(fields *entity.DocumentField) *FieldResponse {
 	return &FieldResponse{
+		ID:    fields.ID,
 		Key:   fields.TemplateField.Key,
 		Value: fields.Value,
 	}
@@ -161,4 +164,42 @@ func NewBriefDocumentsResponse(documents *entity.Documents) *BriefDocumentsRespo
 	}
 
 	return &documentsResponse
+}
+
+type DocumentUpdateRequest struct {
+	Register    string `json:"register"`
+	Description string `json:"description"`
+}
+
+func (d *DocumentUpdateRequest) ToEntity() *entity.Document {
+	return &entity.Document{
+		Register:    d.Register,
+		Description: d.Description,
+	}
+}
+
+type FieldUpdateRequest struct {
+	ID    uint   `json:"id"`
+	Value string `json:"value"`
+}
+
+func (f *FieldUpdateRequest) ToEntity(docID string) *entity.DocumentField {
+	return &entity.DocumentField{
+		Model: gorm.Model{
+			ID: f.ID,
+		},
+		DocumentID: docID,
+		Value:      f.Value,
+	}
+}
+
+type FieldsUpdateRequest []FieldUpdateRequest
+
+func (f *FieldsUpdateRequest) ToEntity(docID string) *entity.DocumentFields {
+	var fields entity.DocumentFields
+	for _, field := range *f {
+		fields = append(fields, *field.ToEntity(docID))
+	}
+
+	return &fields
 }
