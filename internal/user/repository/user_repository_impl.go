@@ -78,3 +78,17 @@ func (u *UserRepositoryImpl) FindByUsername(ctx context.Context, username string
 
 	return &user, nil
 }
+
+func (u *UserRepositoryImpl) GetAllUser(ctx context.Context) (*entity.Users, error) {
+	var users entity.Users
+	err := u.db.WithContext(ctx).Find(&users).Error
+	if err != nil {
+		return nil, err
+	}
+
+	if len(users) == 0 {
+		return nil, utils.ErrUserNotFound
+	}
+
+	return &users, nil
+}
