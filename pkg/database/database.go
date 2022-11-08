@@ -44,5 +44,6 @@ func Migrate(db *gorm.DB) error {
 		&entity.Stage{},
 		&entity.Document{},
 		&entity.DocumentField{},
+		&entity.Register{},
 	)
 }

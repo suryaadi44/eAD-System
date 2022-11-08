@@ -72,8 +72,8 @@ func (m *MockDocumentService) GetApplicantID(ctx context.Context, documentID str
 	return args.Get(0).(*string), args.Error(1)
 }
 
-func (m *MockDocumentService) VerifyDocument(ctx context.Context, documentID string, verifierID string) error {
-	args := m.Called(ctx, documentID, verifierID)
+func (m *MockDocumentService) VerifyDocument(ctx context.Context, documentID string, verifierID string, verifyRequest *dto.VerifyDocumentRequest) error {
+	args := m.Called(ctx, documentID, verifierID, verifyRequest)
 	return args.Error(0)
 }
 
@@ -544,9 +544,7 @@ func (s *TestSuiteDocumentController) TestAddDocument() {
 			Name:               "Success",
 			RequestContentType: "application/json",
 			RequestBody: &dto.DocumentRequest{
-				Register:    "123",
-				Description: "description",
-				TemplateID:  1,
+				TemplateID: 1,
 				Fields: dto.FieldsRequest{
 					{
 						FieldID: 1,
@@ -579,9 +577,7 @@ func (s *TestSuiteDocumentController) TestAddDocument() {
 			Name:               "failed to add document: validation error",
 			RequestContentType: "application/json",
 			RequestBody: &dto.DocumentRequest{
-				Register:    "123",
-				Description: "description",
-				TemplateID:  1,
+				TemplateID: 1,
 				Fields: dto.FieldsRequest{
 					{
 						FieldID: 1,
@@ -599,9 +595,7 @@ func (s *TestSuiteDocumentController) TestAddDocument() {
 			Name:               "failed to add document: template not found",
 			RequestContentType: "application/json",
 			RequestBody: &dto.DocumentRequest{
-				Register:    "123",
-				Description: "description",
-				TemplateID:  1,
+				TemplateID: 1,
 				Fields: dto.FieldsRequest{
 					{
 						FieldID: 1,
@@ -619,9 +613,7 @@ func (s *TestSuiteDocumentController) TestAddDocument() {
 			Name:               "failed to add document: field not match",
 			RequestContentType: "application/json",
 			RequestBody: &dto.DocumentRequest{
-				Register:    "123",
-				Description: "description",
-				TemplateID:  1,
+				TemplateID: 1,
 				Fields: dto.FieldsRequest{
 					{
 						FieldID: 1,
@@ -639,9 +631,7 @@ func (s *TestSuiteDocumentController) TestAddDocument() {
 			Name:               "failed to add document: duplicate register",
 			RequestContentType: "application/json",
 			RequestBody: &dto.DocumentRequest{
-				Register:    "123",
-				Description: "description",
-				TemplateID:  1,
+				TemplateID: 1,
 				Fields: dto.FieldsRequest{
 					{
 						FieldID: 1,
@@ -659,9 +649,7 @@ func (s *TestSuiteDocumentController) TestAddDocument() {
 			Name:               "failed to add document: generic service error",
 			RequestContentType: "application/json",
 			RequestBody: &dto.DocumentRequest{
-				Register:    "123",
-				Description: "description",
-				TemplateID:  1,
+				TemplateID: 1,
 				Fields: dto.FieldsRequest{
 					{
 						FieldID: 1,
@@ -729,7 +717,7 @@ func (s *TestSuiteDocumentController) TestGetDocument() {
 			FunctionError: nil,
 			FunctionReturn: &dto.DocumentResponse{
 				ID:          "",
-				Register:    "",
+				RegisterID:  0,
 				Description: "",
 				Applicant: dto2.ApplicantResponse{
 					ID:       "1",
@@ -756,7 +744,7 @@ func (s *TestSuiteDocumentController) TestGetDocument() {
 				"message": "success getting document",
 				"data": map[string]interface{}{
 					"id":          "",
-					"register":    "",
+					"register":    float64(0),
 					"description": "",
 					"applicant": map[string]interface{}{
 						"id":       "1",
@@ -810,7 +798,7 @@ func (s *TestSuiteDocumentController) TestGetDocument() {
 			FunctionError: nil,
 			FunctionReturn: &dto.DocumentResponse{
 				ID:          "",
-				Register:    "",
+				RegisterID:  0,
 				Description: "",
 				Applicant: dto2.ApplicantResponse{
 					ID:       "1",
@@ -841,7 +829,7 @@ func (s *TestSuiteDocumentController) TestGetDocument() {
 			FunctionError: nil,
 			FunctionReturn: &dto.DocumentResponse{
 				ID:          "",
-				Register:    "",
+				RegisterID:  0,
 				Description: "",
 				Applicant: dto2.ApplicantResponse{
 					ID:       "1",
@@ -867,7 +855,7 @@ func (s *TestSuiteDocumentController) TestGetDocument() {
 				"message": "success getting document",
 				"data": map[string]interface{}{
 					"id":          "",
-					"register":    "",
+					"register":    float64(0),
 					"description": "",
 					"applicant": map[string]interface{}{
 						"id":       "1",
@@ -950,7 +938,7 @@ func (s *TestSuiteDocumentController) TestGetBriefDocument() {
 				{
 					ID:          "1",
 					Description: "description",
-					Register:    "123",
+					RegisterID:  123,
 					Applicant: dto2.ApplicantResponse{
 						ID:       "1",
 						Username: "Username",
@@ -971,7 +959,7 @@ func (s *TestSuiteDocumentController) TestGetBriefDocument() {
 					map[string]interface{}{
 						"id":          "1",
 						"description": "description",
-						"register":    "123",
+						"register":    float64(123),
 						"applicant": map[string]interface{}{
 							"id":       "1",
 							"username": "Username",
@@ -997,7 +985,7 @@ func (s *TestSuiteDocumentController) TestGetBriefDocument() {
 				{
 					ID:          "1",
 					Description: "description",
-					Register:    "123",
+					RegisterID:  123,
 					Applicant: dto2.ApplicantResponse{
 						ID:       "1",
 						Username: "Username",
@@ -1018,7 +1006,7 @@ func (s *TestSuiteDocumentController) TestGetBriefDocument() {
 					map[string]interface{}{
 						"id":          "1",
 						"description": "description",
-						"register":    "123",
+						"register":    float64(123),
 						"applicant": map[string]interface{}{
 							"id":       "1",
 							"username": "Username",
@@ -1144,7 +1132,7 @@ func (s *TestSuiteDocumentController) TestGetDocumentStatus() {
 			FunctionReturn: &dto.DocumentStatusResponse{
 				ID:          "1",
 				Description: "description",
-				Register:    "123",
+				RegisterID:  123,
 				Stage:       "applied",
 				Verifier:    dto2.EmployeeResponse{},
 				VerifiedAt:  time.Time{},
@@ -1159,7 +1147,7 @@ func (s *TestSuiteDocumentController) TestGetDocumentStatus() {
 				"data": map[string]interface{}{
 					"id":          "1",
 					"description": "description",
-					"register":    "123",
+					"register":    float64(123),
 					"stage":       "applied",
 					"verifier":    map[string]interface{}{},
 					"verified_at": "0001-01-01T00:00:00Z",
@@ -1314,7 +1302,7 @@ func (s *TestSuiteDocumentController) TestGetPDFDocument() {
 			c.SetParamValues("1")
 
 			s.mockJWTService.On("GetClaims", mock.Anything).Return(tc.JWTReturn)
-			s.mockDocumentService.On("GetApplicantID", mock.Anything, "1").Return((*string)(&tc.ServiceReturn), tc.ServiceError)
+			s.mockDocumentService.On("GetApplicantID", mock.Anything, "1").Return(&tc.ServiceReturn, tc.ServiceError)
 			s.mockDocumentService.On("GeneratePDFDocument", mock.Anything, "1").Return([]byte(nil), tc.PDFError)
 
 			err := s.documentController.GetPDFDocument(c)
@@ -1402,7 +1390,7 @@ func (s *TestSuiteDocumentController) TestVerifyDocument() {
 			c.SetParamValues("1")
 
 			s.mockJWTService.On("GetClaims", mock.Anything).Return(tc.JWTReturn)
-			s.mockDocumentService.On("VerifyDocument", mock.Anything, "1", mock.Anything).Return(tc.ServiceError)
+			s.mockDocumentService.On("VerifyDocument", mock.Anything, "1", mock.Anything, mock.Anything).Return(tc.ServiceError)
 
 			err := s.documentController.VerifyDocument(c)
 
@@ -1641,7 +1629,7 @@ func (s *TestSuiteDocumentController) TestUpdateDocument() {
 		{
 			Name: "Success to update document",
 			RequestBody: &dto.DocumentUpdateRequest{
-				Register:    "123",
+				RegisterID:  123,
 				Description: "description",
 			},
 			RequestContentTypes: "application/json",
@@ -1658,7 +1646,7 @@ func (s *TestSuiteDocumentController) TestUpdateDocument() {
 		{
 			Name: "Failed to update document : role not sufficient to update document",
 			RequestBody: &dto.DocumentUpdateRequest{
-				Register:    "123",
+				RegisterID:  123,
 				Description: "description",
 			},
 			RequestContentTypes: "application/json",
@@ -1685,7 +1673,7 @@ func (s *TestSuiteDocumentController) TestUpdateDocument() {
 		{
 			Name: "Failed to update document : generic service error",
 			RequestBody: &dto.DocumentUpdateRequest{
-				Register:    "123",
+				RegisterID:  123,
 				Description: "description",
 			},
 			RequestContentTypes: "application/json",
@@ -1700,7 +1688,7 @@ func (s *TestSuiteDocumentController) TestUpdateDocument() {
 		{
 			Name: "Failed to update document : document not found",
 			RequestBody: &dto.DocumentUpdateRequest{
-				Register:    "123",
+				RegisterID:  123,
 				Description: "description",
 			},
 			RequestContentTypes: "application/json",
@@ -1715,7 +1703,7 @@ func (s *TestSuiteDocumentController) TestUpdateDocument() {
 		{
 			Name: "Failed to update document : document already signed",
 			RequestBody: &dto.DocumentUpdateRequest{
-				Register:    "123",
+				RegisterID:  123,
 				Description: "description",
 			},
 			RequestContentTypes: "application/json",
@@ -1730,7 +1718,7 @@ func (s *TestSuiteDocumentController) TestUpdateDocument() {
 		{
 			Name: "Failed to update document : document already Verified",
 			RequestBody: &dto.DocumentUpdateRequest{
-				Register:    "123",
+				RegisterID:  123,
 				Description: "description",
 			},
 			RequestContentTypes: "application/json",

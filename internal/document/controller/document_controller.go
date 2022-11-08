@@ -288,8 +288,13 @@ func (d *DocumentController) VerifyDocument(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusForbidden, utils.ErrDidntHavePermission.Error())
 	}
 
+	verifyRequest := new(dto.VerifyDocumentRequest)
+	if err := c.Bind(verifyRequest); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, utils.ErrBadRequestBody.Error())
+	}
+
 	documentID := c.Param("document_id")
-	err := d.documentService.VerifyDocument(c.Request().Context(), documentID, userID)
+	err := d.documentService.VerifyDocument(c.Request().Context(), documentID, userID, verifyRequest)
 	if err != nil {
 		if err == utils.ErrDocumentNotFound {
 			return echo.NewHTTPError(http.StatusNotFound, err.Error())

@@ -110,7 +110,7 @@ func (d *DocumentRepositoryImpl) GetTemplateFields(ctx context.Context, template
 }
 
 func (d *DocumentRepositoryImpl) AddDocument(ctx context.Context, document *entity.Document) (string, error) {
-	err := d.db.WithContext(ctx).Create(document).Error
+	err := d.db.WithContext(ctx).Omit("Register").Create(document).Error
 	if err != nil {
 		if strings.Contains(err.Error(), "Error 1062: Duplicate entry") {
 			return "", utils.ErrDuplicateRegister
@@ -149,10 +149,10 @@ func (d *DocumentRepositoryImpl) GetDocument(ctx context.Context, documentID str
 	return &document, nil
 }
 
-func (d *DocumentRepositoryImpl) GetBriefDocuments(ctx context.Context, limit int, offset int) (*entity.Documents, error) {
-	var documents entity.Documents
+func (d *DocumentRepositoryImpl) GetBriefDocument(ctx context.Context, documentID string) (*entity.Document, error) {
+	var document entity.Document
 	err := d.db.WithContext(ctx).Model(&entity.Document{}).
-		Select("id, register, description, created_at, applicant_id, template_id, stage_id").
+		Select("id, register_id, description, created_at, applicant_id, template_id, stage_id").
 		Preload("Applicant", func(db *gorm.DB) *gorm.DB {
 			return db.Select("id, username, name")
 		}).
@@ -160,6 +160,32 @@ func (d *DocumentRepositoryImpl) GetBriefDocuments(ctx context.Context, limit in
 			return db.Select("id, name")
 		}).
 		Preload("Stage").
+		Preload("Register").
+		Order("created_at desc").
+		First(&document, "id = ?", documentID).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, utils.ErrDocumentNotFound
+		}
+
+		return nil, err
+	}
+
+	return &document, nil
+}
+
+func (d *DocumentRepositoryImpl) GetBriefDocuments(ctx context.Context, limit int, offset int) (*entity.Documents, error) {
+	var documents entity.Documents
+	err := d.db.WithContext(ctx).Model(&entity.Document{}).
+		Select("id, register_id, description, created_at, applicant_id, template_id, stage_id").
+		Preload("Applicant", func(db *gorm.DB) *gorm.DB {
+			return db.Select("id, username, name")
+		}).
+		Preload("Template", func(db *gorm.DB) *gorm.DB {
+			return db.Select("id, name")
+		}).
+		Preload("Stage").
+		Preload("Register").
 		Order("created_at desc").
 		Limit(limit).
 		Offset(offset).
@@ -178,7 +204,7 @@ func (d *DocumentRepositoryImpl) GetBriefDocuments(ctx context.Context, limit in
 func (d *DocumentRepositoryImpl) GetBriefDocumentsByApplicant(ctx context.Context, applicantID string, limit int, offset int) (*entity.Documents, error) {
 	var documents entity.Documents
 	err := d.db.WithContext(ctx).Model(&entity.Document{}).
-		Select("id, register, description, created_at, applicant_id, template_id, stage_id").
+		Select("id, register_id, description, created_at, applicant_id, template_id, stage_id").
 		Preload("Applicant", func(db *gorm.DB) *gorm.DB {
 			return db.Select("id, username, name")
 		}).
@@ -186,6 +212,7 @@ func (d *DocumentRepositoryImpl) GetBriefDocumentsByApplicant(ctx context.Contex
 			return db.Select("id, name")
 		}).
 		Preload("Stage").
+		Preload("Register").
 		Where("applicant_id = ?", applicantID).
 		Order("created_at desc").
 		Limit(limit).
@@ -263,7 +290,6 @@ func (d *DocumentRepositoryImpl) VerifyDocument(ctx context.Context, document *e
 		WithContext(ctx).
 		Model(&entity.Document{}).
 		Where("id = ?", document.ID).
-		Select("VerifierID", "VerifiedAt", "StageID").
 		Updates(document)
 	if result.Error != nil {
 		return result.Error
@@ -341,4 +367,13 @@ func (d *DocumentRepositoryImpl) UpdateDocumentFields(ctx context.Context, docum
 	}
 
 	return nil
+}
+
+func (d *DocumentRepositoryImpl) AddDocumentRegister(ctx context.Context, register *entity.Register) (uint, error) {
+	result := d.db.WithContext(ctx).Create(register)
+	if result.Error != nil {
+		return 0, result.Error
+	}
+
+	return register.ID, nil
 }

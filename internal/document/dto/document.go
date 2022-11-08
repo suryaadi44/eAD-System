@@ -9,10 +9,8 @@ import (
 )
 
 type DocumentRequest struct {
-	Register    string        `json:"register" validate:"required"`
-	Description string        `json:"description" validate:"required"`
-	TemplateID  uint          `json:"template_id" validate:"required"`
-	Fields      FieldsRequest `json:"fields" validate:"required"`
+	TemplateID uint          `json:"template_id" validate:"required"`
+	Fields     FieldsRequest `json:"fields" validate:"required"`
 }
 
 type FieldRequest struct {
@@ -32,16 +30,14 @@ func (d *DocumentRequest) ToEntity() *entity.Document {
 	}
 
 	return &entity.Document{
-		Register:    d.Register,
-		Description: d.Description,
-		TemplateID:  d.TemplateID,
-		Fields:      fields,
+		TemplateID: d.TemplateID,
+		Fields:     fields,
 	}
 }
 
 type DocumentResponse struct {
 	ID          string                `json:"id"`
-	Register    string                `json:"register"`
+	RegisterID  uint                  `json:"register"`
 	Description string                `json:"description"`
 	Applicant   dto.ApplicantResponse `json:"applicant"`
 	Template    TemplateResponse      `json:"template"`
@@ -58,7 +54,7 @@ type DocumentResponse struct {
 func NewDocumentResponse(document *entity.Document) *DocumentResponse {
 	return &DocumentResponse{
 		ID:          document.ID,
-		Register:    document.Register,
+		RegisterID:  document.RegisterID,
 		Description: document.Description,
 		Applicant:   *dto.NewApplicantResponse(&document.Applicant),
 		Template:    *NewTemplateResponse(&document.Template),
@@ -110,7 +106,7 @@ func NewFieldsMapResponse(fields *entity.DocumentFields) map[string]interface{} 
 type DocumentStatusResponse struct {
 	ID          string               `json:"id"`
 	Description string               `json:"description"`
-	Register    string               `json:"register"`
+	RegisterID  uint                 `json:"register"`
 	Stage       string               `json:"stage"`
 	Verifier    dto.EmployeeResponse `json:"verifier"`
 	VerifiedAt  time.Time            `json:"verified_at"`
@@ -124,7 +120,7 @@ func NewDocumentStatusResponse(document *entity.Document) *DocumentStatusRespons
 	return &DocumentStatusResponse{
 		ID:          document.ID,
 		Description: document.Description,
-		Register:    document.Register,
+		RegisterID:  document.RegisterID,
 		Stage:       document.Stage.Status,
 		Verifier:    *dto.NewEmployeeResponse(&document.Verifier),
 		VerifiedAt:  document.VerifiedAt,
@@ -138,7 +134,7 @@ func NewDocumentStatusResponse(document *entity.Document) *DocumentStatusRespons
 type BriefDocumentResponse struct {
 	ID          string                `json:"id"`
 	Description string                `json:"description"`
-	Register    string                `json:"register"`
+	RegisterID  uint                  `json:"register"`
 	Applicant   dto.ApplicantResponse `json:"applicant"`
 	Stage       string                `json:"stage"`
 	Template    string                `json:"template"`
@@ -148,7 +144,7 @@ func NewBriefDocumentResponse(document *entity.Document) *BriefDocumentResponse 
 	return &BriefDocumentResponse{
 		ID:          document.ID,
 		Description: document.Description,
-		Register:    document.Register,
+		RegisterID:  document.RegisterID,
 		Applicant:   *dto.NewApplicantResponse(&document.Applicant),
 		Stage:       document.Stage.Status,
 		Template:    document.Template.Name,
@@ -167,14 +163,26 @@ func NewBriefDocumentsResponse(documents *entity.Documents) *BriefDocumentsRespo
 }
 
 type DocumentUpdateRequest struct {
-	Register    string `json:"register"`
+	RegisterID  uint   `json:"register"`
 	Description string `json:"description"`
 }
 
 func (d *DocumentUpdateRequest) ToEntity() *entity.Document {
 	return &entity.Document{
-		Register:    d.Register,
+		RegisterID:  d.RegisterID,
 		Description: d.Description,
+	}
+}
+
+type VerifyDocumentRequest struct {
+	RegisterID  uint   `json:"register_id"`
+	Description string `json:"description"`
+}
+
+func (v *VerifyDocumentRequest) ToEntity() *entity.Document {
+	return &entity.Document{
+		RegisterID:  v.RegisterID,
+		Description: v.Description,
 	}
 }
 
