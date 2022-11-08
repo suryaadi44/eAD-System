@@ -109,21 +109,6 @@ func (d *DocumentRepositoryImpl) GetTemplateFields(ctx context.Context, template
 	return &templateFields, nil
 }
 
-func (d *DocumentRepositoryImpl) GetDocumentTemplate(ctx context.Context, documentID string) (*entity.Template, error) {
-	var Template entity.Template
-	err := d.db.WithContext(ctx).
-		First(&Template, "id = ?", documentID).Error
-	if err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return nil, utils.ErrDocumentNotFound
-		}
-
-		return nil, err
-	}
-
-	return &Template, nil
-}
-
 func (d *DocumentRepositoryImpl) AddDocument(ctx context.Context, document *entity.Document) (string, error) {
 	err := d.db.WithContext(ctx).Omit("Register").Create(document).Error
 	if err != nil {
@@ -281,25 +266,6 @@ func (d *DocumentRepositoryImpl) GetApplicantID(ctx context.Context, documentID 
 	}
 
 	return &applicantID, nil
-}
-
-func (d *DocumentRepositoryImpl) GetApplicant(ctx context.Context, documentID string) (*entity.User, error) {
-	var applicant entity.User
-	err := d.db.WithContext(ctx).
-		Model(&entity.Document{}).
-		Select("applicant_id").
-		Preload("Applicant", func(db *gorm.DB) *gorm.DB {
-			return db.Select("id, username, name")
-		}).First(&applicant, "id = ?", documentID).Error
-	if err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return nil, utils.ErrDocumentNotFound
-		}
-
-		return nil, err
-	}
-
-	return &applicant, nil
 }
 
 func (d *DocumentRepositoryImpl) GetDocumentStage(ctx context.Context, documentID string) (*int, error) {

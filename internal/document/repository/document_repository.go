@@ -11,7 +11,6 @@ type DocumentRepository interface {
 	GetAllTemplate(ctx context.Context) (*entity.Templates, error)
 	GetTemplateDetail(ctx context.Context, templateId uint) (*entity.Template, error)
 	GetTemplateFields(ctx context.Context, templateId uint) (*entity.TemplateFields, error)
-	GetDocumentTemplate(ctx context.Context, documentID string) (*entity.Template, error)
 
 	AddDocument(ctx context.Context, document *entity.Document) (string, error)
 	GetDocument(ctx context.Context, documentID string) (*entity.Document, error)
@@ -20,7 +19,6 @@ type DocumentRepository interface {
 	GetBriefDocumentsByApplicant(ctx context.Context, applicantID string, limit int, offset int) (*entity.Documents, error)
 	GetDocumentStatus(ctx context.Context, documentID string) (*entity.Document, error)
 	GetApplicantID(ctx context.Context, documentID string) (*string, error)
-	GetApplicant(ctx context.Context, documentID string) (*entity.User, error)
 	GetDocumentStage(ctx context.Context, documentID string) (*int, error)
 	VerifyDocument(ctx context.Context, document *entity.Document) error
 	SignDocument(ctx context.Context, document *entity.Document) error
