@@ -291,7 +291,7 @@ func (s *TestSuiteDocumentRepository) TestGetTemplateFields() {
 }
 
 func (s *TestSuiteDocumentRepository) TestAddDocument() {
-	query := regexp.QuoteMeta("INSERT INTO `documents` (`id`,`register`,`description`,`applicant_id`,`template_id`,`stage_id`,`created_at`,`updated_at`,`deleted_at`) VALUES (?,?,?,?,?,?,?,?,?)")
+	query := regexp.QuoteMeta("INSERT INTO `documents` (`id`,`description`,`applicant_id`,`template_id`,`stage_id`,`created_at`,`updated_at`,`deleted_at`) VALUES (?,?,?,?,?,?,?,?)")
 	for _, tc := range []struct {
 		Name        string
 		Err         error
@@ -351,7 +351,7 @@ func (s *TestSuiteDocumentRepository) TestGetDocument() {
 			ExpectedErr: nil,
 			ExpectedReturn: &entity.Document{
 				ID:          "1",
-				Register:    "register",
+				RegisterID:  123,
 				Description: "description",
 				ApplicantID: "1",
 				Applicant: entity.User{
@@ -434,8 +434,8 @@ func (s *TestSuiteDocumentRepository) TestGetDocument() {
 			if tc.Err != nil {
 				s.mock.ExpectQuery(query).WillReturnError(tc.Err)
 			} else {
-				s.mock.ExpectQuery(query).WillReturnRows(sqlmock.NewRows([]string{"id", "register", "description", "applicant_id", "template_id", "stage_id", "verifier_id", "signer_id"}).
-					AddRow(1, "register", "description", "1", 1, 3, "1", "1"))
+				s.mock.ExpectQuery(query).WillReturnRows(sqlmock.NewRows([]string{"id", "register_id", "description", "applicant_id", "template_id", "stage_id", "verifier_id", "signer_id"}).
+					AddRow(1, 123, "description", "1", 1, 3, "1", "1"))
 				s.mock.ExpectQuery(queryPreloadUser).WillReturnRows(sqlmock.NewRows([]string{"id", "username", "name"}).AddRow(1, "username", "name"))
 				s.mock.ExpectQuery(queryPreloadDocumentFields).WillReturnRows(sqlmock.NewRows([]string{"id", "document_id", "template_field_id", "value"}).AddRow(1, 1, 1, "value"))
 				s.mock.ExpectQuery(queryPreloadTemplateFields).WillReturnRows(sqlmock.NewRows([]string{"id", "template_id", "key"}).AddRow(1, 1, "key"))
@@ -458,39 +458,44 @@ func (s *TestSuiteDocumentRepository) TestGetDocument() {
 	}
 }
 
-func (s *TestSuiteDocumentRepository) TestGetBriefDocuments() {
-	query := regexp.QuoteMeta("SELECT id, register, description, created_at, applicant_id, template_id, stage_id FROM `documents` WHERE `documents`.`deleted_at` IS NULL ORDER BY created_at desc")
+func (s *TestSuiteDocumentRepository) TestGetBriefDocument() {
+	query := regexp.QuoteMeta("SELECT id, register_id, description, created_at, applicant_id, template_id, stage_id FROM `documents` WHERE id = ? AND `documents`.`deleted_at` IS NULL ORDER BY created_at desc,`documents`.`id` LIMIT 1")
 	queryPreloadAplicant := regexp.QuoteMeta("SELECT id, username, name FROM `users` WHERE `users`.`id` = ? AND `users`.`deleted_at` IS NULL")
 	queryPreloadStage := regexp.QuoteMeta("SELECT id, status FROM `stages` WHERE `stages`.`id` = ? AND `stages`.`deleted_at` IS NULL")
 	queryPreloadtemplate := regexp.QuoteMeta("SELECT name FROM `templates` WHERE `templates`.`id` = ? AND `templates`.`deleted_at` IS NULL")
+	queryPreloadRegister := regexp.QuoteMeta("SELECT * FROM `registers` WHERE `registers`.`id` = ? AND `registers`.`deleted_at` IS NULL")
 
 	for _, tc := range []struct {
 		Name           string
 		Err            error
 		ExpectedErr    error
-		ExpectedReturn *entity.Documents
+		ExpectedReturn *entity.Document
 		ReturnedRows   *sqlmock.Rows
 	}{
 		{
 			Name:        "Success",
 			Err:         nil,
 			ExpectedErr: nil,
-			ExpectedReturn: &entity.Documents{
-				{
-					ID:          "1",
-					Register:    "register",
+			ExpectedReturn: &entity.Document{
+				ID:         "1",
+				RegisterID: 123,
+				Register: entity.Register{
+					Model: gorm.Model{
+						ID: 123,
+					},
 					Description: "description",
-					CreatedAt:   time.Time{},
 				},
+				Description: "description",
+				CreatedAt:   time.Time{},
 			},
-			ReturnedRows: sqlmock.NewRows([]string{"id", "register", "description", "created_at"}).AddRow(1, "register", "description", time.Time{}),
+			ReturnedRows: sqlmock.NewRows([]string{"id", "register_id", "description", "created_at"}).AddRow(1, 123, "description", time.Time{}),
 		},
 		{
 			Name:           "Error No rows in result set",
-			Err:            nil,
+			Err:            gorm.ErrRecordNotFound,
 			ExpectedErr:    utils.ErrDocumentNotFound,
-			ExpectedReturn: &entity.Documents{},
-			ReturnedRows:   sqlmock.NewRows([]string{"id", "register", "description", "created_at"}),
+			ExpectedReturn: &entity.Document{},
+			ReturnedRows:   sqlmock.NewRows([]string{"id", "register_id", "description", "created_at"}),
 		},
 		{
 			Name:           "Error generic error",
@@ -506,6 +511,80 @@ func (s *TestSuiteDocumentRepository) TestGetBriefDocuments() {
 				s.mock.ExpectQuery(query).WillReturnError(tc.Err)
 			} else {
 				s.mock.ExpectQuery(query).WillReturnRows(tc.ReturnedRows)
+				s.mock.ExpectQuery(queryPreloadRegister).WillReturnRows(sqlmock.NewRows([]string{"id", "description"}).AddRow(123, "description"))
+				s.mock.ExpectQuery(queryPreloadAplicant).WillReturnRows(sqlmock.NewRows([]string{"id", "username", "name"}).AddRow(1, "username", "name"))
+				s.mock.ExpectQuery(queryPreloadStage).WillReturnRows(sqlmock.NewRows([]string{"id", "status"}).AddRow(3, "approved"))
+				s.mock.ExpectQuery(queryPreloadtemplate).WillReturnRows(sqlmock.NewRows([]string{"name"}).AddRow("template"))
+			}
+
+			result, err := s.documentRepository.GetBriefDocument(context.Background(), "1")
+
+			if tc.ExpectedErr != nil {
+				s.Equal(tc.ExpectedErr, err)
+			} else {
+				s.Equal(tc.ExpectedReturn, result)
+			}
+		})
+		s.TearDownTest()
+	}
+}
+
+func (s *TestSuiteDocumentRepository) TestGetBriefDocuments() {
+	query := regexp.QuoteMeta("SELECT id, register_id, description, created_at, applicant_id, template_id, stage_id FROM `documents` WHERE `documents`.`deleted_at` IS NULL ORDER BY created_at desc")
+	queryPreloadAplicant := regexp.QuoteMeta("SELECT id, username, name FROM `users` WHERE `users`.`id` = ? AND `users`.`deleted_at` IS NULL")
+	queryPreloadStage := regexp.QuoteMeta("SELECT id, status FROM `stages` WHERE `stages`.`id` = ? AND `stages`.`deleted_at` IS NULL")
+	queryPreloadtemplate := regexp.QuoteMeta("SELECT name FROM `templates` WHERE `templates`.`id` = ? AND `templates`.`deleted_at` IS NULL")
+	queryPreloadRegister := regexp.QuoteMeta("SELECT * FROM `registers` WHERE `registers`.`id` = ? AND `registers`.`deleted_at` IS NULL")
+
+	for _, tc := range []struct {
+		Name           string
+		Err            error
+		ExpectedErr    error
+		ExpectedReturn *entity.Documents
+		ReturnedRows   *sqlmock.Rows
+	}{
+		{
+			Name:        "Success",
+			Err:         nil,
+			ExpectedErr: nil,
+			ExpectedReturn: &entity.Documents{
+				{
+					ID:         "1",
+					RegisterID: 123,
+					Register: entity.Register{
+						Model: gorm.Model{
+							ID: 123,
+						},
+						Description: "description",
+					},
+					Description: "description",
+					CreatedAt:   time.Time{},
+				},
+			},
+			ReturnedRows: sqlmock.NewRows([]string{"id", "register_id", "description", "created_at"}).AddRow(1, 123, "description", time.Time{}),
+		},
+		{
+			Name:           "Error No rows in result set",
+			Err:            nil,
+			ExpectedErr:    utils.ErrDocumentNotFound,
+			ExpectedReturn: &entity.Documents{},
+			ReturnedRows:   sqlmock.NewRows([]string{"id", "register_id", "description", "created_at"}),
+		},
+		{
+			Name:           "Error generic error",
+			Err:            errors.New("generic error"),
+			ExpectedErr:    errors.New("generic error"),
+			ExpectedReturn: nil,
+			ReturnedRows:   nil,
+		},
+	} {
+		s.SetupTest()
+		s.Run(tc.Name, func() {
+			if tc.Err != nil {
+				s.mock.ExpectQuery(query).WillReturnError(tc.Err)
+			} else {
+				s.mock.ExpectQuery(query).WillReturnRows(tc.ReturnedRows)
+				s.mock.ExpectQuery(queryPreloadRegister).WillReturnRows(sqlmock.NewRows([]string{"id", "description"}).AddRow(123, "description"))
 				s.mock.ExpectQuery(queryPreloadAplicant).WillReturnRows(sqlmock.NewRows([]string{"id", "username", "name"}).AddRow(1, "username", "name"))
 				s.mock.ExpectQuery(queryPreloadStage).WillReturnRows(sqlmock.NewRows([]string{"id", "status"}).AddRow(3, "approved"))
 				s.mock.ExpectQuery(queryPreloadtemplate).WillReturnRows(sqlmock.NewRows([]string{"name"}).AddRow("template"))
@@ -524,10 +603,11 @@ func (s *TestSuiteDocumentRepository) TestGetBriefDocuments() {
 }
 
 func (s *TestSuiteDocumentRepository) TestGetBriefDocumentsByApplicant() {
-	query := regexp.QuoteMeta("SELECT id, register, description, created_at, applicant_id, template_id, stage_id FROM `documents` WHERE applicant_id = ? AND `documents`.`deleted_at` IS NULL ORDER BY created_at desc")
+	query := regexp.QuoteMeta("SELECT id, register_id, description, created_at, applicant_id, template_id, stage_id FROM `documents` WHERE applicant_id = ? AND `documents`.`deleted_at` IS NULL ORDER BY created_at desc")
 	queryPreloadAplicant := regexp.QuoteMeta("SELECT id, username, name FROM `users` WHERE `users`.`id` = ? AND `users`.`deleted_at` IS NULL")
 	queryPreloadStage := regexp.QuoteMeta("SELECT id, status FROM `stages` WHERE `stages`.`id` = ? AND `stages`.`deleted_at` IS NULL")
 	queryPreloadtemplate := regexp.QuoteMeta("SELECT name FROM `templates` WHERE `templates`.`id` = ? AND `templates`.`deleted_at` IS NULL")
+	queryPreloadRegister := regexp.QuoteMeta("SELECT * FROM `registers` WHERE `registers`.`id` = ? AND `registers`.`deleted_at` IS NULL")
 
 	for _, tc := range []struct {
 		Name           string
@@ -542,13 +622,19 @@ func (s *TestSuiteDocumentRepository) TestGetBriefDocumentsByApplicant() {
 			ExpectedErr: nil,
 			ExpectedReturn: &entity.Documents{
 				{
-					ID:          "1",
-					Register:    "register",
+					ID:         "1",
+					RegisterID: 123,
+					Register: entity.Register{
+						Model: gorm.Model{
+							ID: 123,
+						},
+						Description: "description",
+					},
 					Description: "description",
 					CreatedAt:   time.Time{},
 				},
 			},
-			ReturnedRows: sqlmock.NewRows([]string{"id", "register", "description", "created_at"}).AddRow(1, "register", "description", time.Time{}),
+			ReturnedRows: sqlmock.NewRows([]string{"id", "register_id", "description", "created_at"}).AddRow(1, 123, "description", time.Time{}),
 		},
 		{
 			Name:           "Error No rows in result set",
@@ -571,6 +657,7 @@ func (s *TestSuiteDocumentRepository) TestGetBriefDocumentsByApplicant() {
 				s.mock.ExpectQuery(query).WillReturnError(tc.Err)
 			} else {
 				s.mock.ExpectQuery(query).WillReturnRows(tc.ReturnedRows)
+				s.mock.ExpectQuery(queryPreloadRegister).WillReturnRows(sqlmock.NewRows([]string{"id", "description"}).AddRow(123, "description"))
 				s.mock.ExpectQuery(queryPreloadAplicant).WillReturnRows(sqlmock.NewRows([]string{"id", "username", "name"}).AddRow(1, "username", "name"))
 				s.mock.ExpectQuery(queryPreloadStage).WillReturnRows(sqlmock.NewRows([]string{"id", "status"}).AddRow(3, "approved"))
 				s.mock.ExpectQuery(queryPreloadtemplate).WillReturnRows(sqlmock.NewRows([]string{"name"}).AddRow("template"))
@@ -604,7 +691,7 @@ func (s *TestSuiteDocumentRepository) TestGetDocumentStatus() {
 			Name: "Success",
 			ExpectedReturn: &entity.Document{
 				ID:          "1",
-				Register:    "register",
+				RegisterID:  123,
 				Description: "description",
 				ApplicantID: "1",
 				TemplateID:  1,
@@ -652,8 +739,8 @@ func (s *TestSuiteDocumentRepository) TestGetDocumentStatus() {
 			if tc.Err != nil {
 				s.mock.ExpectQuery(query).WillReturnError(tc.Err)
 			} else {
-				s.mock.ExpectQuery(query).WillReturnRows(sqlmock.NewRows([]string{"id", "register", "description", "applicant_id", "template_id", "stage_id", "verifier_id", "signer_id"}).
-					AddRow(1, "register", "description", "1", 1, 3, "1", "1"))
+				s.mock.ExpectQuery(query).WillReturnRows(sqlmock.NewRows([]string{"id", "register_id", "description", "applicant_id", "template_id", "stage_id", "verifier_id", "signer_id"}).
+					AddRow(1, 123, "description", "1", 1, 3, "1", "1"))
 				s.mock.ExpectQuery(queryPreloadEmployee).WillReturnRows(sqlmock.NewRows([]string{"id", "username", "name", "n_ip", "position"}).AddRow(1, "username", "name", "123", "position"))
 				s.mock.ExpectQuery(queryPreloadStage).WillReturnRows(sqlmock.NewRows([]string{"id", "status"}).AddRow(3, "approved"))
 				s.mock.ExpectQuery(queryPreloadEmployee).WillReturnRows(sqlmock.NewRows([]string{"id", "username", "name", "n_ip", "position"}).AddRow(1, "username", "name", "123", "position"))
@@ -766,7 +853,7 @@ func (s *TestSuiteDocumentRepository) TestGetDocumentStage() {
 }
 
 func (s *TestSuiteDocumentRepository) TestVerifyDocument() {
-	query := regexp.QuoteMeta("UPDATE `documents` SET `stage_id`=?,`verifier_id`=?,`verified_at`=?,`updated_at`=? WHERE id = ? AND `documents`.`deleted_at` IS NULL")
+	query := regexp.QuoteMeta("UPDATE `documents` SET `updated_at`=? WHERE id = ? AND `documents`.`deleted_at` IS NULL")
 
 	for _, tc := range []struct {
 		Name         string
@@ -987,6 +1074,46 @@ func (s *TestSuiteDocumentRepository) TestUpdateDocumentFields() {
 			if tc.ExpectedErr != nil {
 				s.Equal(tc.ExpectedErr, err)
 			}
+		})
+		s.TearDownTest()
+	}
+}
+
+func (s *TestSuiteDocumentRepository) TestAddDocumentRegister() {
+	query := regexp.QuoteMeta("INSERT INTO `registers` (`created_at`,`updated_at`,`deleted_at`,`description`) VALUES (?,?,?,?)")
+
+	for _, tc := range []struct {
+		Name         string
+		Err          error
+		ExpectedErr  error
+		RowsAffected int64
+	}{
+		{
+			Name:         "Success",
+			Err:          nil,
+			ExpectedErr:  nil,
+			RowsAffected: 1,
+		},
+		{
+			Name:         "Error generic error",
+			Err:          errors.New("generic error"),
+			ExpectedErr:  errors.New("generic error"),
+			RowsAffected: 0,
+		},
+	} {
+		s.SetupTest()
+		s.Run(tc.Name, func() {
+			if tc.Err != nil {
+				s.mock.ExpectExec(query).WillReturnError(tc.Err)
+			} else {
+				s.mock.ExpectExec(query).WillReturnResult(sqlmock.NewResult(1, tc.RowsAffected))
+			}
+
+			_, err := s.documentRepository.AddDocumentRegister(context.Background(), &entity.Register{
+				Description: "test",
+			})
+
+			s.Equal(tc.ExpectedErr, err)
 		})
 		s.TearDownTest()
 	}

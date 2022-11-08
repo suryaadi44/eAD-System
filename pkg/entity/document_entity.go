@@ -6,11 +6,12 @@ import (
 )
 
 type Document struct {
-	ID          string `gorm:"primaryKey; type:varchar(36)"`
-	Register    string `gorm:"type:varchar(255);not null;uniqueIndex"`
-	Description string `gorm:"type:varchar(255)"`
-	ApplicantID string `gorm:"type:varchar(36);not null"`
-	Applicant   User   `gorm:"foreignKey:ApplicantID"`
+	ID          string   `gorm:"primaryKey; type:varchar(36)"`
+	RegisterID  uint     `gorm:"type:int;default:null"`
+	Register    Register `gorm:"default:null"`
+	Description string   `gorm:"type:varchar(255)"`
+	ApplicantID string   `gorm:"type:varchar(36);not null"`
+	Applicant   User     `gorm:"foreignKey:ApplicantID"`
 	TemplateID  uint
 	Template    Template
 	Fields      DocumentFields
@@ -42,6 +43,11 @@ type DocumentFields []DocumentField
 type Stage struct {
 	ID     int    `gorm:"primaryKey; type:int"`
 	Status string `gorm:"type:varchar(255);not null;uniqueIndex"`
+}
+
+type Register struct {
+	gorm.Model
+	Description string `gorm:"type:varchar(255);not null"`
 }
 
 type Template struct {
