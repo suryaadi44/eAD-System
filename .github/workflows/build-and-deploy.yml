@@ -1,4 +1,4 @@
-name: Build and Deploy
+name: Build
 on:
   push:
     tags:
@@ -39,34 +39,3 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-
-  deploy:
-    runs-on: ubuntu-20.04
-    needs: build
-    environment: production
-    steps:
-    - name: Deploy to Server via SSH
-      uses: appleboy/ssh-action@master
-      with:
-       host: ${{ secrets.SERVER_HOST }}
-       username: ${{ secrets.SERVER_USERNAME }}
-       key: ${{ secrets.SERVER_KEY }}
-       port: ${{ secrets.SERVER_PORT }}
-       script: |
-        sudo docker stop ead
-        sudo docker rm ead
-        sudo docker volume create ead
-        sudo docker pull suryawarior44/ead-system:latest
-        sudo docker run -d \
-          -e "ENV=production" \
-          -e "DB_USER=${{ secrets.DB_USER }}" \
-          -e "DB_PASS=${{ secrets.DB_PASS }}" \
-          -e "DB_HOST=${{ secrets.DB_HOST }}" \
-          -e "DB_PORT=${{ secrets.DB_PORT }}" \
-          -e "DB_NAME=${{ secrets.DB_NAME }}" \
-          -e "PORT=${{ secrets.PORT }}" \
-          -e "JWT_SECRET=${{ secrets.JWT_SECRET }}" \
-          -e "QR_PATH=${{ secrets.QR_PATH }}" \
-          --network=MAIN \
-          -v ead:/template \
-        -p ${{ secrets.PORT }}:${{ secrets.PORT }} --name ead suryawarior44/ead-system:latest

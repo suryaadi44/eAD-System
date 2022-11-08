@@ -27,8 +27,7 @@ func InitController(e *echo.Echo, db *gorm.DB, conf map[string]string) {
 
 	jwtService := utils.NewJWTService(conf["JWT_SECRET"], 1*time.Hour)
 
-	api := e.Group("/api")
-	v1 := api.Group("/v1")
+	v1 := e.Group("/v1")
 	secureV1 := v1.Group("")
 	secureV1.Use(middleware.JWT([]byte(conf["JWT_SECRET"])))
 
