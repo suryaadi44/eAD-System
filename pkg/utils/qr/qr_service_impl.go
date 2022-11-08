@@ -3,7 +3,7 @@ package qr
 import (
 	"encoding/base64"
 
-	qrcode "github.com/skip2/go-qrcode"
+	"github.com/skip2/go-qrcode"
 )
 
 type CodeServiceImpl struct {

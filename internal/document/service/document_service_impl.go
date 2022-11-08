@@ -198,7 +198,7 @@ func (d *DocumentServiceImpl) GeneratePDFDocument(ctx context.Context, documentI
 
 func (d *DocumentServiceImpl) fillMapFields(document *entity.Document) (*map[string]interface{}, error) {
 	fieldsMap := dto.NewFieldsMapResponse(&document.Fields)
-	fieldsMap["register"] = document.Register
+	fieldsMap["register"] = document.RegisterID
 
 	if document.SignedAt.IsZero() {
 		fieldsMap["signedDate"] = ""
@@ -228,18 +228,45 @@ func (d *DocumentServiceImpl) GetApplicantID(ctx context.Context, documentID str
 	return d.documentRepository.GetApplicantID(ctx, documentID)
 }
 
-func (d *DocumentServiceImpl) VerifyDocument(ctx context.Context, documentID string, verifierID string) error {
-	// check stage
-	stage, err := d.documentRepository.GetDocumentStage(ctx, documentID)
+func (d *DocumentServiceImpl) VerifyDocument(ctx context.Context, documentID string, verifierID string, verifyRequest *dto.VerifyDocumentRequest) error {
+	briefDocument, err := d.documentRepository.GetBriefDocument(ctx, documentID)
 	if err != nil {
 		return err
 	}
 
-	if *stage > 1 {
+	if briefDocument.StageID > 1 {
 		return utils.ErrAlreadyVerified
 	}
 
 	var documentEntity = entity.Document{}
+	var description string
+
+	if briefDocument.Description == "" {
+		if verifyRequest.Description == "" {
+			documentEntity.Description = fmt.Sprintf("%s a.n %s", briefDocument.Template.Name, briefDocument.Applicant.Name)
+		} else {
+			documentEntity.Description = verifyRequest.Description
+		}
+		description = documentEntity.Description
+	} else {
+		description = briefDocument.Description
+	}
+
+	if briefDocument.RegisterID == 0 {
+		if verifyRequest.RegisterID == 0 {
+			registerID, err := d.documentRepository.AddDocumentRegister(ctx, &entity.Register{
+				Description: description,
+			})
+
+			if err != nil {
+				return err
+			}
+			documentEntity.RegisterID = registerID
+		} else {
+			documentEntity.RegisterID = verifyRequest.RegisterID
+		}
+	}
+
 	documentEntity.ID = documentID
 	documentEntity.VerifierID = verifierID
 	documentEntity.VerifiedAt = time.Now()

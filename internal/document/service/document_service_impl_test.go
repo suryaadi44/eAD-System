@@ -42,12 +42,22 @@ func (m *MockDocumentRepository) GetTemplateFields(ctx context.Context, template
 	return args.Get(0).(*entity.TemplateFields), args.Error(1)
 }
 
+func (m *MockDocumentRepository) GetDocumentTemplate(ctx context.Context, documentID string) (*entity.Template, error) {
+	args := m.Called(ctx, documentID)
+	return args.Get(0).(*entity.Template), args.Error(1)
+}
+
 func (m *MockDocumentRepository) AddDocument(ctx context.Context, document *entity.Document) (string, error) {
 	args := m.Called(ctx, document)
 	return args.String(0), args.Error(1)
 }
 
 func (m *MockDocumentRepository) GetDocument(ctx context.Context, documentID string) (*entity.Document, error) {
+	args := m.Called(ctx, documentID)
+	return args.Get(0).(*entity.Document), args.Error(1)
+}
+
+func (m *MockDocumentRepository) GetBriefDocument(ctx context.Context, documentID string) (*entity.Document, error) {
 	args := m.Called(ctx, documentID)
 	return args.Get(0).(*entity.Document), args.Error(1)
 }
@@ -70,6 +80,11 @@ func (m *MockDocumentRepository) GetDocumentStatus(ctx context.Context, document
 func (m *MockDocumentRepository) GetApplicantID(ctx context.Context, documentID string) (*string, error) {
 	args := m.Called(ctx, documentID)
 	return args.Get(0).(*string), args.Error(1)
+}
+
+func (m *MockDocumentRepository) GetApplicant(ctx context.Context, documentID string) (*entity.User, error) {
+	args := m.Called(ctx, documentID)
+	return args.Get(0).(*entity.User), args.Error(1)
 }
 
 func (m *MockDocumentRepository) GetDocumentStage(ctx context.Context, documentID string) (*int, error) {
@@ -100,6 +115,11 @@ func (m *MockDocumentRepository) UpdateDocument(ctx context.Context, document *e
 func (m *MockDocumentRepository) UpdateDocumentFields(ctx context.Context, documentFields *entity.DocumentFields) error {
 	args := m.Called(ctx, documentFields)
 	return args.Error(0)
+}
+
+func (m *MockDocumentRepository) AddDocumentRegister(ctx context.Context, register *entity.Register) (uint, error) {
+	args := m.Called(ctx, register)
+	return args.Get(0).(uint), args.Error(1)
 }
 
 type MockPDFService struct {
@@ -440,7 +460,7 @@ func (s *TestSuiteDocumentService) TestAddDocument_ErrorRepository() {
 func (s *TestSuiteDocumentService) TestGetDocument_Success() {
 	s.mockDocumentRepository.On("GetDocument", mock.Anything, mock.Anything).Return(&entity.Document{
 		ID:          "1",
-		Register:    "",
+		RegisterID:  123,
 		Description: "",
 		ApplicantID: "",
 		Applicant:   entity.User{},
@@ -483,7 +503,7 @@ func (s *TestSuiteDocumentService) TestGetDocument_Success() {
 
 	expectedReturn := &dto.DocumentResponse{
 		ID:          "1",
-		Register:    "",
+		RegisterID:  123,
 		Description: "",
 		Applicant:   dto2.ApplicantResponse{},
 		Template: dto.TemplateResponse{
@@ -523,7 +543,7 @@ func (s *TestSuiteDocumentService) TestGetBriefDocuments_Success() {
 	s.mockDocumentRepository.On("GetBriefDocuments", mock.Anything, mock.Anything, mock.Anything).Return(&entity.Documents{
 		{
 			ID:          "1",
-			Register:    "register",
+			RegisterID:  123,
 			Description: "description",
 			Applicant: entity.User{
 				ID:       "1",
@@ -544,7 +564,7 @@ func (s *TestSuiteDocumentService) TestGetBriefDocuments_Success() {
 	expectedReturn := &dto.BriefDocumentsResponse{
 		{
 			ID:          "1",
-			Register:    "register",
+			RegisterID:  123,
 			Description: "description",
 			Applicant: dto2.ApplicantResponse{
 				ID:       "1",
@@ -565,7 +585,7 @@ func (s *TestSuiteDocumentService) TestGetBriefDocuments_SuccessWithUserRole() {
 	s.mockDocumentRepository.On("GetBriefDocumentsByApplicant", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(&entity.Documents{
 		{
 			ID:          "1",
-			Register:    "register",
+			RegisterID:  123,
 			Description: "description",
 			Applicant: entity.User{
 				ID:       "1",
@@ -586,7 +606,7 @@ func (s *TestSuiteDocumentService) TestGetBriefDocuments_SuccessWithUserRole() {
 	expectedReturn := &dto.BriefDocumentsResponse{
 		{
 			ID:          "1",
-			Register:    "register",
+			RegisterID:  123,
 			Description: "description",
 			Applicant: dto2.ApplicantResponse{
 				ID:       "1",
@@ -614,7 +634,7 @@ func (s *TestSuiteDocumentService) TestGetBriefDocuments_ErrorRepository() {
 func (s *TestSuiteDocumentService) TestGetDocumentStatus_Success() {
 	s.mockDocumentRepository.On("GetDocumentStatus", mock.Anything, mock.Anything).Return(&entity.Document{
 		ID:          "1",
-		Register:    "",
+		RegisterID:  123,
 		Description: "",
 		ApplicantID: "",
 		Applicant:   entity.User{},
@@ -658,7 +678,7 @@ func (s *TestSuiteDocumentService) TestGetDocumentStatus_Success() {
 	expectedReturn := &dto.DocumentStatusResponse{
 		ID:          "1",
 		Description: "",
-		Register:    "",
+		RegisterID:  123,
 		Stage:       "",
 		Verifier:    dto2.EmployeeResponse{},
 		VerifiedAt:  time.Time{},
@@ -684,7 +704,7 @@ func (s *TestSuiteDocumentService) TestGetDocumentStatus_ErrorRepository() {
 func (s *TestSuiteDocumentService) TestGeneratePDFDocument_Success() {
 	s.mockDocumentRepository.On("GetDocument", mock.Anything, mock.Anything).Return(&entity.Document{
 		ID:          "1",
-		Register:    "",
+		RegisterID:  123,
 		Description: "",
 		ApplicantID: "",
 		Applicant:   entity.User{},
@@ -747,7 +767,7 @@ func (s *TestSuiteDocumentService) TestGeneratePDFDocument_ErrorDocumentNotFound
 func (s *TestSuiteDocumentService) TestGeneratePDFDocument_ErrorGenerateHTMLDocument() {
 	s.mockDocumentRepository.On("GetDocument", mock.Anything, mock.Anything).Return(&entity.Document{
 		ID:          "1",
-		Register:    "",
+		RegisterID:  123,
 		Description: "",
 		ApplicantID: "",
 		Applicant:   entity.User{},
@@ -798,7 +818,7 @@ func (s *TestSuiteDocumentService) TestGeneratePDFDocument_ErrorGenerateHTMLDocu
 func (s *TestSuiteDocumentService) TestGeneratePDFDocument_ErrorGeneratePDF() {
 	s.mockDocumentRepository.On("GetDocument", mock.Anything, "1").Return(&entity.Document{
 		ID:          "1",
-		Register:    "",
+		RegisterID:  123,
 		Description: "",
 		ApplicantID: "",
 		Applicant:   entity.User{},
@@ -853,7 +873,7 @@ func (s *TestSuiteDocumentService) TestGeneratePDFDocument_ErrorGeneratePDF() {
 func (s *TestSuiteDocumentService) TestFillMapFields_NotSignedYet() {
 	doc := &entity.Document{
 		ID:          "1",
-		Register:    "register",
+		RegisterID:  123,
 		Description: "",
 		ApplicantID: "",
 		Applicant: entity.User{
@@ -899,7 +919,7 @@ func (s *TestSuiteDocumentService) TestFillMapFields_NotSignedYet() {
 
 	expectedMap := &map[string]interface{}{
 		"field1":     "value1",
-		"register":   "register",
+		"register":   123,
 		"signedDate": "",
 		"signature":  "",
 		"footer":     "",
@@ -916,7 +936,7 @@ func (s *TestSuiteDocumentService) TestFillMapFields_SignatureError() {
 
 	doc := &entity.Document{
 		ID:          "1",
-		Register:    "register",
+		RegisterID:  123,
 		Description: "",
 		ApplicantID: "",
 		Applicant: entity.User{
@@ -984,7 +1004,7 @@ func (s *TestSuiteDocumentService) TestFillMapFields_FooterError() {
 
 	doc := &entity.Document{
 		ID:          "1",
-		Register:    "register",
+		RegisterID:  123,
 		Description: "",
 		ApplicantID: "",
 		Applicant: entity.User{
@@ -1053,7 +1073,7 @@ func (s *TestSuiteDocumentService) TestFillMapFields_Success() {
 
 	doc := &entity.Document{
 		ID:          "1",
-		Register:    "register",
+		RegisterID:  123,
 		Description: "",
 		ApplicantID: "",
 		Applicant: entity.User{
@@ -1112,7 +1132,7 @@ func (s *TestSuiteDocumentService) TestFillMapFields_Success() {
 	templateHtml := template.HTML(`<!DOCTYPE html>`)
 	expectedMap := &map[string]interface{}{
 		"field1":     "value1",
-		"register":   "register",
+		"register":   123,
 		"signedDate": now.Format("02 January 2006"),
 		"signature":  &templateHtml,
 		"footer":     &templateHtml,

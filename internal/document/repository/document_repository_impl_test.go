@@ -291,7 +291,7 @@ func (s *TestSuiteDocumentRepository) TestGetTemplateFields() {
 }
 
 func (s *TestSuiteDocumentRepository) TestAddDocument() {
-	query := regexp.QuoteMeta("INSERT INTO `documents` (`id`,`register`,`description`,`applicant_id`,`template_id`,`stage_id`,`created_at`,`updated_at`,`deleted_at`) VALUES (?,?,?,?,?,?,?,?,?)")
+	query := regexp.QuoteMeta("INSERT INTO `documents` (`id`,`description`,`applicant_id`,`template_id`,`stage_id`,`created_at`,`updated_at`,`deleted_at`) VALUES (?,?,?,?,?,?,?,?)")
 	for _, tc := range []struct {
 		Name        string
 		Err         error
@@ -351,7 +351,7 @@ func (s *TestSuiteDocumentRepository) TestGetDocument() {
 			ExpectedErr: nil,
 			ExpectedReturn: &entity.Document{
 				ID:          "1",
-				Register:    "register",
+				RegisterID:  123,
 				Description: "description",
 				ApplicantID: "1",
 				Applicant: entity.User{
@@ -434,8 +434,8 @@ func (s *TestSuiteDocumentRepository) TestGetDocument() {
 			if tc.Err != nil {
 				s.mock.ExpectQuery(query).WillReturnError(tc.Err)
 			} else {
-				s.mock.ExpectQuery(query).WillReturnRows(sqlmock.NewRows([]string{"id", "register", "description", "applicant_id", "template_id", "stage_id", "verifier_id", "signer_id"}).
-					AddRow(1, "register", "description", "1", 1, 3, "1", "1"))
+				s.mock.ExpectQuery(query).WillReturnRows(sqlmock.NewRows([]string{"id", "register_id", "description", "applicant_id", "template_id", "stage_id", "verifier_id", "signer_id"}).
+					AddRow(1, 123, "description", "1", 1, 3, "1", "1"))
 				s.mock.ExpectQuery(queryPreloadUser).WillReturnRows(sqlmock.NewRows([]string{"id", "username", "name"}).AddRow(1, "username", "name"))
 				s.mock.ExpectQuery(queryPreloadDocumentFields).WillReturnRows(sqlmock.NewRows([]string{"id", "document_id", "template_field_id", "value"}).AddRow(1, 1, 1, "value"))
 				s.mock.ExpectQuery(queryPreloadTemplateFields).WillReturnRows(sqlmock.NewRows([]string{"id", "template_id", "key"}).AddRow(1, 1, "key"))
@@ -478,19 +478,19 @@ func (s *TestSuiteDocumentRepository) TestGetBriefDocuments() {
 			ExpectedReturn: &entity.Documents{
 				{
 					ID:          "1",
-					Register:    "register",
+					RegisterID:  123,
 					Description: "description",
 					CreatedAt:   time.Time{},
 				},
 			},
-			ReturnedRows: sqlmock.NewRows([]string{"id", "register", "description", "created_at"}).AddRow(1, "register", "description", time.Time{}),
+			ReturnedRows: sqlmock.NewRows([]string{"id", "register_id", "description", "created_at"}).AddRow(1, 123, "description", time.Time{}),
 		},
 		{
 			Name:           "Error No rows in result set",
 			Err:            nil,
 			ExpectedErr:    utils.ErrDocumentNotFound,
 			ExpectedReturn: &entity.Documents{},
-			ReturnedRows:   sqlmock.NewRows([]string{"id", "register", "description", "created_at"}),
+			ReturnedRows:   sqlmock.NewRows([]string{"id", "register_id", "description", "created_at"}),
 		},
 		{
 			Name:           "Error generic error",
@@ -543,12 +543,12 @@ func (s *TestSuiteDocumentRepository) TestGetBriefDocumentsByApplicant() {
 			ExpectedReturn: &entity.Documents{
 				{
 					ID:          "1",
-					Register:    "register",
+					RegisterID:  123,
 					Description: "description",
 					CreatedAt:   time.Time{},
 				},
 			},
-			ReturnedRows: sqlmock.NewRows([]string{"id", "register", "description", "created_at"}).AddRow(1, "register", "description", time.Time{}),
+			ReturnedRows: sqlmock.NewRows([]string{"id", "register_id", "description", "created_at"}).AddRow(1, 123, "description", time.Time{}),
 		},
 		{
 			Name:           "Error No rows in result set",
@@ -604,7 +604,7 @@ func (s *TestSuiteDocumentRepository) TestGetDocumentStatus() {
 			Name: "Success",
 			ExpectedReturn: &entity.Document{
 				ID:          "1",
-				Register:    "register",
+				RegisterID:  123,
 				Description: "description",
 				ApplicantID: "1",
 				TemplateID:  1,
@@ -652,8 +652,8 @@ func (s *TestSuiteDocumentRepository) TestGetDocumentStatus() {
 			if tc.Err != nil {
 				s.mock.ExpectQuery(query).WillReturnError(tc.Err)
 			} else {
-				s.mock.ExpectQuery(query).WillReturnRows(sqlmock.NewRows([]string{"id", "register", "description", "applicant_id", "template_id", "stage_id", "verifier_id", "signer_id"}).
-					AddRow(1, "register", "description", "1", 1, 3, "1", "1"))
+				s.mock.ExpectQuery(query).WillReturnRows(sqlmock.NewRows([]string{"id", "register_id", "description", "applicant_id", "template_id", "stage_id", "verifier_id", "signer_id"}).
+					AddRow(1, 123, "description", "1", 1, 3, "1", "1"))
 				s.mock.ExpectQuery(queryPreloadEmployee).WillReturnRows(sqlmock.NewRows([]string{"id", "username", "name", "n_ip", "position"}).AddRow(1, "username", "name", "123", "position"))
 				s.mock.ExpectQuery(queryPreloadStage).WillReturnRows(sqlmock.NewRows([]string{"id", "status"}).AddRow(3, "approved"))
 				s.mock.ExpectQuery(queryPreloadEmployee).WillReturnRows(sqlmock.NewRows([]string{"id", "username", "name", "n_ip", "position"}).AddRow(1, "username", "name", "123", "position"))
