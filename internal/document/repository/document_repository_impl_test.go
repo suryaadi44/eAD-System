@@ -459,10 +459,11 @@ func (s *TestSuiteDocumentRepository) TestGetDocument() {
 }
 
 func (s *TestSuiteDocumentRepository) TestGetBriefDocuments() {
-	query := regexp.QuoteMeta("SELECT id, register, description, created_at, applicant_id, template_id, stage_id FROM `documents` WHERE `documents`.`deleted_at` IS NULL ORDER BY created_at desc")
+	query := regexp.QuoteMeta("SELECT id, register_id, description, created_at, applicant_id, template_id, stage_id FROM `documents` WHERE `documents`.`deleted_at` IS NULL ORDER BY created_at desc")
 	queryPreloadAplicant := regexp.QuoteMeta("SELECT id, username, name FROM `users` WHERE `users`.`id` = ? AND `users`.`deleted_at` IS NULL")
 	queryPreloadStage := regexp.QuoteMeta("SELECT id, status FROM `stages` WHERE `stages`.`id` = ? AND `stages`.`deleted_at` IS NULL")
 	queryPreloadtemplate := regexp.QuoteMeta("SELECT name FROM `templates` WHERE `templates`.`id` = ? AND `templates`.`deleted_at` IS NULL")
+	queryPreloadRegister := regexp.QuoteMeta("SELECT * FROM `registers` WHERE `registers`.`id` = ? AND `registers`.`deleted_at` IS NULL")
 
 	for _, tc := range []struct {
 		Name           string
@@ -477,8 +478,14 @@ func (s *TestSuiteDocumentRepository) TestGetBriefDocuments() {
 			ExpectedErr: nil,
 			ExpectedReturn: &entity.Documents{
 				{
-					ID:          "1",
-					RegisterID:  123,
+					ID:         "1",
+					RegisterID: 123,
+					Register: entity.Register{
+						Model: gorm.Model{
+							ID: 123,
+						},
+						Description: "description",
+					},
 					Description: "description",
 					CreatedAt:   time.Time{},
 				},
@@ -506,6 +513,7 @@ func (s *TestSuiteDocumentRepository) TestGetBriefDocuments() {
 				s.mock.ExpectQuery(query).WillReturnError(tc.Err)
 			} else {
 				s.mock.ExpectQuery(query).WillReturnRows(tc.ReturnedRows)
+				s.mock.ExpectQuery(queryPreloadRegister).WillReturnRows(sqlmock.NewRows([]string{"id", "description"}).AddRow(123, "description"))
 				s.mock.ExpectQuery(queryPreloadAplicant).WillReturnRows(sqlmock.NewRows([]string{"id", "username", "name"}).AddRow(1, "username", "name"))
 				s.mock.ExpectQuery(queryPreloadStage).WillReturnRows(sqlmock.NewRows([]string{"id", "status"}).AddRow(3, "approved"))
 				s.mock.ExpectQuery(queryPreloadtemplate).WillReturnRows(sqlmock.NewRows([]string{"name"}).AddRow("template"))
@@ -524,10 +532,11 @@ func (s *TestSuiteDocumentRepository) TestGetBriefDocuments() {
 }
 
 func (s *TestSuiteDocumentRepository) TestGetBriefDocumentsByApplicant() {
-	query := regexp.QuoteMeta("SELECT id, register, description, created_at, applicant_id, template_id, stage_id FROM `documents` WHERE applicant_id = ? AND `documents`.`deleted_at` IS NULL ORDER BY created_at desc")
+	query := regexp.QuoteMeta("SELECT id, register_id, description, created_at, applicant_id, template_id, stage_id FROM `documents` WHERE applicant_id = ? AND `documents`.`deleted_at` IS NULL ORDER BY created_at desc")
 	queryPreloadAplicant := regexp.QuoteMeta("SELECT id, username, name FROM `users` WHERE `users`.`id` = ? AND `users`.`deleted_at` IS NULL")
 	queryPreloadStage := regexp.QuoteMeta("SELECT id, status FROM `stages` WHERE `stages`.`id` = ? AND `stages`.`deleted_at` IS NULL")
 	queryPreloadtemplate := regexp.QuoteMeta("SELECT name FROM `templates` WHERE `templates`.`id` = ? AND `templates`.`deleted_at` IS NULL")
+	queryPreloadRegister := regexp.QuoteMeta("SELECT * FROM `registers` WHERE `registers`.`id` = ? AND `registers`.`deleted_at` IS NULL")
 
 	for _, tc := range []struct {
 		Name           string
@@ -542,8 +551,14 @@ func (s *TestSuiteDocumentRepository) TestGetBriefDocumentsByApplicant() {
 			ExpectedErr: nil,
 			ExpectedReturn: &entity.Documents{
 				{
-					ID:          "1",
-					RegisterID:  123,
+					ID:         "1",
+					RegisterID: 123,
+					Register: entity.Register{
+						Model: gorm.Model{
+							ID: 123,
+						},
+						Description: "description",
+					},
 					Description: "description",
 					CreatedAt:   time.Time{},
 				},
@@ -571,6 +586,7 @@ func (s *TestSuiteDocumentRepository) TestGetBriefDocumentsByApplicant() {
 				s.mock.ExpectQuery(query).WillReturnError(tc.Err)
 			} else {
 				s.mock.ExpectQuery(query).WillReturnRows(tc.ReturnedRows)
+				s.mock.ExpectQuery(queryPreloadRegister).WillReturnRows(sqlmock.NewRows([]string{"id", "description"}).AddRow(123, "description"))
 				s.mock.ExpectQuery(queryPreloadAplicant).WillReturnRows(sqlmock.NewRows([]string{"id", "username", "name"}).AddRow(1, "username", "name"))
 				s.mock.ExpectQuery(queryPreloadStage).WillReturnRows(sqlmock.NewRows([]string{"id", "status"}).AddRow(3, "approved"))
 				s.mock.ExpectQuery(queryPreloadtemplate).WillReturnRows(sqlmock.NewRows([]string{"name"}).AddRow("template"))
@@ -766,7 +782,7 @@ func (s *TestSuiteDocumentRepository) TestGetDocumentStage() {
 }
 
 func (s *TestSuiteDocumentRepository) TestVerifyDocument() {
-	query := regexp.QuoteMeta("UPDATE `documents` SET `stage_id`=?,`verifier_id`=?,`verified_at`=?,`updated_at`=? WHERE id = ? AND `documents`.`deleted_at` IS NULL")
+	query := regexp.QuoteMeta("UPDATE `documents` SET `updated_at`=? WHERE id = ? AND `documents`.`deleted_at` IS NULL")
 
 	for _, tc := range []struct {
 		Name         string

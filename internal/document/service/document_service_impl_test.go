@@ -872,8 +872,14 @@ func (s *TestSuiteDocumentService) TestGeneratePDFDocument_ErrorGeneratePDF() {
 
 func (s *TestSuiteDocumentService) TestFillMapFields_NotSignedYet() {
 	doc := &entity.Document{
-		ID:          "1",
-		RegisterID:  123,
+		ID:         "1",
+		RegisterID: 123,
+		Register: entity.Register{
+			Model: gorm.Model{
+				ID: 123,
+			},
+			Description: "Test Register",
+		},
 		Description: "",
 		ApplicantID: "",
 		Applicant: entity.User{
@@ -919,7 +925,7 @@ func (s *TestSuiteDocumentService) TestFillMapFields_NotSignedYet() {
 
 	expectedMap := &map[string]interface{}{
 		"field1":     "value1",
-		"register":   123,
+		"register":   uint(123),
 		"signedDate": "",
 		"signature":  "",
 		"footer":     "",
@@ -1132,7 +1138,7 @@ func (s *TestSuiteDocumentService) TestFillMapFields_Success() {
 	templateHtml := template.HTML(`<!DOCTYPE html>`)
 	expectedMap := &map[string]interface{}{
 		"field1":     "value1",
-		"register":   123,
+		"register":   uint(123),
 		"signedDate": now.Format("02 January 2006"),
 		"signature":  &templateHtml,
 		"footer":     &templateHtml,
@@ -1167,38 +1173,50 @@ func (s *TestSuiteDocumentService) TestGetApplicantID_Error() {
 }
 
 func (s *TestSuiteDocumentService) TestVerifyDocument_Success() {
-	returnedStage := 1
-	s.mockDocumentRepository.On("GetDocumentStage", mock.Anything, "1").Return(&returnedStage, nil)
+	returnedBriefDocumentDetail := &entity.Document{
+		StageID:     1,
+		RegisterID:  1,
+		Description: "test",
+	}
+	s.mockDocumentRepository.On("GetBriefDocument", mock.Anything, "1").Return(returnedBriefDocumentDetail, nil)
 	s.mockDocumentRepository.On("VerifyDocument", mock.Anything, mock.Anything).Return(nil)
 
-	err := s.documentService.VerifyDocument(context.Background(), "1", "1")
+	err := s.documentService.VerifyDocument(context.Background(), "1", "1", nil)
 
 	s.NoError(err)
 }
 
 func (s *TestSuiteDocumentService) TestVerifyDocument_ErrorGettingStage() {
-	s.mockDocumentRepository.On("GetDocumentStage", mock.Anything, "1").Return((*int)(nil), errors.New("error"))
+	s.mockDocumentRepository.On("GetBriefDocument", mock.Anything, "1").Return((*entity.Document)(nil), errors.New("error"))
 
-	err := s.documentService.VerifyDocument(context.Background(), "1", "1")
+	err := s.documentService.VerifyDocument(context.Background(), "1", "1", (*dto.VerifyDocumentRequest)(nil))
 
 	s.Equal(errors.New("error"), err)
 }
 
 func (s *TestSuiteDocumentService) TestVerifyDocument_ErrorAlreadyVerified() {
-	returnedStage := 2
-	s.mockDocumentRepository.On("GetDocumentStage", mock.Anything, "1").Return(&returnedStage, nil)
+	returnedBriefDocumentDetail := &entity.Document{
+		StageID:     2,
+		RegisterID:  1,
+		Description: "test",
+	}
+	s.mockDocumentRepository.On("GetBriefDocument", mock.Anything, "1").Return(returnedBriefDocumentDetail, nil)
 
-	err := s.documentService.VerifyDocument(context.Background(), "1", "1")
+	err := s.documentService.VerifyDocument(context.Background(), "1", "1", nil)
 
 	s.Equal(utils.ErrAlreadyVerified, err)
 }
 
 func (s *TestSuiteDocumentService) TestVerifyDocument_RepositoryError() {
-	returnedStage := 1
-	s.mockDocumentRepository.On("GetDocumentStage", mock.Anything, "1").Return(&returnedStage, nil)
+	returnedBriefDocumentDetail := &entity.Document{
+		StageID:     1,
+		RegisterID:  1,
+		Description: "test",
+	}
+	s.mockDocumentRepository.On("GetBriefDocument", mock.Anything, "1").Return(returnedBriefDocumentDetail, nil)
 	s.mockDocumentRepository.On("VerifyDocument", mock.Anything, mock.Anything).Return(errors.New("error"))
 
-	err := s.documentService.VerifyDocument(context.Background(), "1", "1")
+	err := s.documentService.VerifyDocument(context.Background(), "1", "1", nil)
 
 	s.Equal(errors.New("error"), err)
 }

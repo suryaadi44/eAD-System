@@ -72,8 +72,8 @@ func (m *MockDocumentService) GetApplicantID(ctx context.Context, documentID str
 	return args.Get(0).(*string), args.Error(1)
 }
 
-func (m *MockDocumentService) VerifyDocument(ctx context.Context, documentID string, verifierID string) error {
-	args := m.Called(ctx, documentID, verifierID)
+func (m *MockDocumentService) VerifyDocument(ctx context.Context, documentID string, verifierID string, verifyRequest *dto.VerifyDocumentRequest) error {
+	args := m.Called(ctx, documentID, verifierID, verifyRequest)
 	return args.Error(0)
 }
 
@@ -1390,7 +1390,7 @@ func (s *TestSuiteDocumentController) TestVerifyDocument() {
 			c.SetParamValues("1")
 
 			s.mockJWTService.On("GetClaims", mock.Anything).Return(tc.JWTReturn)
-			s.mockDocumentService.On("VerifyDocument", mock.Anything, "1", mock.Anything).Return(tc.ServiceError)
+			s.mockDocumentService.On("VerifyDocument", mock.Anything, "1", mock.Anything, mock.Anything).Return(tc.ServiceError)
 
 			err := s.documentController.VerifyDocument(c)
 
