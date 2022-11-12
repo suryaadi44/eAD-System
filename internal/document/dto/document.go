@@ -1,6 +1,7 @@
 package dto
 
 import (
+	dto2 "github.com/suryaadi44/eAD-System/internal/template/dto"
 	"gorm.io/gorm"
 	"time"
 
@@ -40,7 +41,7 @@ type DocumentResponse struct {
 	RegisterID  uint                  `json:"register"`
 	Description string                `json:"description"`
 	Applicant   dto.ApplicantResponse `json:"applicant"`
-	Template    TemplateResponse      `json:"template"`
+	Template    dto2.TemplateResponse `json:"template"`
 	Fields      FieldsResponse        `json:"fields"`
 	Stage       string                `json:"stage"`
 	Verifier    dto.EmployeeResponse  `json:"verifier"`
@@ -57,7 +58,7 @@ func NewDocumentResponse(document *entity.Document) *DocumentResponse {
 		RegisterID:  document.RegisterID,
 		Description: document.Description,
 		Applicant:   *dto.NewApplicantResponse(&document.Applicant),
-		Template:    *NewTemplateResponse(&document.Template),
+		Template:    *dto2.NewTemplateResponse(&document.Template),
 		Fields:      *NewFieldsResponse(&document.Fields),
 		Stage:       document.Stage.Status,
 		Verifier:    *dto.NewEmployeeResponse(&document.Verifier),

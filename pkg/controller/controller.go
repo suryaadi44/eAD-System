@@ -7,6 +7,9 @@ import (
 	documentControllerPkg "github.com/suryaadi44/eAD-System/internal/document/controller"
 	documentRepositoryPkg "github.com/suryaadi44/eAD-System/internal/document/repository"
 	documentServicePkg "github.com/suryaadi44/eAD-System/internal/document/service"
+	templateControllerPkg "github.com/suryaadi44/eAD-System/internal/template/controller"
+	templateRepositoryPkg "github.com/suryaadi44/eAD-System/internal/template/repository"
+	templateServicePkg "github.com/suryaadi44/eAD-System/internal/template/service"
 	userControllerPkg "github.com/suryaadi44/eAD-System/internal/user/controller"
 	userRepositoryPkg "github.com/suryaadi44/eAD-System/internal/user/repository"
 	userServicePkg "github.com/suryaadi44/eAD-System/internal/user/service"
@@ -14,9 +17,10 @@ import (
 	pdfServicePkg "github.com/suryaadi44/eAD-System/pkg/utils/pdf"
 	qrServicePkg "github.com/suryaadi44/eAD-System/pkg/utils/qr"
 
+	"time"
+
 	"github.com/suryaadi44/eAD-System/pkg/utils"
 	"gorm.io/gorm"
-	"time"
 )
 
 func InitController(e *echo.Echo, db *gorm.DB, conf map[string]string) {
@@ -34,6 +38,11 @@ func InitController(e *echo.Echo, db *gorm.DB, conf map[string]string) {
 	qrCodeService := qrServicePkg.NewCodeServiceImpl(conf["QR_PATH"])
 	renderService := renderServicePkg.NewRenderServiceImpl(qrCodeService)
 
+	templateRepository := templateRepositoryPkg.NewTemplateRepositoryImpl(db)
+	templateService := templateServicePkg.NewTemplateServiceImpl(templateRepository)
+	templateController := templateControllerPkg.NewTemplateController(templateService, jwtService)
+	templateController.InitRoute(v1, secureV1)
+
 	userRepository := userRepositoryPkg.NewUserRepositoryImpl(db)
 	userService := userServicePkg.NewUserServiceImpl(userRepository, utils.PasswordFunc{}, jwtService)
 	userController := userControllerPkg.NewUserController(userService, jwtService)
@@ -41,7 +50,7 @@ func InitController(e *echo.Echo, db *gorm.DB, conf map[string]string) {
 
 	pdfService := pdfServicePkg.NewPDFService()
 	documentRepository := documentRepositoryPkg.NewDocumentRepositoryImpl(db)
-	documentService := documentServicePkg.NewDocumentServiceImpl(documentRepository, pdfService, renderService)
+	documentService := documentServicePkg.NewDocumentServiceImpl(documentRepository, templateRepository, pdfService, renderService)
 	documentController := documentControllerPkg.NewDocumentController(documentService, jwtService)
 	documentController.InitRoute(v1, secureV1)
 }

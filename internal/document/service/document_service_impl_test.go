@@ -5,9 +5,10 @@ import (
 	"context"
 	"errors"
 	"html/template"
-	"os"
 	"testing"
 	"time"
+
+	dto3 "github.com/suryaadi44/eAD-System/internal/template/dto"
 
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
@@ -20,31 +21,6 @@ import (
 
 type MockDocumentRepository struct {
 	mock.Mock
-}
-
-func (m *MockDocumentRepository) AddTemplate(ctc context.Context, template *entity.Template) error {
-	args := m.Called(ctc, template)
-	return args.Error(0)
-}
-
-func (m *MockDocumentRepository) GetAllTemplate(ctx context.Context) (*entity.Templates, error) {
-	args := m.Called(ctx)
-	return args.Get(0).(*entity.Templates), args.Error(1)
-}
-
-func (m *MockDocumentRepository) GetTemplateDetail(ctx context.Context, templateId uint) (*entity.Template, error) {
-	args := m.Called(ctx, templateId)
-	return args.Get(0).(*entity.Template), args.Error(1)
-}
-
-func (m *MockDocumentRepository) GetTemplateFields(ctx context.Context, templateId uint) (*entity.TemplateFields, error) {
-	args := m.Called(ctx, templateId)
-	return args.Get(0).(*entity.TemplateFields), args.Error(1)
-}
-
-func (m *MockDocumentRepository) GetDocumentTemplate(ctx context.Context, documentID string) (*entity.Template, error) {
-	args := m.Called(ctx, documentID)
-	return args.Get(0).(*entity.Template), args.Error(1)
 }
 
 func (m *MockDocumentRepository) AddDocument(ctx context.Context, document *entity.Document) (string, error) {
@@ -150,9 +126,34 @@ func (m *MockRenderService) GenerateHTMLDocument(docTemplate *entity.Template, d
 	return args.Get(0).(*bytes.Buffer), args.Error(1)
 }
 
+type MockTemplateRepository struct {
+	mock.Mock
+}
+
+func (m *MockTemplateRepository) AddTemplate(ctc context.Context, template *entity.Template) error {
+	args := m.Called(ctc, template)
+	return args.Error(0)
+}
+
+func (m *MockTemplateRepository) GetAllTemplate(ctx context.Context) (*entity.Templates, error) {
+	args := m.Called(ctx)
+	return args.Get(0).(*entity.Templates), args.Error(1)
+}
+
+func (m *MockTemplateRepository) GetTemplateDetail(ctx context.Context, templateId uint) (*entity.Template, error) {
+	args := m.Called(ctx, templateId)
+	return args.Get(0).(*entity.Template), args.Error(1)
+}
+
+func (m *MockTemplateRepository) GetTemplateFields(ctx context.Context, templateId uint) (*entity.TemplateFields, error) {
+	args := m.Called(ctx, templateId)
+	return args.Get(0).(*entity.TemplateFields), args.Error(1)
+}
+
 type TestSuiteDocumentService struct {
 	suite.Suite
 	mockDocumentRepository *MockDocumentRepository
+	mockTemplateRepository *MockTemplateRepository
 	mockPDFService         *MockPDFService
 	mockRenderService      *MockRenderService
 	documentService        *DocumentServiceImpl
@@ -160,10 +161,12 @@ type TestSuiteDocumentService struct {
 
 func (s *TestSuiteDocumentService) SetupTest() {
 	s.mockDocumentRepository = new(MockDocumentRepository)
+	s.mockTemplateRepository = new(MockTemplateRepository)
 	s.mockPDFService = new(MockPDFService)
 	s.mockRenderService = new(MockRenderService)
 	s.documentService = &DocumentServiceImpl{
 		documentRepository: s.mockDocumentRepository,
+		templateRepository: s.mockTemplateRepository,
 		pdfService:         s.mockPDFService,
 		renderService:      s.mockRenderService,
 	}
@@ -177,179 +180,7 @@ func (s *TestSuiteDocumentService) TearDownTest() {
 }
 
 func (s *TestSuiteDocumentService) TestNewDocumentServiceImpl() {
-	s.NotNil(NewDocumentServiceImpl(s.mockDocumentRepository, s.mockPDFService, s.mockRenderService))
-}
-
-func (s *TestSuiteDocumentService) TestAddTemplateToRepo_Success() {
-	file, err := os.Open("../../../template/test.html")
-	if err != nil {
-		s.Fail("Error when opening file")
-	}
-
-	defer file.Close()
-
-	tmp := &entity.Template{
-		Model: gorm.Model{
-			ID: 1,
-		},
-		Name:         "Test Template",
-		Path:         "test.html",
-		MarginTop:    10,
-		MarginBottom: 10,
-		MarginLeft:   10,
-		MarginRight:  10,
-		Fields: []entity.TemplateField{
-			{
-				Model: gorm.Model{
-					ID: 1,
-				},
-				Key: "field1",
-			},
-		},
-	}
-
-	s.mockDocumentRepository.On("AddTemplate", mock.Anything, mock.Anything).Return(nil)
-
-	err = s.documentService.addTemplateToRepo(context.Background(), tmp)
-	s.NoError(err)
-}
-
-func (s *TestSuiteDocumentService) TestAddTemplateToRepo_FailRepoError() {
-	file, err := os.Open("../../../template/test.html")
-	if err != nil {
-		s.Fail("Error when opening file")
-	}
-
-	defer file.Close()
-
-	tmp := &entity.Template{
-		Model: gorm.Model{
-			ID: 1,
-		},
-		Name:         "Test Template",
-		Path:         "test.html",
-		MarginTop:    10,
-		MarginBottom: 10,
-		MarginLeft:   10,
-		MarginRight:  10,
-		Fields: []entity.TemplateField{
-			{
-				Model: gorm.Model{
-					ID: 1,
-				},
-				Key: "field1",
-			},
-		},
-	}
-
-	s.mockDocumentRepository.On("AddTemplate", mock.Anything, mock.Anything).Return(errors.New("error"))
-
-	err = s.documentService.addTemplateToRepo(context.Background(), tmp)
-	s.Error(err)
-}
-
-func (s *TestSuiteDocumentService) TestGetAllTemplate_Success() {
-	tmp := &entity.Templates{
-		{
-			Model: gorm.Model{
-				ID: 1,
-			},
-			Name:         "Test Template",
-			Path:         "test.html",
-			MarginTop:    10,
-			MarginBottom: 10,
-			MarginLeft:   10,
-			MarginRight:  10,
-			Fields: []entity.TemplateField{
-				{
-					Model: gorm.Model{
-						ID: 1,
-					},
-					Key: "field1",
-				},
-			},
-		},
-	}
-
-	expectedReturn := &dto.TemplatesResponse{
-		{
-			ID:           1,
-			Name:         "Test Template",
-			MarginTop:    10,
-			MarginBottom: 10,
-			MarginLeft:   10,
-			MarginRight:  10,
-			Keys: dto.KeysResponse{
-				{
-					ID:  1,
-					Key: "field1",
-				},
-			},
-		},
-	}
-
-	s.mockDocumentRepository.On("GetAllTemplate", mock.Anything).Return(tmp, nil)
-
-	actualTmp, err := s.documentService.GetAllTemplate(context.Background())
-	s.NoError(err)
-	s.Equal(expectedReturn, actualTmp)
-}
-
-func (s *TestSuiteDocumentService) TestGetAllTemplate_RepositoryGenericError() {
-	s.mockDocumentRepository.On("GetAllTemplate", mock.Anything).Return(&entity.Templates{}, errors.New("error"))
-
-	_, err := s.documentService.GetAllTemplate(context.Background())
-	s.Equal(err, errors.New("error"))
-}
-
-func (s *TestSuiteDocumentService) TestGetTemplateDetail() {
-	tmp := &entity.Template{
-		Model: gorm.Model{
-			ID: 1,
-		},
-		Name:         "Test Template",
-		Path:         "test.html",
-		MarginTop:    10,
-		MarginBottom: 10,
-		MarginLeft:   10,
-		MarginRight:  10,
-		Fields: []entity.TemplateField{
-			{
-				Model: gorm.Model{
-					ID: 1,
-				},
-				Key: "field1",
-			},
-		},
-	}
-
-	expectedReturn := &dto.TemplateResponse{
-		ID:           1,
-		Name:         "Test Template",
-		MarginTop:    10,
-		MarginBottom: 10,
-		MarginLeft:   10,
-		MarginRight:  10,
-		Keys: dto.KeysResponse{
-			{
-				ID:  1,
-				Key: "field1",
-			},
-		},
-	}
-
-	s.mockDocumentRepository.On("GetTemplateDetail", mock.Anything, mock.Anything).Return(tmp, nil)
-
-	actualTmp, err := s.documentService.GetTemplateDetail(context.Background(), 1)
-	s.NoError(err)
-	s.Equal(expectedReturn, actualTmp)
-}
-
-func (s *TestSuiteDocumentService) TestGetTemplateDetail_RepositoryGenericError() {
-	s.mockDocumentRepository.On("GetTemplateDetail", mock.Anything, mock.Anything).Return(&entity.Template{}, errors.New("error"))
-
-	_, err := s.documentService.GetTemplateDetail(context.Background(), 1)
-	s.Equal(err, errors.New("error"))
+	s.NotNil(NewDocumentServiceImpl(s.mockDocumentRepository, s.mockTemplateRepository, s.mockPDFService, s.mockRenderService))
 }
 
 func (s *TestSuiteDocumentService) TestAddDocument_Success() {
@@ -363,7 +194,7 @@ func (s *TestSuiteDocumentService) TestAddDocument_Success() {
 		},
 	}
 
-	s.mockDocumentRepository.On("GetTemplateFields", mock.Anything, uint(1)).Return(&entity.TemplateFields{
+	s.mockTemplateRepository.On("GetTemplateFields", mock.Anything, uint(1)).Return(&entity.TemplateFields{
 		{
 			Model: gorm.Model{
 				ID: 1,
@@ -390,7 +221,7 @@ func (s *TestSuiteDocumentService) TestAddDocument_ErrorNoTemplate() {
 		},
 	}
 
-	s.mockDocumentRepository.On("GetTemplateFields", mock.Anything, uint(1)).Return(&entity.TemplateFields{}, utils.ErrTemplateFieldNotFound)
+	s.mockTemplateRepository.On("GetTemplateFields", mock.Anything, uint(1)).Return(&entity.TemplateFields{}, utils.ErrTemplateFieldNotFound)
 
 	id, err := s.documentService.AddDocument(context.Background(), doc, "123")
 	s.Equal(err, utils.ErrTemplateFieldNotFound)
@@ -408,7 +239,7 @@ func (s *TestSuiteDocumentService) TestAddDocument_ErrorFieldMissing() {
 		},
 	}
 
-	s.mockDocumentRepository.On("GetTemplateFields", mock.Anything, uint(1)).Return(&entity.TemplateFields{
+	s.mockTemplateRepository.On("GetTemplateFields", mock.Anything, uint(1)).Return(&entity.TemplateFields{
 		{
 			Model: gorm.Model{
 				ID: 1,
@@ -441,7 +272,7 @@ func (s *TestSuiteDocumentService) TestAddDocument_ErrorRepository() {
 		},
 	}
 
-	s.mockDocumentRepository.On("GetTemplateFields", mock.Anything, uint(1)).Return(&entity.TemplateFields{
+	s.mockTemplateRepository.On("GetTemplateFields", mock.Anything, uint(1)).Return(&entity.TemplateFields{
 		{
 			Model: gorm.Model{
 				ID: 1,
@@ -506,7 +337,7 @@ func (s *TestSuiteDocumentService) TestGetDocument_Success() {
 		RegisterID:  123,
 		Description: "",
 		Applicant:   dto2.ApplicantResponse{},
-		Template: dto.TemplateResponse{
+		Template: dto3.TemplateResponse{
 			ID:   1,
 			Name: "Test Template",
 		},
