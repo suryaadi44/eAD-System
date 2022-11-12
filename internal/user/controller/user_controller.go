@@ -26,8 +26,8 @@ func (u *UserController) InitRoute(api *echo.Group, secureApi *echo.Group) {
 	api.POST("/signup", u.SignUpUser)
 	api.POST("/login", u.LoginUser)
 
-	secureApi.GET("/users", u.GetBriefUsers)
-	secureApi.PUT("/users", u.UpdateUser)
+	secureApi.GET("", u.GetBriefUsers)
+	secureApi.PUT("", u.UpdateUser)
 }
 
 func (u *UserController) SignUpUser(c echo.Context) error {

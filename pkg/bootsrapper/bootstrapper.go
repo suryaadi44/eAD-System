@@ -14,10 +14,10 @@ import (
 	userRepositoryPkg "github.com/suryaadi44/eAD-System/internal/user/repository/impl"
 	userServicePkg "github.com/suryaadi44/eAD-System/internal/user/service/impl"
 	renderServicePkg "github.com/suryaadi44/eAD-System/pkg/utils/html/impl"
-	"github.com/suryaadi44/eAD-System/pkg/utils/jwt_service/impl"
-	impl2 "github.com/suryaadi44/eAD-System/pkg/utils/password/impl"
-	impl3 "github.com/suryaadi44/eAD-System/pkg/utils/pdf/impl"
-	impl4 "github.com/suryaadi44/eAD-System/pkg/utils/qr/impl"
+	jwtPkg "github.com/suryaadi44/eAD-System/pkg/utils/jwt_service/impl"
+	passwordPkg "github.com/suryaadi44/eAD-System/pkg/utils/password/impl"
+	pdfPkg "github.com/suryaadi44/eAD-System/pkg/utils/pdf/impl"
+	qrPkg "github.com/suryaadi44/eAD-System/pkg/utils/qr/impl"
 	"github.com/suryaadi44/eAD-System/pkg/utils/validation"
 
 	"time"
@@ -31,29 +31,42 @@ func InitController(e *echo.Echo, db *gorm.DB, conf map[string]string) {
 
 	e.Validator = &validation.CustomValidator{Validator: validator.New()}
 
-	jwtService := impl.NewJWTService(conf["JWT_SECRET"], 1*time.Hour)
+	qrCodeService := qrPkg.NewCodeServiceImpl(conf["QR_PATH"])
+	renderService := renderServicePkg.NewRenderServiceImpl(qrCodeService)
+	passwordFunc := passwordPkg.NewPasswordFuncImpl()
+	pdfService := pdfPkg.NewPDFService()
+	jwtService := jwtPkg.NewJWTService(conf["JWT_SECRET"], 1*time.Hour)
+
+	jwtMiddleware := middleware.JWTWithConfig(middleware.JWTConfig{
+		SigningKey: []byte(conf["JWT_SECRET"]),
+	})
 
 	v1 := e.Group("/v1")
-	secureV1 := v1.Group("")
-	secureV1.Use(middleware.JWT([]byte(conf["JWT_SECRET"])))
 
-	qrCodeService := impl4.NewCodeServiceImpl(conf["QR_PATH"])
-	renderService := renderServicePkg.NewRenderServiceImpl(qrCodeService)
-	passwordFunc := impl2.NewPasswordFuncImpl()
-	pdfService := impl3.NewPDFService()
-
-	templateRepository := templateRepositoryPkg.NewTemplateRepositoryImpl(db)
-	templateService := templateServicePkg.NewTemplateServiceImpl(templateRepository)
-	templateController := templateControllerPkg.NewTemplateController(templateService, jwtService)
-	templateController.InitRoute(v1, secureV1)
-
+	// User
 	userRepository := userRepositoryPkg.NewUserRepositoryImpl(db)
 	userService := userServicePkg.NewUserServiceImpl(userRepository, passwordFunc, jwtService)
 	userController := userControllerPkg.NewUserController(userService, jwtService)
-	userController.InitRoute(v1, secureV1)
 
+	userGroup := v1.Group("/users")
+	userGroupWithAuth := userGroup.Group("", jwtMiddleware)
+	userController.InitRoute(userGroup, userGroupWithAuth)
+
+	// Template
+	templateRepository := templateRepositoryPkg.NewTemplateRepositoryImpl(db)
+	templateService := templateServicePkg.NewTemplateServiceImpl(templateRepository)
+	templateController := templateControllerPkg.NewTemplateController(templateService, jwtService)
+
+	templateGroup := v1.Group("/templates")
+	templateGroupWithAuth := templateGroup.Group("", jwtMiddleware)
+	templateController.InitRoute(templateGroup, templateGroupWithAuth)
+
+	// Document
 	documentRepository := documentRepositoryPkg.NewDocumentRepositoryImpl(db)
 	documentService := documentServicePkg.NewDocumentServiceImpl(documentRepository, templateRepository, pdfService, renderService)
 	documentController := documentControllerPkg.NewDocumentController(documentService, jwtService)
-	documentController.InitRoute(v1, secureV1)
+
+	documentGroup := v1.Group("/documents")
+	documentGroupWithAuth := documentGroup.Group("", jwtMiddleware)
+	documentController.InitRoute(documentGroup, documentGroupWithAuth)
 }
