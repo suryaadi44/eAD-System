@@ -5,21 +5,20 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	error2 "github.com/suryaadi44/eAD-System/pkg/utils"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
-
-	dto3 "github.com/suryaadi44/eAD-System/internal/template/dto"
-	"github.com/suryaadi44/eAD-System/pkg/entity"
-	error2 "github.com/suryaadi44/eAD-System/pkg/utils/error"
 
 	"github.com/golang-jwt/jwt"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 	"github.com/suryaadi44/eAD-System/internal/document/dto"
+	dto3 "github.com/suryaadi44/eAD-System/internal/template/dto"
 	dto2 "github.com/suryaadi44/eAD-System/internal/user/dto"
+	"github.com/suryaadi44/eAD-System/pkg/entity"
 )
 
 type MockDocumentService struct {

@@ -6,7 +6,7 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/suite"
 	"github.com/suryaadi44/eAD-System/pkg/entity"
-	error2 "github.com/suryaadi44/eAD-System/pkg/utils/error"
+	error2 "github.com/suryaadi44/eAD-System/pkg/utils"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"regexp"

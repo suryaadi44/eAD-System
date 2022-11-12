@@ -2,7 +2,7 @@ package repository
 
 import (
 	"context"
-	error2 "github.com/suryaadi44/eAD-System/pkg/utils/error"
+	error2 "github.com/suryaadi44/eAD-System/pkg/utils"
 	"strings"
 
 	"github.com/suryaadi44/eAD-System/pkg/entity"

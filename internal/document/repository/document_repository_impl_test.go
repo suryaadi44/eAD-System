@@ -3,7 +3,7 @@ package repository
 import (
 	"context"
 	"errors"
-	error2 "github.com/suryaadi44/eAD-System/pkg/utils/error"
+	error2 "github.com/suryaadi44/eAD-System/pkg/utils"
 	"regexp"
 	"testing"
 	"time"

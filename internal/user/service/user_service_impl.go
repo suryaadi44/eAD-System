@@ -5,7 +5,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/suryaadi44/eAD-System/internal/user/dto"
 	"github.com/suryaadi44/eAD-System/internal/user/repository"
-	error2 "github.com/suryaadi44/eAD-System/pkg/utils/error"
+	error2 "github.com/suryaadi44/eAD-System/pkg/utils"
 	"github.com/suryaadi44/eAD-System/pkg/utils/jwt_service"
 	"github.com/suryaadi44/eAD-System/pkg/utils/password"
 )

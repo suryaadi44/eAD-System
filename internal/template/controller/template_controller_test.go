@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	error2 "github.com/suryaadi44/eAD-System/pkg/utils"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -19,7 +20,6 @@ import (
 	"github.com/stretchr/testify/suite"
 	"github.com/suryaadi44/eAD-System/internal/template/dto"
 	"github.com/suryaadi44/eAD-System/pkg/entity"
-	error2 "github.com/suryaadi44/eAD-System/pkg/utils/error"
 )
 
 type MockTemplateService struct {
