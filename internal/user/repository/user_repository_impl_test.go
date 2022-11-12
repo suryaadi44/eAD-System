@@ -6,7 +6,7 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/suite"
 	"github.com/suryaadi44/eAD-System/pkg/entity"
-	"github.com/suryaadi44/eAD-System/pkg/utils"
+	error2 "github.com/suryaadi44/eAD-System/pkg/utils/error"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"regexp"
@@ -55,17 +55,17 @@ func (s *TestSuiteUserRepository) TestCreateUser() {
 		{
 			Name:        "Error duplicate username",
 			Err:         errors.New("Error 1062: Duplicate entry '' for key 'username'"),
-			ExpectedErr: utils.ErrUsernameAlreadyExist,
+			ExpectedErr: error2.ErrUsernameAlreadyExist,
 		},
 		{
 			Name:        "Error duplicate nip",
 			Err:         errors.New("Error 1062: Duplicate entry '' for key 'n_ip'"),
-			ExpectedErr: utils.ErrNIPAlreadyExist,
+			ExpectedErr: error2.ErrNIPAlreadyExist,
 		},
 		{
 			Name:        "Error duplicate nik",
 			Err:         errors.New("Error 1062: Duplicate entry '' for key 'nik'"),
-			ExpectedErr: utils.ErrNIKAlreadyExist,
+			ExpectedErr: error2.ErrNIKAlreadyExist,
 		},
 		{
 			Name:        "Generic error",
@@ -104,7 +104,7 @@ func (s *TestSuiteUserRepository) TestFindByUsername() {
 		{
 			Name:        "Error no record found",
 			Err:         gorm.ErrRecordNotFound,
-			ExpectedErr: utils.ErrUserNotFound,
+			ExpectedErr: error2.ErrUserNotFound,
 		},
 		{
 			Name:        "Generic error",
@@ -165,7 +165,7 @@ func (s *TestSuiteUserRepository) TestGetBriefUsers() {
 		{
 			Name:           "Error no record found",
 			Err:            nil,
-			ExpectedErr:    utils.ErrUserNotFound,
+			ExpectedErr:    error2.ErrUserNotFound,
 			ExpectedReturn: nil,
 			ReturnedRows:   sqlmock.NewRows([]string{"id", "n_ip", "nik", "username", "password", "role", "position", "name", "telp", "sex", "address", "created_at", "updated_at", "deleted_at"}),
 		},
@@ -214,25 +214,25 @@ func (s *TestSuiteUserRepository) TestUpdateUser() {
 		{
 			Name:         "Error no record found",
 			Err:          nil,
-			ExpectedErr:  utils.ErrUserNotFound,
+			ExpectedErr:  error2.ErrUserNotFound,
 			RowsAffected: 0,
 		},
 		{
 			Name:         "Error duplicate username",
 			Err:          errors.New("Error 1062: Duplicate entry '' for key 'username'"),
-			ExpectedErr:  utils.ErrUsernameAlreadyExist,
+			ExpectedErr:  error2.ErrUsernameAlreadyExist,
 			RowsAffected: 0,
 		},
 		{
 			Name:         "Error duplicate nip",
 			Err:          errors.New("Error 1062: Duplicate entry '' for key 'n_ip'"),
-			ExpectedErr:  utils.ErrNIPAlreadyExist,
+			ExpectedErr:  error2.ErrNIPAlreadyExist,
 			RowsAffected: 0,
 		},
 		{
 			Name:         "Error duplicate nik",
 			Err:          errors.New("Error 1062: Duplicate entry '' for key 'nik'"),
-			ExpectedErr:  utils.ErrNIKAlreadyExist,
+			ExpectedErr:  error2.ErrNIKAlreadyExist,
 			RowsAffected: 0,
 		},
 		{

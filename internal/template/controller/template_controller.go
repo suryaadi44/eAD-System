@@ -1,28 +1,22 @@
 package controller
 
 import (
+	error2 "github.com/suryaadi44/eAD-System/pkg/utils/error"
+	"github.com/suryaadi44/eAD-System/pkg/utils/jwt_service"
 	"net/http"
 	"strconv"
 
-	"github.com/golang-jwt/jwt"
 	"github.com/labstack/echo/v4"
 	"github.com/suryaadi44/eAD-System/internal/template/dto"
 	"github.com/suryaadi44/eAD-System/internal/template/service"
-	"github.com/suryaadi44/eAD-System/pkg/utils"
 )
 
-type (
-	JWTService interface {
-		GetClaims(c *echo.Context) jwt.MapClaims
-	}
+type TemplateController struct {
+	templateService service.TemplateService
+	jwtService      jwt_service.JWTService
+}
 
-	TemplateController struct {
-		templateService service.TemplateService
-		jwtService      JWTService
-	}
-)
-
-func NewTemplateController(templateService service.TemplateService, jwtService JWTService) *TemplateController {
+func NewTemplateController(templateService service.TemplateService, jwtService jwt_service.JWTService) *TemplateController {
 	return &TemplateController{
 		templateService: templateService,
 		jwtService:      jwtService,
@@ -40,12 +34,12 @@ func (t *TemplateController) AddTemplate(c echo.Context) error {
 	claims := t.jwtService.GetClaims(&c)
 	role := claims["role"].(float64)
 	if role < 2 { // role 2 or above are employee
-		return echo.NewHTTPError(http.StatusForbidden, utils.ErrDidntHavePermission.Error())
+		return echo.NewHTTPError(http.StatusForbidden, error2.ErrDidntHavePermission.Error())
 	}
 
 	template := new(dto.TemplateRequest)
 	if err := c.Bind(template); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, utils.ErrBadRequestBody.Error())
+		return echo.NewHTTPError(http.StatusBadRequest, error2.ErrBadRequestBody.Error())
 	}
 
 	if err := c.Validate(template); err != nil {
@@ -54,7 +48,7 @@ func (t *TemplateController) AddTemplate(c echo.Context) error {
 
 	file, err := c.FormFile("template")
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, utils.ErrBadRequestBody.Error())
+		return echo.NewHTTPError(http.StatusBadRequest, error2.ErrBadRequestBody.Error())
 	}
 
 	fileSrc, err := file.Open()
@@ -65,7 +59,7 @@ func (t *TemplateController) AddTemplate(c echo.Context) error {
 
 	err = t.templateService.AddTemplate(c.Request().Context(), template, fileSrc, file.Filename)
 	if err != nil {
-		if err == utils.ErrDuplicateTemplateName {
+		if err == error2.ErrDuplicateTemplateName {
 			return echo.NewHTTPError(http.StatusConflict, err.Error())
 		}
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
@@ -79,7 +73,7 @@ func (t *TemplateController) AddTemplate(c echo.Context) error {
 func (t *TemplateController) GetAllTemplate(c echo.Context) error {
 	templates, err := t.templateService.GetAllTemplate(c.Request().Context())
 	if err != nil {
-		if err == utils.ErrTemplateNotFound {
+		if err == error2.ErrTemplateNotFound {
 			return echo.NewHTTPError(http.StatusNotFound, err.Error())
 		}
 
@@ -96,12 +90,12 @@ func (t *TemplateController) GetTemplateDetail(c echo.Context) error {
 	templateId := c.Param("template_id")
 	templateIdInt, err := strconv.ParseUint(templateId, 10, 64)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, utils.ErrInvalidTemplateID.Error())
+		return echo.NewHTTPError(http.StatusBadRequest, error2.ErrInvalidTemplateID.Error())
 	}
 
 	template, err := t.templateService.GetTemplateDetail(c.Request().Context(), uint(templateIdInt))
 	if err != nil {
-		if err == utils.ErrTemplateNotFound {
+		if err == error2.ErrTemplateNotFound {
 			return echo.NewHTTPError(http.StatusNotFound, err.Error())
 		}
 

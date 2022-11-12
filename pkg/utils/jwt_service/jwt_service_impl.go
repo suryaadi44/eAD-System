@@ -1,4 +1,4 @@
-package utils
+package jwt_service
 
 import (
 	"time"
@@ -8,19 +8,19 @@ import (
 	"github.com/suryaadi44/eAD-System/pkg/entity"
 )
 
-type JWTService struct {
+type JWTServiceImpl struct {
 	secretKey string
 	exp       time.Duration
 }
 
-func NewJWTService(secretKey string, exp time.Duration) *JWTService {
-	return &JWTService{
+func NewJWTService(secretKey string, exp time.Duration) JWTService {
+	return &JWTServiceImpl{
 		secretKey: secretKey,
 		exp:       exp,
 	}
 }
 
-func (j *JWTService) GenerateToken(user *entity.User) (string, error) {
+func (j *JWTServiceImpl) GenerateToken(user *entity.User) (string, error) {
 	claims := &jwt.MapClaims{
 		"user_id": user.ID,
 		"role":    user.Role,
@@ -30,7 +30,7 @@ func (j *JWTService) GenerateToken(user *entity.User) (string, error) {
 	return token.SignedString([]byte(j.secretKey))
 }
 
-func (*JWTService) GetClaims(c *echo.Context) jwt.MapClaims {
+func (*JWTServiceImpl) GetClaims(c *echo.Context) jwt.MapClaims {
 	user := (*c).Get("user").(*jwt.Token)
 	claims := user.Claims.(jwt.MapClaims)
 	return claims

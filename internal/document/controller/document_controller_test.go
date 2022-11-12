@@ -5,11 +5,14 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	dto3 "github.com/suryaadi44/eAD-System/internal/template/dto"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
+
+	dto3 "github.com/suryaadi44/eAD-System/internal/template/dto"
+	"github.com/suryaadi44/eAD-System/pkg/entity"
+	error2 "github.com/suryaadi44/eAD-System/pkg/utils/error"
 
 	"github.com/golang-jwt/jwt"
 	"github.com/labstack/echo/v4"
@@ -17,7 +20,6 @@ import (
 	"github.com/stretchr/testify/suite"
 	"github.com/suryaadi44/eAD-System/internal/document/dto"
 	dto2 "github.com/suryaadi44/eAD-System/internal/user/dto"
-	"github.com/suryaadi44/eAD-System/pkg/utils"
 )
 
 type MockDocumentService struct {
@@ -81,6 +83,11 @@ func (m *MockDocumentService) UpdateDocumentFields(ctx context.Context, userID s
 
 type MockJWTService struct {
 	mock.Mock
+}
+
+func (m *MockJWTService) GenerateToken(user *entity.User) (string, error) {
+	args := m.Called(user)
+	return args.String(0), args.Error(1)
 }
 
 func (m *MockJWTService) GetClaims(c *echo.Context) jwt.MapClaims {
@@ -172,7 +179,7 @@ func (s *TestSuiteDocumentController) TestAddDocument() {
 			FunctionError:      nil,
 			ExpectedStatus:     http.StatusBadRequest,
 			ExpectedBody:       nil,
-			ExpectedError:      utils.ErrBadRequestBody,
+			ExpectedError:      error2.ErrBadRequestBody,
 		},
 		{
 			Name:               "failed to add document: validation error",
@@ -205,10 +212,10 @@ func (s *TestSuiteDocumentController) TestAddDocument() {
 				},
 			},
 			ValidationErr:  nil,
-			FunctionError:  utils.ErrTemplateNotFound,
+			FunctionError:  error2.ErrTemplateNotFound,
 			ExpectedStatus: http.StatusNotFound,
 			ExpectedBody:   nil,
-			ExpectedError:  utils.ErrTemplateNotFound,
+			ExpectedError:  error2.ErrTemplateNotFound,
 		},
 		{
 			Name:               "failed to add document: field not match",
@@ -223,10 +230,10 @@ func (s *TestSuiteDocumentController) TestAddDocument() {
 				},
 			},
 			ValidationErr:  nil,
-			FunctionError:  utils.ErrFieldNotMatch,
+			FunctionError:  error2.ErrFieldNotMatch,
 			ExpectedStatus: http.StatusBadRequest,
 			ExpectedBody:   nil,
-			ExpectedError:  utils.ErrFieldNotMatch,
+			ExpectedError:  error2.ErrFieldNotMatch,
 		},
 		{
 			Name:               "failed to add document: duplicate register",
@@ -241,10 +248,10 @@ func (s *TestSuiteDocumentController) TestAddDocument() {
 				},
 			},
 			ValidationErr:  nil,
-			FunctionError:  utils.ErrDuplicateRegister,
+			FunctionError:  error2.ErrDuplicateRegister,
 			ExpectedStatus: http.StatusConflict,
 			ExpectedBody:   nil,
-			ExpectedError:  utils.ErrDuplicateRegister,
+			ExpectedError:  error2.ErrDuplicateRegister,
 		},
 		{
 			Name:               "failed to add document: generic service error",
@@ -376,12 +383,12 @@ func (s *TestSuiteDocumentController) TestGetDocument() {
 		{
 			Name:           "failed to get document: error document not found",
 			ID:             "1",
-			FunctionError:  utils.ErrDocumentNotFound,
+			FunctionError:  error2.ErrDocumentNotFound,
 			FunctionReturn: nil,
 			JWTReturn:      nil,
 			ExpectedStatus: http.StatusNotFound,
 			ExpectedBody:   nil,
-			ExpectedError:  utils.ErrDocumentNotFound,
+			ExpectedError:  error2.ErrDocumentNotFound,
 		},
 		{
 			Name:           "failed to get document: generic error from service",
@@ -422,7 +429,7 @@ func (s *TestSuiteDocumentController) TestGetDocument() {
 			},
 			ExpectedStatus: http.StatusForbidden,
 			ExpectedBody:   nil,
-			ExpectedError:  utils.ErrDidntHavePermission,
+			ExpectedError:  error2.ErrDidntHavePermission,
 		},
 		{
 			Name:          "success to get document: role sufficient to get other user document",
@@ -636,7 +643,7 @@ func (s *TestSuiteDocumentController) TestGetBriefDocument() {
 			},
 			ExpectedStatus: http.StatusBadRequest,
 			ExpectedBody:   nil,
-			ExpectedError:  utils.ErrInvalidNumber,
+			ExpectedError:  error2.ErrInvalidNumber,
 		},
 		{
 			Name:           "failed to get brief document: invalid limit",
@@ -650,13 +657,13 @@ func (s *TestSuiteDocumentController) TestGetBriefDocument() {
 			},
 			ExpectedStatus: http.StatusBadRequest,
 			ExpectedBody:   nil,
-			ExpectedError:  utils.ErrInvalidNumber,
+			ExpectedError:  error2.ErrInvalidNumber,
 		},
 		{
 			Name:           "failed to get brief document: no document",
 			Page:           "",
 			Limit:          "",
-			FunctionError:  utils.ErrDocumentNotFound,
+			FunctionError:  error2.ErrDocumentNotFound,
 			FunctionReturn: nil,
 			JWTReturn: jwt.MapClaims{
 				"user_id": "1",
@@ -664,7 +671,7 @@ func (s *TestSuiteDocumentController) TestGetBriefDocument() {
 			},
 			ExpectedStatus: http.StatusNotFound,
 			ExpectedBody:   nil,
-			ExpectedError:  utils.ErrDocumentNotFound,
+			ExpectedError:  error2.ErrDocumentNotFound,
 		},
 		{
 			Name:           "failed to get brief document: generec service error",
@@ -762,11 +769,11 @@ func (s *TestSuiteDocumentController) TestGetDocumentStatus() {
 		},
 		{
 			Name:           "Failed to get document status : document not found",
-			FunctionError:  utils.ErrDocumentNotFound,
+			FunctionError:  error2.ErrDocumentNotFound,
 			FunctionReturn: nil,
 			ExpectedStatus: http.StatusNotFound,
 			ExpectedBody:   nil,
-			ExpectedError:  utils.ErrDocumentNotFound,
+			ExpectedError:  error2.ErrDocumentNotFound,
 		},
 		{
 			Name:           "Failed to get document status : generic error from service",
@@ -833,7 +840,7 @@ func (s *TestSuiteDocumentController) TestGetPDFDocument() {
 		},
 		{
 			Name:          "Failed to get pdf document : document not found while role is 1",
-			ServiceError:  utils.ErrDocumentNotFound,
+			ServiceError:  error2.ErrDocumentNotFound,
 			ServiceReturn: "",
 			PDFError:      nil,
 			JWTReturn: jwt.MapClaims{
@@ -841,7 +848,7 @@ func (s *TestSuiteDocumentController) TestGetPDFDocument() {
 				"user_id": "1",
 			},
 			ExpectedStatus: http.StatusNotFound,
-			ExpectedError:  utils.ErrDocumentNotFound,
+			ExpectedError:  error2.ErrDocumentNotFound,
 		},
 		{
 			Name:          "Failed to get pdf document : generic service error while role is 1",
@@ -865,19 +872,19 @@ func (s *TestSuiteDocumentController) TestGetPDFDocument() {
 				"user_id": "1",
 			},
 			ExpectedStatus: http.StatusForbidden,
-			ExpectedError:  utils.ErrDidntHavePermission,
+			ExpectedError:  error2.ErrDidntHavePermission,
 		},
 		{
 			Name:          "Failed to get pdf document : document not found while role is employee",
 			ServiceError:  nil,
 			ServiceReturn: "",
-			PDFError:      utils.ErrDocumentNotFound,
+			PDFError:      error2.ErrDocumentNotFound,
 			JWTReturn: jwt.MapClaims{
 				"role":    float64(2),
 				"user_id": "1",
 			},
 			ExpectedStatus: http.StatusNotFound,
-			ExpectedError:  utils.ErrDocumentNotFound,
+			ExpectedError:  error2.ErrDocumentNotFound,
 		},
 		{
 			Name:          "Failed to get pdf document : generic service error while role is employee",
@@ -945,7 +952,7 @@ func (s *TestSuiteDocumentController) TestVerifyDocument() {
 		},
 		{
 			Name:          "Failed to verify document : document not found",
-			ServiceError:  utils.ErrDocumentNotFound,
+			ServiceError:  error2.ErrDocumentNotFound,
 			ServiceReturn: "",
 			JWTReturn: jwt.MapClaims{
 				"role":    float64(2),
@@ -953,7 +960,7 @@ func (s *TestSuiteDocumentController) TestVerifyDocument() {
 			},
 			ExpectedStatus: http.StatusNotFound,
 			ExpectedBody:   nil,
-			ExpectedError:  utils.ErrDocumentNotFound,
+			ExpectedError:  error2.ErrDocumentNotFound,
 		},
 		{
 			Name:          "Failed to verify document : generic service error",
@@ -977,7 +984,7 @@ func (s *TestSuiteDocumentController) TestVerifyDocument() {
 			},
 			ExpectedStatus: http.StatusForbidden,
 			ExpectedBody:   nil,
-			ExpectedError:  utils.ErrDidntHavePermission,
+			ExpectedError:  error2.ErrDidntHavePermission,
 		},
 	} {
 		s.Run(tc.Name, func() {
@@ -1038,7 +1045,7 @@ func (s *TestSuiteDocumentController) TestSignDocument() {
 		},
 		{
 			Name:          "Failed to sign document : document not found",
-			ServiceError:  utils.ErrDocumentNotFound,
+			ServiceError:  error2.ErrDocumentNotFound,
 			ServiceReturn: "",
 			JWTReturn: jwt.MapClaims{
 				"role":    float64(3),
@@ -1046,7 +1053,7 @@ func (s *TestSuiteDocumentController) TestSignDocument() {
 			},
 			ExpectedStatus: http.StatusNotFound,
 			ExpectedBody:   nil,
-			ExpectedError:  utils.ErrDocumentNotFound,
+			ExpectedError:  error2.ErrDocumentNotFound,
 		},
 		{
 			Name:          "Failed to sign document : generic service error",
@@ -1070,11 +1077,11 @@ func (s *TestSuiteDocumentController) TestSignDocument() {
 			},
 			ExpectedStatus: http.StatusForbidden,
 			ExpectedBody:   nil,
-			ExpectedError:  utils.ErrDidntHavePermission,
+			ExpectedError:  error2.ErrDidntHavePermission,
 		},
 		{
 			Name:          "Failed to sign document : document not verified yet",
-			ServiceError:  utils.ErrNotVerifiedYet,
+			ServiceError:  error2.ErrNotVerifiedYet,
 			ServiceReturn: "",
 			JWTReturn: jwt.MapClaims{
 				"role":    float64(3),
@@ -1082,7 +1089,7 @@ func (s *TestSuiteDocumentController) TestSignDocument() {
 			},
 			ExpectedStatus: http.StatusConflict,
 			ExpectedBody:   nil,
-			ExpectedError:  utils.ErrNotVerifiedYet,
+			ExpectedError:  error2.ErrNotVerifiedYet,
 		},
 	} {
 		s.Run(tc.Name, func() {
@@ -1141,25 +1148,25 @@ func (s *TestSuiteDocumentController) TestDeleteDocument() {
 		},
 		{
 			Name:         "Failed to delete document : document already signed",
-			ServiceError: utils.ErrAlreadySigned,
+			ServiceError: error2.ErrAlreadySigned,
 			JWTReturn: jwt.MapClaims{
 				"role":    float64(3),
 				"user_id": "1",
 			},
 			ExpectedStatus: http.StatusForbidden,
 			ExpectedBody:   nil,
-			ExpectedError:  utils.ErrAlreadySigned,
+			ExpectedError:  error2.ErrAlreadySigned,
 		},
 		{
 			Name:         "Failed to delete document : document not found",
-			ServiceError: utils.ErrDocumentNotFound,
+			ServiceError: error2.ErrDocumentNotFound,
 			JWTReturn: jwt.MapClaims{
 				"role":    float64(3),
 				"user_id": "1",
 			},
 			ExpectedStatus: http.StatusNotFound,
 			ExpectedBody:   nil,
-			ExpectedError:  utils.ErrDocumentNotFound,
+			ExpectedError:  error2.ErrDocumentNotFound,
 		},
 		{
 			Name:         "Failed to delete document : generic service error",
@@ -1174,14 +1181,14 @@ func (s *TestSuiteDocumentController) TestDeleteDocument() {
 		},
 		{
 			Name:         "Failed to delete document : role not sufficient to delete other user document",
-			ServiceError: utils.ErrDidntHavePermission,
+			ServiceError: error2.ErrDidntHavePermission,
 			JWTReturn: jwt.MapClaims{
 				"role":    float64(1),
 				"user_id": "1",
 			},
 			ExpectedStatus: http.StatusForbidden,
 			ExpectedBody:   nil,
-			ExpectedError:  utils.ErrDidntHavePermission,
+			ExpectedError:  error2.ErrDidntHavePermission,
 		},
 	} {
 		s.Run(tc.Name, func() {
@@ -1251,25 +1258,25 @@ func (s *TestSuiteDocumentController) TestUpdateDocument() {
 				Description: "description",
 			},
 			RequestContentTypes: "application/json",
-			ServiceError:        utils.ErrDidntHavePermission,
+			ServiceError:        error2.ErrDidntHavePermission,
 			JWTReturn: jwt.MapClaims{
 				"role": float64(1),
 			},
 			ExpectedStatus: http.StatusForbidden,
 			ExpectedBody:   nil,
-			ExpectedError:  utils.ErrDidntHavePermission,
+			ExpectedError:  error2.ErrDidntHavePermission,
 		},
 		{
 			Name:                "Failed to update document : invalid request body",
 			RequestBody:         nil,
 			RequestContentTypes: "",
-			ServiceError:        utils.ErrBadRequestBody,
+			ServiceError:        error2.ErrBadRequestBody,
 			JWTReturn: jwt.MapClaims{
 				"role": float64(3),
 			},
 			ExpectedStatus: http.StatusBadRequest,
 			ExpectedBody:   nil,
-			ExpectedError:  utils.ErrBadRequestBody,
+			ExpectedError:  error2.ErrBadRequestBody,
 		},
 		{
 			Name: "Failed to update document : generic service error",
@@ -1293,13 +1300,13 @@ func (s *TestSuiteDocumentController) TestUpdateDocument() {
 				Description: "description",
 			},
 			RequestContentTypes: "application/json",
-			ServiceError:        utils.ErrDocumentNotFound,
+			ServiceError:        error2.ErrDocumentNotFound,
 			JWTReturn: jwt.MapClaims{
 				"role": float64(3),
 			},
 			ExpectedStatus: http.StatusNotFound,
 			ExpectedBody:   nil,
-			ExpectedError:  utils.ErrDocumentNotFound,
+			ExpectedError:  error2.ErrDocumentNotFound,
 		},
 		{
 			Name: "Failed to update document : document already signed",
@@ -1308,13 +1315,13 @@ func (s *TestSuiteDocumentController) TestUpdateDocument() {
 				Description: "description",
 			},
 			RequestContentTypes: "application/json",
-			ServiceError:        utils.ErrAlreadySigned,
+			ServiceError:        error2.ErrAlreadySigned,
 			JWTReturn: jwt.MapClaims{
 				"role": float64(3),
 			},
 			ExpectedStatus: http.StatusForbidden,
 			ExpectedBody:   nil,
-			ExpectedError:  utils.ErrAlreadySigned,
+			ExpectedError:  error2.ErrAlreadySigned,
 		},
 		{
 			Name: "Failed to update document : document already Verified",
@@ -1323,13 +1330,13 @@ func (s *TestSuiteDocumentController) TestUpdateDocument() {
 				Description: "description",
 			},
 			RequestContentTypes: "application/json",
-			ServiceError:        utils.ErrAlreadyVerified,
+			ServiceError:        error2.ErrAlreadyVerified,
 			JWTReturn: jwt.MapClaims{
 				"role": float64(3),
 			},
 			ExpectedStatus: http.StatusForbidden,
 			ExpectedBody:   nil,
-			ExpectedError:  utils.ErrAlreadyVerified,
+			ExpectedError:  error2.ErrAlreadyVerified,
 		},
 	} {
 		s.Run(tc.Name, func() {
@@ -1415,7 +1422,7 @@ func (s *TestSuiteDocumentController) TestUpdateDocumentFields() {
 			ValidationErr:  nil,
 			ExpectedStatus: http.StatusBadRequest,
 			ExpectedBody:   nil,
-			ExpectedError:  utils.ErrBadRequestBody,
+			ExpectedError:  error2.ErrBadRequestBody,
 		},
 		{
 			Name: "Failed to update document fields : failed to validate request body",
@@ -1448,7 +1455,7 @@ func (s *TestSuiteDocumentController) TestUpdateDocumentFields() {
 				},
 			},
 			RequestContentTypes: "application/json",
-			ServiceError:        utils.ErrDocumentNotFound,
+			ServiceError:        error2.ErrDocumentNotFound,
 			JWTReturn: jwt.MapClaims{
 				"role":    float64(3),
 				"user_id": "1",
@@ -1456,7 +1463,7 @@ func (s *TestSuiteDocumentController) TestUpdateDocumentFields() {
 			ValidationErr:  nil,
 			ExpectedStatus: http.StatusNotFound,
 			ExpectedBody:   nil,
-			ExpectedError:  utils.ErrDocumentNotFound,
+			ExpectedError:  error2.ErrDocumentNotFound,
 		},
 		{
 			Name: "Failed to update document fields : err already verified",
@@ -1469,7 +1476,7 @@ func (s *TestSuiteDocumentController) TestUpdateDocumentFields() {
 				},
 			},
 			RequestContentTypes: "application/json",
-			ServiceError:        utils.ErrAlreadyVerified,
+			ServiceError:        error2.ErrAlreadyVerified,
 			JWTReturn: jwt.MapClaims{
 				"role":    float64(3),
 				"user_id": "1",
@@ -1477,7 +1484,7 @@ func (s *TestSuiteDocumentController) TestUpdateDocumentFields() {
 			ValidationErr:  nil,
 			ExpectedStatus: http.StatusForbidden,
 			ExpectedBody:   nil,
-			ExpectedError:  utils.ErrAlreadyVerified,
+			ExpectedError:  error2.ErrAlreadyVerified,
 		},
 		{
 			Name: "Failed to update document fields : err already verified",
@@ -1490,7 +1497,7 @@ func (s *TestSuiteDocumentController) TestUpdateDocumentFields() {
 				},
 			},
 			RequestContentTypes: "application/json",
-			ServiceError:        utils.ErrAlreadySigned,
+			ServiceError:        error2.ErrAlreadySigned,
 			JWTReturn: jwt.MapClaims{
 				"role":    float64(3),
 				"user_id": "1",
@@ -1498,7 +1505,7 @@ func (s *TestSuiteDocumentController) TestUpdateDocumentFields() {
 			ValidationErr:  nil,
 			ExpectedStatus: http.StatusForbidden,
 			ExpectedBody:   nil,
-			ExpectedError:  utils.ErrAlreadySigned,
+			ExpectedError:  error2.ErrAlreadySigned,
 		},
 		{
 			Name: "Failed to update document fields : err user role not sufficient to update document fields of other user",
@@ -1511,7 +1518,7 @@ func (s *TestSuiteDocumentController) TestUpdateDocumentFields() {
 				},
 			},
 			RequestContentTypes: "application/json",
-			ServiceError:        utils.ErrDidntHavePermission,
+			ServiceError:        error2.ErrDidntHavePermission,
 			JWTReturn: jwt.MapClaims{
 				"role":    float64(1),
 				"user_id": "1",
@@ -1519,7 +1526,7 @@ func (s *TestSuiteDocumentController) TestUpdateDocumentFields() {
 			ValidationErr:  nil,
 			ExpectedStatus: http.StatusForbidden,
 			ExpectedBody:   nil,
-			ExpectedError:  utils.ErrDidntHavePermission,
+			ExpectedError:  error2.ErrDidntHavePermission,
 		},
 		{
 			Name: "Failed to update document fields : generic error from service",
