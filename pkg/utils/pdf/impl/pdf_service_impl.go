@@ -1,7 +1,8 @@
-package pdf
+package impl
 
 import (
 	"bytes"
+	"github.com/suryaadi44/eAD-System/pkg/utils/pdf"
 
 	"github.com/SebastiaanKlippert/go-wkhtmltopdf"
 )
@@ -9,7 +10,7 @@ import (
 type PDFServiceImpl struct {
 }
 
-func NewPDFService() PDFService {
+func NewPDFService() pdf.PDFService {
 	return &PDFServiceImpl{}
 }
 

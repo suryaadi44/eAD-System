@@ -1,83 +1,33 @@
-package service
+package impl
 
 import (
 	"context"
 	"errors"
-	error2 "github.com/suryaadi44/eAD-System/pkg/utils"
+	mockUserRepoPkg "github.com/suryaadi44/eAD-System/internal/user/repository/mock"
+	"github.com/suryaadi44/eAD-System/internal/user/service"
+	"github.com/suryaadi44/eAD-System/pkg/utils"
+	mockJwtServicePkg "github.com/suryaadi44/eAD-System/pkg/utils/jwt_service/mock"
+	mockPassFuncPkg "github.com/suryaadi44/eAD-System/pkg/utils/password/mock"
 	"testing"
 
-	"github.com/golang-jwt/jwt"
-	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 	"github.com/suryaadi44/eAD-System/internal/user/dto"
 	"github.com/suryaadi44/eAD-System/pkg/entity"
 )
 
-type MockUserRepository struct {
-	mock.Mock
-}
-
-func (m *MockUserRepository) CreateUser(ctx context.Context, user *entity.User) error {
-	args := m.Called(ctx, user)
-	return args.Error(0)
-}
-
-func (m *MockUserRepository) FindByUsername(ctx context.Context, username string) (*entity.User, error) {
-	args := m.Called(ctx, username)
-	return args.Get(0).(*entity.User), args.Error(1)
-}
-
-func (m *MockUserRepository) GetBriefUsers(ctx context.Context, limit int, offset int) (*entity.Users, error) {
-	args := m.Called(ctx, limit, offset)
-	return args.Get(0).(*entity.Users), args.Error(1)
-}
-
-func (m *MockUserRepository) UpdateUser(ctx context.Context, user *entity.User) error {
-	args := m.Called(ctx, user)
-	return args.Error(0)
-}
-
-type MockPasswordHashFunction struct {
-	mock.Mock
-}
-
-func (m *MockPasswordHashFunction) GenerateFromPassword(password []byte, cost int) ([]byte, error) {
-	args := m.Called(password, cost)
-	return args.Get(0).([]byte), args.Error(1)
-}
-
-func (m *MockPasswordHashFunction) CompareHashAndPassword(hashedPassword, password []byte) error {
-	args := m.Called(hashedPassword, password)
-	return args.Error(0)
-}
-
-type MockJWTService struct {
-	mock.Mock
-}
-
-func (m *MockJWTService) GenerateToken(user *entity.User) (string, error) {
-	args := m.Called(user)
-	return args.String(0), args.Error(1)
-}
-
-func (m *MockJWTService) GetClaims(c *echo.Context) jwt.MapClaims {
-	args := m.Called(c)
-	return args.Get(0).(jwt.MapClaims)
-}
-
 type TestSuiteUserService struct {
 	suite.Suite
-	mockUserRepository *MockUserRepository
-	mockPasswordHash   *MockPasswordHashFunction
-	mockJWTService     *MockJWTService
-	userService        UserService
+	mockUserRepository *mockUserRepoPkg.MockUserRepository
+	mockPasswordHash   *mockPassFuncPkg.MockPasswordHashFunction
+	mockJWTService     *mockJwtServicePkg.MockJWTService
+	userService        service.UserService
 }
 
 func (t *TestSuiteUserService) SetupTest() {
-	t.mockUserRepository = new(MockUserRepository)
-	t.mockPasswordHash = new(MockPasswordHashFunction)
-	t.mockJWTService = new(MockJWTService)
+	t.mockUserRepository = new(mockUserRepoPkg.MockUserRepository)
+	t.mockPasswordHash = new(mockPassFuncPkg.MockPasswordHashFunction)
+	t.mockJWTService = new(mockJwtServicePkg.MockJWTService)
 	t.userService = NewUserServiceImpl(t.mockUserRepository, t.mockPasswordHash, t.mockJWTService)
 }
 
@@ -152,14 +102,14 @@ func (t *TestSuiteUserService) TestLoginUser_FailedFindByUsername() {
 }
 
 func (t *TestSuiteUserService) TestLoginUser_FailedUserNotFound() {
-	t.mockUserRepository.On("FindByUsername", mock.Anything, "username").Return(&entity.User{}, error2.ErrUserNotFound)
+	t.mockUserRepository.On("FindByUsername", mock.Anything, "username").Return(&entity.User{}, utils.ErrUserNotFound)
 
 	_, err := t.userService.LogInUser(context.Background(), &dto.UserLoginRequest{
 		Username: "username",
 		Password: "password",
 	})
 
-	t.Equal(error2.ErrInvalidCredentials, err)
+	t.Equal(utils.ErrInvalidCredentials, err)
 }
 
 func (t *TestSuiteUserService) TestLoginUser_FailedCompareHashAndPassword() {
@@ -174,7 +124,7 @@ func (t *TestSuiteUserService) TestLoginUser_FailedCompareHashAndPassword() {
 		Password: "password",
 	})
 
-	t.Equal(error2.ErrInvalidCredentials, err)
+	t.Equal(utils.ErrInvalidCredentials, err)
 }
 
 func (t *TestSuiteUserService) TestLoginUser_FailedGenerateToken() {

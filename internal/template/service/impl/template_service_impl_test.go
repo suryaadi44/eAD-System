@@ -1,49 +1,26 @@
-package service
+package impl
 
 import (
 	"context"
 	"errors"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
-	dto3 "github.com/suryaadi44/eAD-System/internal/template/dto"
+	"github.com/suryaadi44/eAD-System/internal/template/dto"
+	mockTemplateRepoPkg "github.com/suryaadi44/eAD-System/internal/template/repository/mock"
 	"github.com/suryaadi44/eAD-System/pkg/entity"
 	"gorm.io/gorm"
 	"os"
 	"testing"
 )
 
-type MockTemplateRepository struct {
-	mock.Mock
-}
-
-func (m *MockTemplateRepository) AddTemplate(ctc context.Context, template *entity.Template) error {
-	args := m.Called(ctc, template)
-	return args.Error(0)
-}
-
-func (m *MockTemplateRepository) GetAllTemplate(ctx context.Context) (*entity.Templates, error) {
-	args := m.Called(ctx)
-	return args.Get(0).(*entity.Templates), args.Error(1)
-}
-
-func (m *MockTemplateRepository) GetTemplateDetail(ctx context.Context, templateId uint) (*entity.Template, error) {
-	args := m.Called(ctx, templateId)
-	return args.Get(0).(*entity.Template), args.Error(1)
-}
-
-func (m *MockTemplateRepository) GetTemplateFields(ctx context.Context, templateId uint) (*entity.TemplateFields, error) {
-	args := m.Called(ctx, templateId)
-	return args.Get(0).(*entity.TemplateFields), args.Error(1)
-}
-
 type TestSuiteTemplateService struct {
 	suite.Suite
-	mockTemplateRepository *MockTemplateRepository
+	mockTemplateRepository *mockTemplateRepoPkg.MockTemplateRepository
 	templateService        *TemplateServiceImpl
 }
 
 func (s *TestSuiteTemplateService) SetupTest() {
-	s.mockTemplateRepository = new(MockTemplateRepository)
+	s.mockTemplateRepository = new(mockTemplateRepoPkg.MockTemplateRepository)
 	s.templateService = &TemplateServiceImpl{
 		templateRepository: s.mockTemplateRepository,
 	}
@@ -55,7 +32,7 @@ func (s *TestSuiteTemplateService) TearDownTest() {
 }
 
 func (s *TestSuiteTemplateService) TestAddTemplateToRepo_Success() {
-	file, err := os.Open("../../../template/test.html")
+	file, err := os.Open("../../../../template/test.html")
 	if err != nil {
 		s.Fail("Error when opening file")
 	}
@@ -89,7 +66,7 @@ func (s *TestSuiteTemplateService) TestAddTemplateToRepo_Success() {
 }
 
 func (s *TestSuiteTemplateService) TestAddTemplateToRepo_FailRepoError() {
-	file, err := os.Open("../../../template/test.html")
+	file, err := os.Open("../../../../template/test.html")
 	if err != nil {
 		s.Fail("Error when opening file")
 	}
@@ -145,7 +122,7 @@ func (s *TestSuiteTemplateService) TestGetAllTemplate_Success() {
 		},
 	}
 
-	expectedReturn := &dto3.TemplatesResponse{
+	expectedReturn := &dto.TemplatesResponse{
 		{
 			ID:           1,
 			Name:         "Test Template",
@@ -153,7 +130,7 @@ func (s *TestSuiteTemplateService) TestGetAllTemplate_Success() {
 			MarginBottom: 10,
 			MarginLeft:   10,
 			MarginRight:  10,
-			Keys: dto3.KeysResponse{
+			Keys: dto.KeysResponse{
 				{
 					ID:  1,
 					Key: "field1",
@@ -197,14 +174,14 @@ func (s *TestSuiteTemplateService) TestGetTemplateDetail() {
 		},
 	}
 
-	expectedReturn := &dto3.TemplateResponse{
+	expectedReturn := &dto.TemplateResponse{
 		ID:           1,
 		Name:         "Test Template",
 		MarginTop:    10,
 		MarginBottom: 10,
 		MarginLeft:   10,
 		MarginRight:  10,
-		Keys: dto3.KeysResponse{
+		Keys: dto.KeysResponse{
 			{
 				ID:  1,
 				Key: "field1",

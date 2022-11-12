@@ -1,7 +1,8 @@
-package qr
+package impl
 
 import (
 	"encoding/base64"
+	"github.com/suryaadi44/eAD-System/pkg/utils/qr"
 
 	"github.com/skip2/go-qrcode"
 )
@@ -10,7 +11,7 @@ type CodeServiceImpl struct {
 	basePath string
 }
 
-func NewCodeServiceImpl(basePath string) CodeService {
+func NewCodeServiceImpl(basePath string) qr.CodeService {
 	return &CodeServiceImpl{basePath: basePath}
 }
 

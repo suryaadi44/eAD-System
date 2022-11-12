@@ -1,4 +1,4 @@
-package repository
+package impl
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/suite"
 	"github.com/suryaadi44/eAD-System/pkg/entity"
-	error2 "github.com/suryaadi44/eAD-System/pkg/utils"
+	"github.com/suryaadi44/eAD-System/pkg/utils"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"regexp"
@@ -54,7 +54,7 @@ func (s *TestSuiteTemplateRepository) TestAddTemplate() {
 		{
 			Name:        "Error duplicate file name",
 			Err:         errors.New("Error 1062: Duplicate entry '' for key 'name'"),
-			ExpectedErr: error2.ErrDuplicateTemplateName,
+			ExpectedErr: utils.ErrDuplicateTemplateName,
 		},
 		{
 			Name:        "Error generic error",
@@ -124,7 +124,7 @@ func (s *TestSuiteTemplateRepository) TestGetAllTemplate() {
 		{
 			Name:             "Error No rows in result set",
 			Err:              nil,
-			ExpectedErr:      error2.ErrTemplateNotFound,
+			ExpectedErr:      utils.ErrTemplateNotFound,
 			ReturnedRow:      sqlmock.NewRows([]string{"id", "name", "path", "margin_top", "margin_bottom", "margin_left", "margin_right", "is_active"}),
 			ReturnedRowField: sqlmock.NewRows([]string{"id", "template_id", "key"}),
 		},
@@ -199,7 +199,7 @@ func (s *TestSuiteTemplateRepository) TestGetTemplateDetail() {
 		{
 			Name:             "Error No rows in result set",
 			Err:              nil,
-			ExpectedErr:      error2.ErrTemplateNotFound,
+			ExpectedErr:      utils.ErrTemplateNotFound,
 			ReturnedRow:      sqlmock.NewRows([]string{"id", "name", "path", "margin_top", "margin_bottom", "margin_left", "margin_right", "is_active"}),
 			ReturnedRowField: sqlmock.NewRows([]string{"id", "template_id", "key"}),
 		},
@@ -259,7 +259,7 @@ func (s *TestSuiteTemplateRepository) TestGetTemplateFields() {
 		{
 			Name:        "Error No rows in result set",
 			Err:         nil,
-			ExpectedErr: error2.ErrTemplateFieldNotFound,
+			ExpectedErr: utils.ErrTemplateFieldNotFound,
 			ReturnedRow: sqlmock.NewRows([]string{"id", "template_id", "key"}),
 		},
 		{

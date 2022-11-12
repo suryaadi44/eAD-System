@@ -1,9 +1,10 @@
-package service
+package impl
 
 import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/suryaadi44/eAD-System/internal/template/service"
 	"io"
 	"os"
 	"path/filepath"
@@ -18,7 +19,7 @@ type TemplateServiceImpl struct {
 	templateRepository repository.TemplateRepository
 }
 
-func NewTemplateServiceImpl(templateRepository repository.TemplateRepository) TemplateService {
+func NewTemplateServiceImpl(templateRepository repository.TemplateRepository) service.TemplateService {
 	return &TemplateServiceImpl{
 		templateRepository: templateRepository,
 	}

@@ -4,7 +4,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/suryaadi44/eAD-System/internal/user/dto"
 	"github.com/suryaadi44/eAD-System/internal/user/service"
-	error2 "github.com/suryaadi44/eAD-System/pkg/utils"
+	"github.com/suryaadi44/eAD-System/pkg/utils"
 	"github.com/suryaadi44/eAD-System/pkg/utils/jwt_service"
 	"net/http"
 	"strconv"
@@ -33,7 +33,7 @@ func (u *UserController) InitRoute(api *echo.Group, secureApi *echo.Group) {
 func (u *UserController) SignUpUser(c echo.Context) error {
 	user := new(dto.UserSignUpRequest)
 	if err := c.Bind(user); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, error2.ErrBadRequestBody.Error())
+		return echo.NewHTTPError(http.StatusBadRequest, utils.ErrBadRequestBody.Error())
 	}
 
 	if err := c.Validate(user); err != nil {
@@ -43,11 +43,11 @@ func (u *UserController) SignUpUser(c echo.Context) error {
 	err := u.userService.SignUpUser(c.Request().Context(), user)
 	if err != nil {
 		switch err {
-		case error2.ErrUsernameAlreadyExist:
+		case utils.ErrUsernameAlreadyExist:
 			fallthrough
-		case error2.ErrNIKAlreadyExist:
+		case utils.ErrNIKAlreadyExist:
 			fallthrough
-		case error2.ErrNIPAlreadyExist:
+		case utils.ErrNIPAlreadyExist:
 			return echo.NewHTTPError(http.StatusConflict, err.Error())
 		default:
 			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
@@ -62,7 +62,7 @@ func (u *UserController) SignUpUser(c echo.Context) error {
 func (u *UserController) LoginUser(c echo.Context) error {
 	user := new(dto.UserLoginRequest)
 	if err := c.Bind(user); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, error2.ErrBadRequestBody.Error())
+		return echo.NewHTTPError(http.StatusBadRequest, utils.ErrBadRequestBody.Error())
 	}
 
 	if err := c.Validate(user); err != nil {
@@ -72,7 +72,7 @@ func (u *UserController) LoginUser(c echo.Context) error {
 	token, err := u.userService.LogInUser(c.Request().Context(), user)
 	if err != nil {
 		switch err {
-		case error2.ErrInvalidCredentials:
+		case utils.ErrInvalidCredentials:
 			return echo.NewHTTPError(http.StatusUnauthorized, err.Error())
 		default:
 			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
@@ -90,7 +90,7 @@ func (u *UserController) GetBriefUsers(c echo.Context) error {
 	role := claims["role"].(float64)
 
 	if role == 1 {
-		return echo.NewHTTPError(http.StatusForbidden, error2.ErrDidntHavePermission.Error())
+		return echo.NewHTTPError(http.StatusForbidden, utils.ErrDidntHavePermission.Error())
 	}
 
 	page := c.QueryParam("page")
@@ -99,7 +99,7 @@ func (u *UserController) GetBriefUsers(c echo.Context) error {
 	}
 	pageInt, err := strconv.ParseInt(page, 10, 64)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, error2.ErrInvalidNumber.Error())
+		return echo.NewHTTPError(http.StatusBadRequest, utils.ErrInvalidNumber.Error())
 	}
 
 	limit := c.QueryParam("limit")
@@ -108,12 +108,12 @@ func (u *UserController) GetBriefUsers(c echo.Context) error {
 	}
 	limitInt, err := strconv.ParseInt(limit, 10, 64)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, error2.ErrInvalidNumber.Error())
+		return echo.NewHTTPError(http.StatusBadRequest, utils.ErrInvalidNumber.Error())
 	}
 
 	users, err := u.userService.GetBriefUsers(c.Request().Context(), int(pageInt), int(limitInt))
 	if err != nil {
-		if err == error2.ErrUserNotFound {
+		if err == utils.ErrUserNotFound {
 			return echo.NewHTTPError(http.StatusNotFound, err.Error())
 		}
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
@@ -135,7 +135,7 @@ func (u *UserController) UpdateUser(c echo.Context) error {
 
 	user := new(dto.UserUpdateRequest)
 	if err := c.Bind(user); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, error2.ErrBadRequestBody.Error())
+		return echo.NewHTTPError(http.StatusBadRequest, utils.ErrBadRequestBody.Error())
 	}
 
 	if err := c.Validate(user); err != nil {
@@ -145,13 +145,13 @@ func (u *UserController) UpdateUser(c echo.Context) error {
 	err := u.userService.UpdateUser(c.Request().Context(), userID, user)
 	if err != nil {
 		switch err {
-		case error2.ErrUserNotFound:
+		case utils.ErrUserNotFound:
 			return echo.NewHTTPError(http.StatusNotFound, err.Error())
-		case error2.ErrUsernameAlreadyExist:
+		case utils.ErrUsernameAlreadyExist:
 			fallthrough
-		case error2.ErrNIKAlreadyExist:
+		case utils.ErrNIKAlreadyExist:
 			fallthrough
-		case error2.ErrNIPAlreadyExist:
+		case utils.ErrNIPAlreadyExist:
 			return echo.NewHTTPError(http.StatusConflict, err.Error())
 		default:
 			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())

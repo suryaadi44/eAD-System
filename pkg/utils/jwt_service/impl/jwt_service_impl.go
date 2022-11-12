@@ -1,6 +1,7 @@
-package jwt_service
+package impl
 
 import (
+	"github.com/suryaadi44/eAD-System/pkg/utils/jwt_service"
 	"time"
 
 	"github.com/golang-jwt/jwt"
@@ -13,7 +14,7 @@ type JWTServiceImpl struct {
 	exp       time.Duration
 }
 
-func NewJWTService(secretKey string, exp time.Duration) JWTService {
+func NewJWTService(secretKey string, exp time.Duration) jwt_service.JWTService {
 	return &JWTServiceImpl{
 		secretKey: secretKey,
 		exp:       exp,

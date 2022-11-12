@@ -1,10 +1,11 @@
-package repository
+package impl
 
 import (
 	"context"
+	"github.com/suryaadi44/eAD-System/internal/user/repository"
 	"github.com/suryaadi44/eAD-System/pkg/config"
 	"github.com/suryaadi44/eAD-System/pkg/entity"
-	error2 "github.com/suryaadi44/eAD-System/pkg/utils"
+	"github.com/suryaadi44/eAD-System/pkg/utils"
 	"gorm.io/gorm"
 	"strings"
 )
@@ -13,7 +14,7 @@ type UserRepositoryImpl struct {
 	db *gorm.DB
 }
 
-func NewUserRepositoryImpl(db *gorm.DB) UserRepository {
+func NewUserRepositoryImpl(db *gorm.DB) repository.UserRepository {
 	userRepository := &UserRepositoryImpl{
 		db: db,
 	}
@@ -51,11 +52,11 @@ func (u *UserRepositoryImpl) CreateUser(ctx context.Context, user *entity.User) 
 		if strings.Contains(err.Error(), "Error 1062: Duplicate entry") {
 			switch {
 			case strings.Contains(err.Error(), "username"):
-				return error2.ErrUsernameAlreadyExist
+				return utils.ErrUsernameAlreadyExist
 			case strings.Contains(err.Error(), "n_ip"):
-				return error2.ErrNIPAlreadyExist
+				return utils.ErrNIPAlreadyExist
 			case strings.Contains(err.Error(), "nik"):
-				return error2.ErrNIKAlreadyExist
+				return utils.ErrNIKAlreadyExist
 			}
 		}
 
@@ -70,7 +71,7 @@ func (u *UserRepositoryImpl) FindByUsername(ctx context.Context, username string
 	err := u.db.WithContext(ctx).Select([]string{"id", "username", "password", "role"}).Where("username = ?", username).First(&user).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return nil, error2.ErrUserNotFound
+			return nil, utils.ErrUserNotFound
 		}
 
 		return nil, err
@@ -92,7 +93,7 @@ func (u *UserRepositoryImpl) GetBriefUsers(ctx context.Context, limit int, offse
 	}
 
 	if len(users) == 0 {
-		return nil, error2.ErrUserNotFound
+		return nil, utils.ErrUserNotFound
 	}
 
 	return &users, nil
@@ -105,11 +106,11 @@ func (u *UserRepositoryImpl) UpdateUser(ctx context.Context, user *entity.User) 
 		if strings.Contains(errStr, "Error 1062: Duplicate entry") {
 			switch {
 			case strings.Contains(errStr, "username"):
-				return error2.ErrUsernameAlreadyExist
+				return utils.ErrUsernameAlreadyExist
 			case strings.Contains(errStr, "n_ip"):
-				return error2.ErrNIPAlreadyExist
+				return utils.ErrNIPAlreadyExist
 			case strings.Contains(errStr, "nik"):
-				return error2.ErrNIKAlreadyExist
+				return utils.ErrNIKAlreadyExist
 			}
 		}
 
@@ -117,7 +118,7 @@ func (u *UserRepositoryImpl) UpdateUser(ctx context.Context, user *entity.User) 
 	}
 
 	if result.RowsAffected == 0 {
-		return error2.ErrUserNotFound
+		return utils.ErrUserNotFound
 	}
 
 	return nil

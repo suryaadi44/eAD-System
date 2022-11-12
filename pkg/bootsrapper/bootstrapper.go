@@ -5,19 +5,19 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	documentControllerPkg "github.com/suryaadi44/eAD-System/internal/document/controller"
-	documentRepositoryPkg "github.com/suryaadi44/eAD-System/internal/document/repository"
-	documentServicePkg "github.com/suryaadi44/eAD-System/internal/document/service"
+	documentRepositoryPkg "github.com/suryaadi44/eAD-System/internal/document/repository/impl"
+	documentServicePkg "github.com/suryaadi44/eAD-System/internal/document/service/impl"
 	templateControllerPkg "github.com/suryaadi44/eAD-System/internal/template/controller"
-	templateRepositoryPkg "github.com/suryaadi44/eAD-System/internal/template/repository"
-	templateServicePkg "github.com/suryaadi44/eAD-System/internal/template/service"
+	templateRepositoryPkg "github.com/suryaadi44/eAD-System/internal/template/repository/impl"
+	templateServicePkg "github.com/suryaadi44/eAD-System/internal/template/service/impl"
 	userControllerPkg "github.com/suryaadi44/eAD-System/internal/user/controller"
-	userRepositoryPkg "github.com/suryaadi44/eAD-System/internal/user/repository"
-	userServicePkg "github.com/suryaadi44/eAD-System/internal/user/service"
-	renderServicePkg "github.com/suryaadi44/eAD-System/pkg/utils/html"
-	"github.com/suryaadi44/eAD-System/pkg/utils/jwt_service"
-	"github.com/suryaadi44/eAD-System/pkg/utils/password"
-	"github.com/suryaadi44/eAD-System/pkg/utils/pdf"
-	"github.com/suryaadi44/eAD-System/pkg/utils/qr"
+	userRepositoryPkg "github.com/suryaadi44/eAD-System/internal/user/repository/impl"
+	userServicePkg "github.com/suryaadi44/eAD-System/internal/user/service/impl"
+	renderServicePkg "github.com/suryaadi44/eAD-System/pkg/utils/html/impl"
+	"github.com/suryaadi44/eAD-System/pkg/utils/jwt_service/impl"
+	impl2 "github.com/suryaadi44/eAD-System/pkg/utils/password/impl"
+	impl3 "github.com/suryaadi44/eAD-System/pkg/utils/pdf/impl"
+	impl4 "github.com/suryaadi44/eAD-System/pkg/utils/qr/impl"
 	"github.com/suryaadi44/eAD-System/pkg/utils/validation"
 
 	"time"
@@ -31,16 +31,16 @@ func InitController(e *echo.Echo, db *gorm.DB, conf map[string]string) {
 
 	e.Validator = &validation.CustomValidator{Validator: validator.New()}
 
-	jwtService := jwt_service.NewJWTService(conf["JWT_SECRET"], 1*time.Hour)
+	jwtService := impl.NewJWTService(conf["JWT_SECRET"], 1*time.Hour)
 
 	v1 := e.Group("/v1")
 	secureV1 := v1.Group("")
 	secureV1.Use(middleware.JWT([]byte(conf["JWT_SECRET"])))
 
-	qrCodeService := qr.NewCodeServiceImpl(conf["QR_PATH"])
+	qrCodeService := impl4.NewCodeServiceImpl(conf["QR_PATH"])
 	renderService := renderServicePkg.NewRenderServiceImpl(qrCodeService)
-	passwordFunc := password.NewPasswordFuncImpl()
-	pdfService := pdf.NewPDFService()
+	passwordFunc := impl2.NewPasswordFuncImpl()
+	pdfService := impl3.NewPDFService()
 
 	templateRepository := templateRepositoryPkg.NewTemplateRepositoryImpl(db)
 	templateService := templateServicePkg.NewTemplateServiceImpl(templateRepository)
