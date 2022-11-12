@@ -1,8 +1,9 @@
-package service
+package impl
 
 import (
 	"context"
 	"fmt"
+	"github.com/suryaadi44/eAD-System/internal/document/service"
 	error2 "github.com/suryaadi44/eAD-System/pkg/utils"
 	"time"
 
@@ -23,7 +24,7 @@ type DocumentServiceImpl struct {
 	renderService      html.RenderService
 }
 
-func NewDocumentServiceImpl(documentRepository repository.DocumentRepository, templateRepository repository2.TemplateRepository, pdfgService pdf.PDFService, renderService html.RenderService) DocumentService {
+func NewDocumentServiceImpl(documentRepository repository.DocumentRepository, templateRepository repository2.TemplateRepository, pdfgService pdf.PDFService, renderService html.RenderService) service.DocumentService {
 	return &DocumentServiceImpl{
 		documentRepository: documentRepository,
 		templateRepository: templateRepository,

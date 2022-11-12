@@ -1,7 +1,8 @@
-package repository
+package impl
 
 import (
 	"context"
+	"github.com/suryaadi44/eAD-System/internal/document/repository"
 	error2 "github.com/suryaadi44/eAD-System/pkg/utils"
 	"strings"
 
@@ -14,7 +15,7 @@ type DocumentRepositoryImpl struct {
 	db *gorm.DB
 }
 
-func NewDocumentRepositoryImpl(db *gorm.DB) DocumentRepository {
+func NewDocumentRepositoryImpl(db *gorm.DB) repository.DocumentRepository {
 	documentRepository := &DocumentRepositoryImpl{
 		db: db,
 	}
