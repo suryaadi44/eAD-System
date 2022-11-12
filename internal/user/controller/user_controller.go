@@ -1,27 +1,21 @@
 package controller
 
 import (
-	"github.com/golang-jwt/jwt"
 	"github.com/labstack/echo/v4"
 	"github.com/suryaadi44/eAD-System/internal/user/dto"
 	"github.com/suryaadi44/eAD-System/internal/user/service"
 	"github.com/suryaadi44/eAD-System/pkg/utils"
+	"github.com/suryaadi44/eAD-System/pkg/utils/jwt_service"
 	"net/http"
 	"strconv"
 )
 
-type (
-	JWTService interface {
-		GetClaims(c *echo.Context) jwt.MapClaims
-	}
+type UserController struct {
+	userService service.UserService
+	jwtService  jwt_service.JWTService
+}
 
-	UserController struct {
-		userService service.UserService
-		jwtService  JWTService
-	}
-)
-
-func NewUserController(userService service.UserService, jwtService JWTService) *UserController {
+func NewUserController(userService service.UserService, jwtService jwt_service.JWTService) *UserController {
 	return &UserController{
 		userService: userService,
 		jwtService:  jwtService,
@@ -32,8 +26,8 @@ func (u *UserController) InitRoute(api *echo.Group, secureApi *echo.Group) {
 	api.POST("/signup", u.SignUpUser)
 	api.POST("/login", u.LoginUser)
 
-	secureApi.GET("/users", u.GetBriefUsers)
-	secureApi.PUT("/users", u.UpdateUser)
+	secureApi.GET("", u.GetBriefUsers)
+	secureApi.PUT("", u.UpdateUser)
 }
 
 func (u *UserController) SignUpUser(c echo.Context) error {
