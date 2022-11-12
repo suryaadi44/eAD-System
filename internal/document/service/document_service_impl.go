@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
-	error2 "github.com/suryaadi44/eAD-System/pkg/utils/error"
+	error2 "github.com/suryaadi44/eAD-System/pkg/utils"
 	"time"
 
 	"github.com/suryaadi44/eAD-System/pkg/utils/html"

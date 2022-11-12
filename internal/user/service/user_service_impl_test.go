@@ -3,12 +3,11 @@ package service
 import (
 	"context"
 	"errors"
+	error2 "github.com/suryaadi44/eAD-System/pkg/utils"
 	"testing"
 
 	"github.com/golang-jwt/jwt"
 	"github.com/labstack/echo/v4"
-	error2 "github.com/suryaadi44/eAD-System/pkg/utils/error"
-
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 	"github.com/suryaadi44/eAD-System/internal/user/dto"

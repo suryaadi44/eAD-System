@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/suryaadi44/eAD-System/pkg/config"
 	"github.com/suryaadi44/eAD-System/pkg/entity"
-	error2 "github.com/suryaadi44/eAD-System/pkg/utils/error"
+	error2 "github.com/suryaadi44/eAD-System/pkg/utils"
 	"gorm.io/gorm"
 	"strings"
 )

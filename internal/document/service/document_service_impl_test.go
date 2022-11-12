@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	error2 "github.com/suryaadi44/eAD-System/pkg/utils/error"
+	error2 "github.com/suryaadi44/eAD-System/pkg/utils"
 	"html/template"
 	"testing"
 	"time"
