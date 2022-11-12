@@ -5,7 +5,7 @@ import (
 	"errors"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
-	dto3 "github.com/suryaadi44/eAD-System/internal/template/dto"
+	"github.com/suryaadi44/eAD-System/internal/template/dto"
 	mockTemplateRepoPkg "github.com/suryaadi44/eAD-System/internal/template/repository/mock"
 	"github.com/suryaadi44/eAD-System/pkg/entity"
 	"gorm.io/gorm"
@@ -122,7 +122,7 @@ func (s *TestSuiteTemplateService) TestGetAllTemplate_Success() {
 		},
 	}
 
-	expectedReturn := &dto3.TemplatesResponse{
+	expectedReturn := &dto.TemplatesResponse{
 		{
 			ID:           1,
 			Name:         "Test Template",
@@ -130,7 +130,7 @@ func (s *TestSuiteTemplateService) TestGetAllTemplate_Success() {
 			MarginBottom: 10,
 			MarginLeft:   10,
 			MarginRight:  10,
-			Keys: dto3.KeysResponse{
+			Keys: dto.KeysResponse{
 				{
 					ID:  1,
 					Key: "field1",
@@ -174,14 +174,14 @@ func (s *TestSuiteTemplateService) TestGetTemplateDetail() {
 		},
 	}
 
-	expectedReturn := &dto3.TemplateResponse{
+	expectedReturn := &dto.TemplateResponse{
 		ID:           1,
 		Name:         "Test Template",
 		MarginTop:    10,
 		MarginBottom: 10,
 		MarginLeft:   10,
 		MarginRight:  10,
-		Keys: dto3.KeysResponse{
+		Keys: dto.KeysResponse{
 			{
 				ID:  1,
 				Key: "field1",

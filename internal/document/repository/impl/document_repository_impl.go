@@ -3,7 +3,7 @@ package impl
 import (
 	"context"
 	"github.com/suryaadi44/eAD-System/internal/document/repository"
-	error2 "github.com/suryaadi44/eAD-System/pkg/utils"
+	"github.com/suryaadi44/eAD-System/pkg/utils"
 	"strings"
 
 	"github.com/suryaadi44/eAD-System/pkg/config"
@@ -56,7 +56,7 @@ func (d *DocumentRepositoryImpl) AddDocument(ctx context.Context, document *enti
 	err := d.db.WithContext(ctx).Omit("Register").Create(document).Error
 	if err != nil {
 		if strings.Contains(err.Error(), "Error 1062: Duplicate entry") {
-			return "", error2.ErrDuplicateRegister
+			return "", utils.ErrDuplicateRegister
 		}
 
 		return "", err
@@ -83,7 +83,7 @@ func (d *DocumentRepositoryImpl) GetDocument(ctx context.Context, documentID str
 		Preload("Fields.TemplateField").First(&document, "id = ?", documentID).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return nil, error2.ErrDocumentNotFound
+			return nil, utils.ErrDocumentNotFound
 		}
 
 		return nil, err
@@ -108,7 +108,7 @@ func (d *DocumentRepositoryImpl) GetBriefDocument(ctx context.Context, documentI
 		First(&document, "id = ?", documentID).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return nil, error2.ErrDocumentNotFound
+			return nil, utils.ErrDocumentNotFound
 		}
 
 		return nil, err
@@ -138,7 +138,7 @@ func (d *DocumentRepositoryImpl) GetBriefDocuments(ctx context.Context, limit in
 	}
 
 	if len(documents) == 0 {
-		return nil, error2.ErrDocumentNotFound
+		return nil, utils.ErrDocumentNotFound
 	}
 
 	return &documents, nil
@@ -166,7 +166,7 @@ func (d *DocumentRepositoryImpl) GetBriefDocumentsByApplicant(ctx context.Contex
 	}
 
 	if len(documents) == 0 {
-		return nil, error2.ErrDocumentNotFound
+		return nil, utils.ErrDocumentNotFound
 	}
 
 	return &documents, nil
@@ -185,7 +185,7 @@ func (d *DocumentRepositoryImpl) GetDocumentStatus(ctx context.Context, document
 		First(&document, "id = ?", documentID).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return nil, error2.ErrDocumentNotFound
+			return nil, utils.ErrDocumentNotFound
 		}
 
 		return nil, err
@@ -202,7 +202,7 @@ func (d *DocumentRepositoryImpl) GetApplicantID(ctx context.Context, documentID 
 		First(&applicantID, "id = ?", documentID).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return nil, error2.ErrDocumentNotFound
+			return nil, utils.ErrDocumentNotFound
 		}
 
 		return nil, err
@@ -219,7 +219,7 @@ func (d *DocumentRepositoryImpl) GetDocumentStage(ctx context.Context, documentI
 		First(&stage, "id = ?", documentID).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return nil, error2.ErrDocumentNotFound
+			return nil, utils.ErrDocumentNotFound
 		}
 
 		return nil, err
@@ -239,7 +239,7 @@ func (d *DocumentRepositoryImpl) VerifyDocument(ctx context.Context, document *e
 	}
 
 	if result.RowsAffected == 0 {
-		return error2.ErrDocumentNotFound
+		return utils.ErrDocumentNotFound
 	}
 
 	return nil
@@ -256,7 +256,7 @@ func (d *DocumentRepositoryImpl) SignDocument(ctx context.Context, document *ent
 	}
 
 	if result.RowsAffected == 0 {
-		return error2.ErrDocumentNotFound
+		return utils.ErrDocumentNotFound
 	}
 
 	return nil
@@ -271,7 +271,7 @@ func (d *DocumentRepositoryImpl) DeleteDocument(ctx context.Context, documentID 
 	}
 
 	if result.RowsAffected == 0 {
-		return error2.ErrDocumentNotFound
+		return utils.ErrDocumentNotFound
 	}
 
 	return nil
@@ -287,7 +287,7 @@ func (d *DocumentRepositoryImpl) UpdateDocument(ctx context.Context, document *e
 	}
 
 	if result.RowsAffected == 0 {
-		return error2.ErrDocumentNotFound
+		return utils.ErrDocumentNotFound
 	}
 
 	return nil
@@ -305,7 +305,7 @@ func (d *DocumentRepositoryImpl) UpdateDocumentFields(ctx context.Context, docum
 		}
 
 		if result.RowsAffected == 0 {
-			return error2.ErrFieldNotFound
+			return utils.ErrFieldNotFound
 		}
 	}
 

@@ -6,7 +6,7 @@ import (
 	"github.com/suryaadi44/eAD-System/internal/user/dto"
 	"github.com/suryaadi44/eAD-System/internal/user/repository"
 	"github.com/suryaadi44/eAD-System/internal/user/service"
-	error2 "github.com/suryaadi44/eAD-System/pkg/utils"
+	"github.com/suryaadi44/eAD-System/pkg/utils"
 	"github.com/suryaadi44/eAD-System/pkg/utils/jwt_service"
 	"github.com/suryaadi44/eAD-System/pkg/utils/password"
 )
@@ -50,8 +50,8 @@ func (u *UserServiceImpl) SignUpUser(ctx context.Context, user *dto.UserSignUpRe
 func (u *UserServiceImpl) LogInUser(ctx context.Context, user *dto.UserLoginRequest) (string, error) {
 	userEntity, err := u.userRepository.FindByUsername(ctx, user.Username)
 	if err != nil {
-		if err == error2.ErrUserNotFound {
-			return "", error2.ErrInvalidCredentials
+		if err == utils.ErrUserNotFound {
+			return "", utils.ErrInvalidCredentials
 		}
 
 		return "", err
@@ -59,7 +59,7 @@ func (u *UserServiceImpl) LogInUser(ctx context.Context, user *dto.UserLoginRequ
 
 	err = u.passwordHash.CompareHashAndPassword([]byte(userEntity.Password), []byte(user.Password))
 	if err != nil {
-		return "", error2.ErrInvalidCredentials
+		return "", utils.ErrInvalidCredentials
 	}
 
 	token, err := u.jwtService.GenerateToken(userEntity)

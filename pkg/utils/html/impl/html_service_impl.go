@@ -1,7 +1,8 @@
-package html
+package impl
 
 import (
 	"bytes"
+	"github.com/suryaadi44/eAD-System/pkg/utils/html"
 	"github.com/suryaadi44/eAD-System/pkg/utils/qr"
 	"html/template"
 
@@ -12,7 +13,7 @@ type RenderServiceImpl struct {
 	codeService qr.CodeService
 }
 
-func NewRenderServiceImpl(codeService qr.CodeService) RenderService {
+func NewRenderServiceImpl(codeService qr.CodeService) html.RenderService {
 	return &RenderServiceImpl{
 		codeService: codeService,
 	}

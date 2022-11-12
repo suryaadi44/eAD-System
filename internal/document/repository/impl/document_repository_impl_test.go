@@ -3,7 +3,7 @@ package impl
 import (
 	"context"
 	"errors"
-	error2 "github.com/suryaadi44/eAD-System/pkg/utils"
+	"github.com/suryaadi44/eAD-System/pkg/utils"
 	"regexp"
 	"testing"
 	"time"
@@ -56,7 +56,7 @@ func (s *TestSuiteDocumentRepository) TestAddDocument() {
 		{
 			Name:        "Error duplicate register",
 			Err:         errors.New("Error 1062: Duplicate entry '' for key ''"),
-			ExpectedErr: error2.ErrDuplicateRegister,
+			ExpectedErr: utils.ErrDuplicateRegister,
 		},
 		{
 			Name:        "Error generic error",
@@ -172,7 +172,7 @@ func (s *TestSuiteDocumentRepository) TestGetDocument() {
 		{
 			Name:        "Error No rows in result set",
 			Err:         gorm.ErrRecordNotFound,
-			ExpectedErr: error2.ErrDocumentNotFound,
+			ExpectedErr: utils.ErrDocumentNotFound,
 		},
 		{
 			Name:        "Error generic error",
@@ -244,7 +244,7 @@ func (s *TestSuiteDocumentRepository) TestGetBriefDocument() {
 		{
 			Name:           "Error No rows in result set",
 			Err:            gorm.ErrRecordNotFound,
-			ExpectedErr:    error2.ErrDocumentNotFound,
+			ExpectedErr:    utils.ErrDocumentNotFound,
 			ExpectedReturn: &entity.Document{},
 			ReturnedRows:   sqlmock.NewRows([]string{"id", "register_id", "description", "created_at"}),
 		},
@@ -317,7 +317,7 @@ func (s *TestSuiteDocumentRepository) TestGetBriefDocuments() {
 		{
 			Name:           "Error No rows in result set",
 			Err:            nil,
-			ExpectedErr:    error2.ErrDocumentNotFound,
+			ExpectedErr:    utils.ErrDocumentNotFound,
 			ExpectedReturn: &entity.Documents{},
 			ReturnedRows:   sqlmock.NewRows([]string{"id", "register_id", "description", "created_at"}),
 		},
@@ -390,7 +390,7 @@ func (s *TestSuiteDocumentRepository) TestGetBriefDocumentsByApplicant() {
 		{
 			Name:           "Error No rows in result set",
 			Err:            nil,
-			ExpectedErr:    error2.ErrDocumentNotFound,
+			ExpectedErr:    utils.ErrDocumentNotFound,
 			ExpectedReturn: &entity.Documents{},
 			ReturnedRows:   sqlmock.NewRows([]string{"id", "register", "description", "created_at"}),
 		},
@@ -477,7 +477,7 @@ func (s *TestSuiteDocumentRepository) TestGetDocumentStatus() {
 		{
 			Name:        "Error No rows in result set",
 			Err:         gorm.ErrRecordNotFound,
-			ExpectedErr: error2.ErrDocumentNotFound,
+			ExpectedErr: utils.ErrDocumentNotFound,
 		},
 		{
 			Name:        "Error generic error",
@@ -528,7 +528,7 @@ func (s *TestSuiteDocumentRepository) TestGetApplicantID() {
 		{
 			Name:        "Error No rows in result set",
 			Err:         gorm.ErrRecordNotFound,
-			ExpectedErr: error2.ErrDocumentNotFound,
+			ExpectedErr: utils.ErrDocumentNotFound,
 		},
 		{
 			Name:        "Error generic error",
@@ -575,7 +575,7 @@ func (s *TestSuiteDocumentRepository) TestGetDocumentStage() {
 		{
 			Name:        "Error No rows in result set",
 			Err:         gorm.ErrRecordNotFound,
-			ExpectedErr: error2.ErrDocumentNotFound,
+			ExpectedErr: utils.ErrDocumentNotFound,
 		},
 		{
 			Name:        "Error generic error",
@@ -619,7 +619,7 @@ func (s *TestSuiteDocumentRepository) TestVerifyDocument() {
 		{
 			Name:         "Error No rows affected",
 			RowsAffected: 0,
-			ExpectedErr:  error2.ErrDocumentNotFound,
+			ExpectedErr:  utils.ErrDocumentNotFound,
 		},
 		{
 			Name:        "Error generic error",
@@ -661,7 +661,7 @@ func (s *TestSuiteDocumentRepository) TestSignDocument() {
 		{
 			Name:         "Error No rows affected",
 			RowsAffected: 0,
-			ExpectedErr:  error2.ErrDocumentNotFound,
+			ExpectedErr:  utils.ErrDocumentNotFound,
 		},
 		{
 			Name:        "Error generic error",
@@ -703,7 +703,7 @@ func (s *TestSuiteDocumentRepository) TestDeleteDocument() {
 		{
 			Name:         "Error No rows affected",
 			RowsAffected: 0,
-			ExpectedErr:  error2.ErrDocumentNotFound,
+			ExpectedErr:  utils.ErrDocumentNotFound,
 		},
 		{
 			Name:        "Error generic error",
@@ -747,7 +747,7 @@ func (s *TestSuiteDocumentRepository) TestUpdateDocument() {
 		{
 			Name:         "Error No rows affected",
 			Err:          nil,
-			ExpectedErr:  error2.ErrDocumentNotFound,
+			ExpectedErr:  utils.ErrDocumentNotFound,
 			RowsAffected: 0,
 		},
 		{
@@ -793,7 +793,7 @@ func (s *TestSuiteDocumentRepository) TestUpdateDocumentFields() {
 		{
 			Name:         "Error No rows affected",
 			Err:          nil,
-			ExpectedErr:  error2.ErrFieldNotFound,
+			ExpectedErr:  utils.ErrFieldNotFound,
 			RowsAffected: 0,
 		},
 		{

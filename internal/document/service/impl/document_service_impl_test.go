@@ -5,87 +5,38 @@ import (
 	"context"
 	"errors"
 	mockDocumentRepoPkg "github.com/suryaadi44/eAD-System/internal/document/repository/mock"
-	error2 "github.com/suryaadi44/eAD-System/pkg/utils"
+	mockTemplateRepoPkg "github.com/suryaadi44/eAD-System/internal/template/repository/mock"
+	"github.com/suryaadi44/eAD-System/pkg/utils"
+	mockHtmlService "github.com/suryaadi44/eAD-System/pkg/utils/html/mock"
+	mockPdfServicePkg "github.com/suryaadi44/eAD-System/pkg/utils/pdf/mock"
 	"html/template"
 	"testing"
 	"time"
 
-	dto3 "github.com/suryaadi44/eAD-System/internal/template/dto"
+	tmpDto "github.com/suryaadi44/eAD-System/internal/template/dto"
 
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 	"github.com/suryaadi44/eAD-System/internal/document/dto"
-	dto2 "github.com/suryaadi44/eAD-System/internal/user/dto"
+	userDto "github.com/suryaadi44/eAD-System/internal/user/dto"
 	"github.com/suryaadi44/eAD-System/pkg/entity"
 	"gorm.io/gorm"
 )
 
-type MockPDFService struct {
-	mock.Mock
-}
-
-func (m *MockPDFService) GeneratePDF(data *bytes.Buffer, marginTop uint, marginBottom uint, marginLeft uint, marginRight uint) ([]byte, error) {
-	args := m.Called(data, marginTop, marginBottom, marginLeft, marginRight)
-	return args.Get(0).([]byte), args.Error(1)
-}
-
-type MockRenderService struct {
-	mock.Mock
-}
-
-func (m *MockRenderService) GenerateSignature(signer entity.User) (*template.HTML, error) {
-	args := m.Called(signer)
-	return args.Get(0).(*template.HTML), args.Error(1)
-}
-
-func (m *MockRenderService) GenerateFooter(document *entity.Document) (*template.HTML, error) {
-	args := m.Called(document)
-	return args.Get(0).(*template.HTML), args.Error(1)
-}
-
-func (m *MockRenderService) GenerateHTMLDocument(docTemplate *entity.Template, data *map[string]interface{}) (*bytes.Buffer, error) {
-	args := m.Called(docTemplate, data)
-	return args.Get(0).(*bytes.Buffer), args.Error(1)
-}
-
-type MockTemplateRepository struct {
-	mock.Mock
-}
-
-func (m *MockTemplateRepository) AddTemplate(ctc context.Context, template *entity.Template) error {
-	args := m.Called(ctc, template)
-	return args.Error(0)
-}
-
-func (m *MockTemplateRepository) GetAllTemplate(ctx context.Context) (*entity.Templates, error) {
-	args := m.Called(ctx)
-	return args.Get(0).(*entity.Templates), args.Error(1)
-}
-
-func (m *MockTemplateRepository) GetTemplateDetail(ctx context.Context, templateId uint) (*entity.Template, error) {
-	args := m.Called(ctx, templateId)
-	return args.Get(0).(*entity.Template), args.Error(1)
-}
-
-func (m *MockTemplateRepository) GetTemplateFields(ctx context.Context, templateId uint) (*entity.TemplateFields, error) {
-	args := m.Called(ctx, templateId)
-	return args.Get(0).(*entity.TemplateFields), args.Error(1)
-}
-
 type TestSuiteDocumentService struct {
 	suite.Suite
 	mockDocumentRepository *mockDocumentRepoPkg.MockDocumentRepository
-	mockTemplateRepository *MockTemplateRepository
-	mockPDFService         *MockPDFService
-	mockRenderService      *MockRenderService
+	mockTemplateRepository *mockTemplateRepoPkg.MockTemplateRepository
+	mockPDFService         *mockPdfServicePkg.MockPDFService
+	mockRenderService      *mockHtmlService.MockRenderService
 	documentService        *DocumentServiceImpl
 }
 
 func (s *TestSuiteDocumentService) SetupTest() {
 	s.mockDocumentRepository = new(mockDocumentRepoPkg.MockDocumentRepository)
-	s.mockTemplateRepository = new(MockTemplateRepository)
-	s.mockPDFService = new(MockPDFService)
-	s.mockRenderService = new(MockRenderService)
+	s.mockTemplateRepository = new(mockTemplateRepoPkg.MockTemplateRepository)
+	s.mockPDFService = new(mockPdfServicePkg.MockPDFService)
+	s.mockRenderService = new(mockHtmlService.MockRenderService)
 	s.documentService = &DocumentServiceImpl{
 		documentRepository: s.mockDocumentRepository,
 		templateRepository: s.mockTemplateRepository,
@@ -143,10 +94,10 @@ func (s *TestSuiteDocumentService) TestAddDocument_ErrorNoTemplate() {
 		},
 	}
 
-	s.mockTemplateRepository.On("GetTemplateFields", mock.Anything, uint(1)).Return(&entity.TemplateFields{}, error2.ErrTemplateFieldNotFound)
+	s.mockTemplateRepository.On("GetTemplateFields", mock.Anything, uint(1)).Return(&entity.TemplateFields{}, utils.ErrTemplateFieldNotFound)
 
 	id, err := s.documentService.AddDocument(context.Background(), doc, "123")
-	s.Equal(err, error2.ErrTemplateFieldNotFound)
+	s.Equal(err, utils.ErrTemplateFieldNotFound)
 	s.Equal(id, "")
 }
 
@@ -179,7 +130,7 @@ func (s *TestSuiteDocumentService) TestAddDocument_ErrorFieldMissing() {
 	}, nil)
 
 	id, err := s.documentService.AddDocument(context.Background(), doc, "123")
-	s.Equal(err, error2.ErrFieldNotMatch)
+	s.Equal(err, utils.ErrFieldNotMatch)
 	s.Equal(id, "")
 }
 
@@ -258,8 +209,8 @@ func (s *TestSuiteDocumentService) TestGetDocument_Success() {
 		ID:          "1",
 		RegisterID:  123,
 		Description: "",
-		Applicant:   dto2.ApplicantResponse{},
-		Template: dto3.TemplateResponse{
+		Applicant:   userDto.ApplicantResponse{},
+		Template: tmpDto.TemplateResponse{
 			ID:   1,
 			Name: "Test Template",
 		},
@@ -271,9 +222,9 @@ func (s *TestSuiteDocumentService) TestGetDocument_Success() {
 			},
 		},
 		Stage:      "",
-		Verifier:   dto2.EmployeeResponse{},
+		Verifier:   userDto.EmployeeResponse{},
 		VerifiedAt: time.Time{},
-		Signer:     dto2.EmployeeResponse{},
+		Signer:     userDto.EmployeeResponse{},
 		SignedAt:   time.Time{},
 		CreatedAt:  time.Time{},
 		UpdatedAt:  time.Time{},
@@ -319,7 +270,7 @@ func (s *TestSuiteDocumentService) TestGetBriefDocuments_Success() {
 			ID:          "1",
 			RegisterID:  123,
 			Description: "description",
-			Applicant: dto2.ApplicantResponse{
+			Applicant: userDto.ApplicantResponse{
 				ID:       "1",
 				Username: "username",
 				Name:     "name",
@@ -361,7 +312,7 @@ func (s *TestSuiteDocumentService) TestGetBriefDocuments_SuccessWithUserRole() {
 			ID:          "1",
 			RegisterID:  123,
 			Description: "description",
-			Applicant: dto2.ApplicantResponse{
+			Applicant: userDto.ApplicantResponse{
 				ID:       "1",
 				Username: "username",
 				Name:     "name",
@@ -433,9 +384,9 @@ func (s *TestSuiteDocumentService) TestGetDocumentStatus_Success() {
 		Description: "",
 		RegisterID:  123,
 		Stage:       "",
-		Verifier:    dto2.EmployeeResponse{},
+		Verifier:    userDto.EmployeeResponse{},
 		VerifiedAt:  time.Time{},
-		Signer:      dto2.EmployeeResponse{},
+		Signer:      userDto.EmployeeResponse{},
 		SignedAt:    time.Time{},
 		CreatedAt:   time.Time{},
 		UpdatedAt:   time.Time{},
@@ -510,10 +461,10 @@ func (s *TestSuiteDocumentService) TestGeneratePDFDocument_Success() {
 }
 
 func (s *TestSuiteDocumentService) TestGeneratePDFDocument_ErrorDocumentNotFound() {
-	s.mockDocumentRepository.On("GetDocument", mock.Anything, mock.Anything).Return(&entity.Document{}, error2.ErrDocumentNotFound)
+	s.mockDocumentRepository.On("GetDocument", mock.Anything, mock.Anything).Return(&entity.Document{}, utils.ErrDocumentNotFound)
 
 	doc, err := s.documentService.GeneratePDFDocument(context.Background(), "1")
-	s.Equal(err, error2.ErrDocumentNotFound)
+	s.Equal(err, utils.ErrDocumentNotFound)
 	s.Nil(doc)
 }
 
@@ -957,7 +908,7 @@ func (s *TestSuiteDocumentService) TestVerifyDocument_ErrorAlreadyVerified() {
 
 	err := s.documentService.VerifyDocument(context.Background(), "1", "1", nil)
 
-	s.Equal(error2.ErrAlreadyVerified, err)
+	s.Equal(utils.ErrAlreadyVerified, err)
 }
 
 func (s *TestSuiteDocumentService) TestVerifyDocument_SuccesAutoGenerateDescription() {
@@ -1075,7 +1026,7 @@ func (s *TestSuiteDocumentService) TestSignDocument_ErrorAlreadySigned() {
 
 	err := s.documentService.SignDocument(context.Background(), "1", "1")
 
-	s.Equal(error2.ErrAlreadySigned, err)
+	s.Equal(utils.ErrAlreadySigned, err)
 }
 
 func (s *TestSuiteDocumentService) TestSignDocument_ErrorNotVerified() {
@@ -1084,7 +1035,7 @@ func (s *TestSuiteDocumentService) TestSignDocument_ErrorNotVerified() {
 
 	err := s.documentService.SignDocument(context.Background(), "1", "1")
 
-	s.Equal(error2.ErrNotVerifiedYet, err)
+	s.Equal(utils.ErrNotVerifiedYet, err)
 }
 
 func (s *TestSuiteDocumentService) TestSignDocument_RepositoryError() {
@@ -1136,7 +1087,7 @@ func (s *TestSuiteDocumentService) TestDeleteDocument_ErrorRoleNotSufficentToDel
 
 	err := s.documentService.DeleteDocument(context.Background(), "userid", 1, "documentid")
 
-	s.Equal(error2.ErrDidntHavePermission, err)
+	s.Equal(utils.ErrDidntHavePermission, err)
 }
 
 func (s *TestSuiteDocumentService) TestDeleteDocument_ErrorGettingDocumentStage() {
@@ -1159,7 +1110,7 @@ func (s *TestSuiteDocumentService) TestDeleteDocument_ErrorDocumentAlreadySigned
 
 	err := s.documentService.DeleteDocument(context.Background(), "userid", 1, "documentid")
 
-	s.Equal(error2.ErrAlreadySigned, err)
+	s.Equal(utils.ErrAlreadySigned, err)
 }
 
 func (s *TestSuiteDocumentService) TestUpdateDocument_Success() {
@@ -1187,7 +1138,7 @@ func (s *TestSuiteDocumentService) TestUpdateDocument_ErrorDocumentAlreadySigned
 
 	err := s.documentService.UpdateDocument(context.Background(), &dto.DocumentUpdateRequest{}, "documentid")
 
-	s.Equal(error2.ErrAlreadySigned, err)
+	s.Equal(utils.ErrAlreadySigned, err)
 }
 
 func (s *TestSuiteDocumentService) TestUpdateDocument_ErrorDocumentAlreadyVerified() {
@@ -1196,7 +1147,7 @@ func (s *TestSuiteDocumentService) TestUpdateDocument_ErrorDocumentAlreadyVerifi
 
 	err := s.documentService.UpdateDocument(context.Background(), &dto.DocumentUpdateRequest{}, "documentid")
 
-	s.Equal(error2.ErrAlreadyVerified, err)
+	s.Equal(utils.ErrAlreadyVerified, err)
 }
 
 func (s *TestSuiteDocumentService) TestUpdateDocument_RepositoryError() {
@@ -1249,7 +1200,7 @@ func (s *TestSuiteDocumentService) TestUpdateDocumentFields_ErrorRoleNotSufficen
 
 	err := s.documentService.UpdateDocumentFields(context.Background(), "userid", 1, "documentid", &dto.FieldsUpdateRequest{})
 
-	s.Equal(error2.ErrDidntHavePermission, err)
+	s.Equal(utils.ErrDidntHavePermission, err)
 }
 
 func (s *TestSuiteDocumentService) TestUpdateDocumentFields_ErrorGettingDocumentStage() {
@@ -1272,7 +1223,7 @@ func (s *TestSuiteDocumentService) TestUpdateDocumentFields_ErrorDocumentAlready
 
 	err := s.documentService.UpdateDocumentFields(context.Background(), "userid", 1, "documentid", &dto.FieldsUpdateRequest{})
 
-	s.Equal(error2.ErrAlreadySigned, err)
+	s.Equal(utils.ErrAlreadySigned, err)
 }
 
 func (s *TestSuiteDocumentService) TestUpdateDocumentFields_ErrorDocumentAlreadyVerified() {
@@ -1284,7 +1235,7 @@ func (s *TestSuiteDocumentService) TestUpdateDocumentFields_ErrorDocumentAlready
 
 	err := s.documentService.UpdateDocumentFields(context.Background(), "userid", 1, "documentid", &dto.FieldsUpdateRequest{})
 
-	s.Equal(error2.ErrAlreadyVerified, err)
+	s.Equal(utils.ErrAlreadyVerified, err)
 }
 
 func TestDocumentService(t *testing.T) {

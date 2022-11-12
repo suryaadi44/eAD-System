@@ -6,7 +6,9 @@ import (
 	"errors"
 	"fmt"
 	mockTemplateServicePkg "github.com/suryaadi44/eAD-System/internal/template/service/mock"
-	error2 "github.com/suryaadi44/eAD-System/pkg/utils"
+	"github.com/suryaadi44/eAD-System/pkg/utils"
+	mockJwtServicePkg "github.com/suryaadi44/eAD-System/pkg/utils/jwt_service/mock"
+	mockValidatorPkg "github.com/suryaadi44/eAD-System/pkg/utils/validation/mock"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -19,45 +21,21 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 	"github.com/suryaadi44/eAD-System/internal/template/dto"
-	"github.com/suryaadi44/eAD-System/pkg/entity"
 )
-
-type MockJWTService struct {
-	mock.Mock
-}
-
-func (m *MockJWTService) GenerateToken(user *entity.User) (string, error) {
-	args := m.Called(user)
-	return args.String(0), args.Error(1)
-}
-
-func (m *MockJWTService) GetClaims(c *echo.Context) jwt.MapClaims {
-	args := m.Called(c)
-	return args.Get(0).(jwt.MapClaims)
-}
-
-type MockValidator struct {
-	mock.Mock
-}
-
-func (m *MockValidator) Validate(a0 interface{}) error {
-	args := m.Called(a0)
-	return args.Error(0)
-}
 
 type TestSuiteTemplateController struct {
 	suite.Suite
 	mockTemplateService *mockTemplateServicePkg.MockTemplateService
-	mockJWTService      *MockJWTService
-	mockValidator       *MockValidator
+	mockJWTService      *mockJwtServicePkg.MockJWTService
+	mockValidator       *mockValidatorPkg.MockValidator
 	templateController  *TemplateController
 	echoApp             *echo.Echo
 }
 
 func (s *TestSuiteTemplateController) SetupTest() {
 	s.mockTemplateService = new(mockTemplateServicePkg.MockTemplateService)
-	s.mockJWTService = new(MockJWTService)
-	s.mockValidator = new(MockValidator)
+	s.mockJWTService = new(mockJwtServicePkg.MockJWTService)
+	s.mockValidator = new(mockValidatorPkg.MockValidator)
 	s.templateController = NewTemplateController(s.mockTemplateService, s.mockJWTService)
 	s.echoApp = echo.New()
 	s.echoApp.Validator = s.mockValidator
@@ -114,14 +92,14 @@ func (s *TestSuiteTemplateController) TestAddTemplate() {
 			},
 			JWTReturn:      jwt.MapClaims{"role": float64(1)},
 			ExpectedStatus: http.StatusForbidden,
-			ExpectedError:  error2.ErrDidntHavePermission,
+			ExpectedError:  utils.ErrDidntHavePermission,
 		},
 		{
 			Name:           "Failed adding template : invalid request body",
 			RequestBody:    "invalid request body",
 			JWTReturn:      jwt.MapClaims{"role": float64(3)},
 			ExpectedStatus: http.StatusBadRequest,
-			ExpectedError:  error2.ErrBadRequestBody,
+			ExpectedError:  utils.ErrBadRequestBody,
 		},
 		{
 			Name: "Failed adding template : validation error",
@@ -139,9 +117,9 @@ func (s *TestSuiteTemplateController) TestAddTemplate() {
 				Name: "Template 1",
 			},
 			JWTReturn:      jwt.MapClaims{"role": float64(3)},
-			FunctionError:  error2.ErrDuplicateTemplateName,
+			FunctionError:  utils.ErrDuplicateTemplateName,
 			ExpectedStatus: http.StatusConflict,
-			ExpectedError:  error2.ErrDuplicateTemplateName,
+			ExpectedError:  utils.ErrDuplicateTemplateName,
 		},
 		{
 			Name: "Failed adding template : service error",
@@ -251,7 +229,7 @@ func (s *TestSuiteTemplateController) TestAddTemplate_Form_data_error() {
 
 	JWTReturn := jwt.MapClaims{"role": float64(3)}
 	ExpectedStatus := http.StatusBadRequest
-	ExpectedError := error2.ErrBadRequestBody
+	ExpectedError := utils.ErrBadRequestBody
 
 	r := httptest.NewRequest(http.MethodPost, "/templates", nil)
 	r.Header.Set(echo.HeaderContentType, "multipart/form-data")
@@ -323,10 +301,10 @@ func (s *TestSuiteTemplateController) TestGetAllTemplate() {
 		},
 		{
 			Name:           "failed to get all template: No template in database",
-			FunctionError:  error2.ErrTemplateNotFound,
+			FunctionError:  utils.ErrTemplateNotFound,
 			ExpectedStatus: http.StatusNotFound,
 			ExpectedBody:   nil,
-			ExpectedError:  error2.ErrTemplateNotFound,
+			ExpectedError:  utils.ErrTemplateNotFound,
 		},
 		{
 			Name:           "failed to get all template: generic error from service",
@@ -409,15 +387,15 @@ func (s *TestSuiteTemplateController) TestGetTemplateDetail() {
 			TemplateID:     "a",
 			ExpectedStatus: http.StatusBadRequest,
 			ExpectedBody:   nil,
-			ExpectedError:  error2.ErrInvalidTemplateID,
+			ExpectedError:  utils.ErrInvalidTemplateID,
 		},
 		{
 			Name:           "failed to get template detail: template not found",
 			TemplateID:     "1",
-			FunctionError:  error2.ErrTemplateNotFound,
+			FunctionError:  utils.ErrTemplateNotFound,
 			ExpectedStatus: http.StatusNotFound,
 			ExpectedBody:   nil,
-			ExpectedError:  error2.ErrTemplateNotFound,
+			ExpectedError:  utils.ErrTemplateNotFound,
 		},
 		{
 			Name:           "failed to get template detail: generic error from service",

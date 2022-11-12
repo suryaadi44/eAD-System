@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	mockUserServicePkg "github.com/suryaadi44/eAD-System/internal/user/service/mock"
-	error2 "github.com/suryaadi44/eAD-System/pkg/utils"
+	"github.com/suryaadi44/eAD-System/pkg/utils"
+	mockJwtServicePkg "github.com/suryaadi44/eAD-System/pkg/utils/jwt_service/mock"
+	mockValidatorPkg "github.com/suryaadi44/eAD-System/pkg/utils/validation/mock"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -15,45 +17,21 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 	"github.com/suryaadi44/eAD-System/internal/user/dto"
-	"github.com/suryaadi44/eAD-System/pkg/entity"
 )
-
-type MockJWTService struct {
-	mock.Mock
-}
-
-func (m *MockJWTService) GenerateToken(user *entity.User) (string, error) {
-	args := m.Called(user)
-	return args.String(0), args.Error(1)
-}
-
-func (m *MockJWTService) GetClaims(c *echo.Context) jwt.MapClaims {
-	args := m.Called(c)
-	return args.Get(0).(jwt.MapClaims)
-}
-
-type MockValidator struct {
-	mock.Mock
-}
-
-func (m *MockValidator) Validate(a0 interface{}) error {
-	args := m.Called(a0)
-	return args.Error(0)
-}
 
 type TestSuiteUserControllers struct {
 	suite.Suite
 	mockUserService *mockUserServicePkg.MockUserService
-	mockValidator   *MockValidator
-	mockJWT         *MockJWTService
+	mockValidator   *mockValidatorPkg.MockValidator
+	mockJWT         *mockJwtServicePkg.MockJWTService
 	userController  *UserController
 	echoApp         *echo.Echo
 }
 
 func (s *TestSuiteUserControllers) SetupTest() {
 	s.mockUserService = new(mockUserServicePkg.MockUserService)
-	s.mockValidator = new(MockValidator)
-	s.mockJWT = new(MockJWTService)
+	s.mockValidator = new(mockValidatorPkg.MockValidator)
+	s.mockJWT = new(mockJwtServicePkg.MockJWTService)
 	s.userController = NewUserController(s.mockUserService, s.mockJWT)
 	s.echoApp = echo.New()
 	s.echoApp.Validator = s.mockValidator
@@ -104,56 +82,56 @@ func (s *TestSuiteUserControllers) TestUpdateUser() {
 			RequestBody: &dto.UserSignUpRequest{
 				Username: "suryaadi",
 			},
-			FunctionError:   error2.ErrUserNotFound,
+			FunctionError:   utils.ErrUserNotFound,
 			ValidationError: nil,
 			JWTReturn: jwt.MapClaims{
 				"user_id": "1",
 			},
 			ExpectedStatus: http.StatusNotFound,
 			ExpectedBody:   nil,
-			ExpectedError:  error2.ErrUserNotFound,
+			ExpectedError:  utils.ErrUserNotFound,
 		},
 		{
 			Name: "Failed updating user : Username already exist",
 			RequestBody: &dto.UserSignUpRequest{
 				Username: "suryaadi",
 			},
-			FunctionError:   error2.ErrUsernameAlreadyExist,
+			FunctionError:   utils.ErrUsernameAlreadyExist,
 			ValidationError: nil,
 			JWTReturn: jwt.MapClaims{
 				"user_id": "1",
 			},
 			ExpectedStatus: http.StatusConflict,
 			ExpectedBody:   nil,
-			ExpectedError:  error2.ErrUsernameAlreadyExist,
+			ExpectedError:  utils.ErrUsernameAlreadyExist,
 		},
 		{
 			Name: "Failed updating user : NIK already exist",
 			RequestBody: &dto.UserSignUpRequest{
 				NIK: "1234567890123456",
 			},
-			FunctionError:   error2.ErrNIKAlreadyExist,
+			FunctionError:   utils.ErrNIKAlreadyExist,
 			ValidationError: nil,
 			JWTReturn: jwt.MapClaims{
 				"user_id": "1",
 			},
 			ExpectedStatus: http.StatusConflict,
 			ExpectedBody:   nil,
-			ExpectedError:  error2.ErrNIKAlreadyExist,
+			ExpectedError:  utils.ErrNIKAlreadyExist,
 		},
 		{
 			Name: "Failed updating user : NIP already exist",
 			RequestBody: &dto.UserSignUpRequest{
 				NIP: "123456789012345678",
 			},
-			FunctionError:   error2.ErrNIPAlreadyExist,
+			FunctionError:   utils.ErrNIPAlreadyExist,
 			ValidationError: nil,
 			JWTReturn: jwt.MapClaims{
 				"user_id": "1",
 			},
 			ExpectedStatus: http.StatusConflict,
 			ExpectedBody:   nil,
-			ExpectedError:  error2.ErrNIPAlreadyExist,
+			ExpectedError:  utils.ErrNIPAlreadyExist,
 		},
 		{
 			Name: "Failed updating user : Generic error",
@@ -179,7 +157,7 @@ func (s *TestSuiteUserControllers) TestUpdateUser() {
 			},
 			ExpectedStatus: http.StatusBadRequest,
 			ExpectedBody:   nil,
-			ExpectedError:  error2.ErrBadRequestBody,
+			ExpectedError:  utils.ErrBadRequestBody,
 		},
 		{
 			Name:            "Failed updating user : Validation error",
@@ -260,9 +238,9 @@ func (s *TestSuiteUserControllers) TestLogInUser() {
 				Username: "suryaadi",
 				Password: "123456",
 			},
-			FunctionError:  error2.ErrInvalidCredentials,
+			FunctionError:  utils.ErrInvalidCredentials,
 			ExpectedStatus: http.StatusUnauthorized,
-			ExpectedError:  error2.ErrInvalidCredentials,
+			ExpectedError:  utils.ErrInvalidCredentials,
 		},
 		{
 			Name: "Failed creating user : Generic error",
@@ -278,7 +256,7 @@ func (s *TestSuiteUserControllers) TestLogInUser() {
 			Name:           "Failed creating user : Invalid request body",
 			RequestBody:    "invalid request body",
 			ExpectedStatus: http.StatusBadRequest,
-			ExpectedError:  error2.ErrBadRequestBody,
+			ExpectedError:  utils.ErrBadRequestBody,
 		},
 		{
 			Name:            "Failed logging in user : Validation error",
@@ -415,7 +393,7 @@ func (s *TestSuiteUserControllers) TestGetBriefUsers() {
 			},
 			ExpectedStatus: http.StatusBadRequest,
 			ExpectedBody:   nil,
-			ExpectedError:  error2.ErrInvalidNumber,
+			ExpectedError:  utils.ErrInvalidNumber,
 		},
 		{
 			Name:           "Failed getting brief users : Invalid limit",
@@ -428,7 +406,7 @@ func (s *TestSuiteUserControllers) TestGetBriefUsers() {
 			},
 			ExpectedStatus: http.StatusBadRequest,
 			ExpectedBody:   nil,
-			ExpectedError:  error2.ErrInvalidNumber,
+			ExpectedError:  utils.ErrInvalidNumber,
 		},
 		{
 			Name:           "Failed getting brief users : role is not employee",
@@ -441,20 +419,20 @@ func (s *TestSuiteUserControllers) TestGetBriefUsers() {
 			},
 			ExpectedStatus: http.StatusForbidden,
 			ExpectedBody:   nil,
-			ExpectedError:  error2.ErrDidntHavePermission,
+			ExpectedError:  utils.ErrDidntHavePermission,
 		},
 		{
 			Name:           "Failed getting brief users : error no user found",
 			Page:           "",
 			Limit:          "",
-			FunctionError:  error2.ErrUserNotFound,
+			FunctionError:  utils.ErrUserNotFound,
 			FunctionReturn: nil,
 			JWTReturn: jwt.MapClaims{
 				"role": float64(2),
 			},
 			ExpectedStatus: http.StatusNotFound,
 			ExpectedBody:   nil,
-			ExpectedError:  error2.ErrUserNotFound,
+			ExpectedError:  utils.ErrUserNotFound,
 		},
 		{
 			Name:           "Failed getting brief users : error from service",
@@ -546,9 +524,9 @@ func (s *TestSuiteUserControllers) TestSignUpUser() {
 				Sex:      "L",
 				Address:  "Jl. Jalan",
 			},
-			FunctionError:  error2.ErrUsernameAlreadyExist,
+			FunctionError:  utils.ErrUsernameAlreadyExist,
 			ExpectedStatus: http.StatusConflict,
-			ExpectedError:  error2.ErrUsernameAlreadyExist,
+			ExpectedError:  utils.ErrUsernameAlreadyExist,
 		},
 		{
 			Name: "Failed creating user : NIK already exist",
@@ -562,9 +540,9 @@ func (s *TestSuiteUserControllers) TestSignUpUser() {
 				Sex:      "L",
 				Address:  "Jl. Jalan",
 			},
-			FunctionError:  error2.ErrNIKAlreadyExist,
+			FunctionError:  utils.ErrNIKAlreadyExist,
 			ExpectedStatus: http.StatusConflict,
-			ExpectedError:  error2.ErrNIKAlreadyExist,
+			ExpectedError:  utils.ErrNIKAlreadyExist,
 		},
 		{
 			Name: "Failed creating user : NIP already exist",
@@ -578,9 +556,9 @@ func (s *TestSuiteUserControllers) TestSignUpUser() {
 				Sex:      "L",
 				Address:  "Jl. Jalan",
 			},
-			FunctionError:  error2.ErrNIPAlreadyExist,
+			FunctionError:  utils.ErrNIPAlreadyExist,
 			ExpectedStatus: http.StatusConflict,
-			ExpectedError:  error2.ErrNIPAlreadyExist,
+			ExpectedError:  utils.ErrNIPAlreadyExist,
 		},
 		{
 			Name: "Failed creating user : Generic error",
@@ -602,7 +580,7 @@ func (s *TestSuiteUserControllers) TestSignUpUser() {
 			Name:           "Failed creating user : Invalid request body",
 			RequestBody:    "invalid request body",
 			ExpectedStatus: http.StatusBadRequest,
-			ExpectedError:  error2.ErrBadRequestBody,
+			ExpectedError:  utils.ErrBadRequestBody,
 		},
 		{
 			Name:            "Failed creating user : Validation error",

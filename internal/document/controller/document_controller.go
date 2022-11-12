@@ -1,7 +1,7 @@
 package controller
 
 import (
-	error2 "github.com/suryaadi44/eAD-System/pkg/utils"
+	"github.com/suryaadi44/eAD-System/pkg/utils"
 	"github.com/suryaadi44/eAD-System/pkg/utils/jwt_service"
 	"net/http"
 	"strconv"
@@ -40,7 +40,7 @@ func (d *DocumentController) InitRoute(api *echo.Group, secureApi *echo.Group) {
 func (d *DocumentController) AddDocument(c echo.Context) error {
 	document := new(dto.DocumentRequest)
 	if err := c.Bind(document); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, error2.ErrBadRequestBody.Error())
+		return echo.NewHTTPError(http.StatusBadRequest, utils.ErrBadRequestBody.Error())
 	}
 
 	if err := c.Validate(document); err != nil {
@@ -53,11 +53,11 @@ func (d *DocumentController) AddDocument(c echo.Context) error {
 	id, err := d.documentService.AddDocument(c.Request().Context(), document, userID)
 	if err != nil {
 		switch err {
-		case error2.ErrTemplateNotFound:
+		case utils.ErrTemplateNotFound:
 			return echo.NewHTTPError(http.StatusNotFound, err.Error())
-		case error2.ErrFieldNotMatch:
+		case utils.ErrFieldNotMatch:
 			return echo.NewHTTPError(http.StatusBadRequest, err.Error())
-		case error2.ErrDuplicateRegister:
+		case utils.ErrDuplicateRegister:
 			return echo.NewHTTPError(http.StatusConflict, err.Error())
 		default:
 			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
@@ -76,7 +76,7 @@ func (d *DocumentController) GetDocument(c echo.Context) error {
 	documentID := c.Param("document_id")
 	document, err := d.documentService.GetDocument(c.Request().Context(), documentID)
 	if err != nil {
-		if err == error2.ErrDocumentNotFound {
+		if err == utils.ErrDocumentNotFound {
 			return echo.NewHTTPError(http.StatusNotFound, err.Error())
 		}
 
@@ -96,7 +96,7 @@ func (d *DocumentController) GetDocument(c echo.Context) error {
 			"data":    document,
 		})
 	default:
-		return echo.NewHTTPError(http.StatusForbidden, error2.ErrDidntHavePermission.Error())
+		return echo.NewHTTPError(http.StatusForbidden, utils.ErrDidntHavePermission.Error())
 	}
 }
 
@@ -111,7 +111,7 @@ func (d *DocumentController) GetBriefDocument(c echo.Context) error {
 	}
 	pageInt, err := strconv.ParseInt(page, 10, 64)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, error2.ErrInvalidNumber.Error())
+		return echo.NewHTTPError(http.StatusBadRequest, utils.ErrInvalidNumber.Error())
 	}
 
 	limit := c.QueryParam("limit")
@@ -120,12 +120,12 @@ func (d *DocumentController) GetBriefDocument(c echo.Context) error {
 	}
 	limitInt, err := strconv.ParseInt(limit, 10, 64)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, error2.ErrInvalidNumber.Error())
+		return echo.NewHTTPError(http.StatusBadRequest, utils.ErrInvalidNumber.Error())
 	}
 
 	documents, err := d.documentService.GetBriefDocuments(c.Request().Context(), userID, int(role), int(pageInt), int(limitInt))
 	if err != nil {
-		if err == error2.ErrDocumentNotFound {
+		if err == utils.ErrDocumentNotFound {
 			return echo.NewHTTPError(http.StatusNotFound, err.Error())
 		}
 
@@ -146,7 +146,7 @@ func (d *DocumentController) GetDocumentStatus(c echo.Context) error {
 	documentID := c.Param("document_id")
 	status, err := d.documentService.GetDocumentStatus(c.Request().Context(), documentID)
 	if err != nil {
-		if err == error2.ErrDocumentNotFound {
+		if err == utils.ErrDocumentNotFound {
 			return echo.NewHTTPError(http.StatusNotFound, err.Error())
 		}
 
@@ -169,7 +169,7 @@ func (d *DocumentController) GetPDFDocument(c echo.Context) error {
 	if role == 1 {
 		applicantID, err := d.documentService.GetApplicantID(c.Request().Context(), documentID)
 		if err != nil {
-			if err == error2.ErrDocumentNotFound {
+			if err == utils.ErrDocumentNotFound {
 				return echo.NewHTTPError(http.StatusNotFound, err.Error())
 			}
 
@@ -177,13 +177,13 @@ func (d *DocumentController) GetPDFDocument(c echo.Context) error {
 		}
 
 		if *applicantID != userID {
-			return echo.NewHTTPError(http.StatusForbidden, error2.ErrDidntHavePermission.Error())
+			return echo.NewHTTPError(http.StatusForbidden, utils.ErrDidntHavePermission.Error())
 		}
 	}
 
 	pdf, err := d.documentService.GeneratePDFDocument(c.Request().Context(), documentID)
 	if err != nil {
-		if err == error2.ErrDocumentNotFound {
+		if err == utils.ErrDocumentNotFound {
 			return echo.NewHTTPError(http.StatusNotFound, err.Error())
 		}
 
@@ -198,18 +198,18 @@ func (d *DocumentController) VerifyDocument(c echo.Context) error {
 	role := claims["role"].(float64)
 	userID := claims["user_id"].(string)
 	if role < 2 { // role 2 or above are employee
-		return echo.NewHTTPError(http.StatusForbidden, error2.ErrDidntHavePermission.Error())
+		return echo.NewHTTPError(http.StatusForbidden, utils.ErrDidntHavePermission.Error())
 	}
 
 	verifyRequest := new(dto.VerifyDocumentRequest)
 	if err := c.Bind(verifyRequest); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, error2.ErrBadRequestBody.Error())
+		return echo.NewHTTPError(http.StatusBadRequest, utils.ErrBadRequestBody.Error())
 	}
 
 	documentID := c.Param("document_id")
 	err := d.documentService.VerifyDocument(c.Request().Context(), documentID, userID, verifyRequest)
 	if err != nil {
-		if err == error2.ErrDocumentNotFound {
+		if err == utils.ErrDocumentNotFound {
 			return echo.NewHTTPError(http.StatusNotFound, err.Error())
 		}
 
@@ -226,16 +226,16 @@ func (d *DocumentController) SignDocument(c echo.Context) error {
 	role := claims["role"].(float64)
 	userID := claims["user_id"].(string)
 	if role < 3 { // role 2 or above are employee
-		return echo.NewHTTPError(http.StatusForbidden, error2.ErrDidntHavePermission.Error())
+		return echo.NewHTTPError(http.StatusForbidden, utils.ErrDidntHavePermission.Error())
 	}
 
 	documentID := c.Param("document_id")
 	err := d.documentService.SignDocument(c.Request().Context(), documentID, userID)
 	if err != nil {
 		switch err {
-		case error2.ErrDocumentNotFound:
+		case utils.ErrDocumentNotFound:
 			return echo.NewHTTPError(http.StatusNotFound, err.Error())
-		case error2.ErrNotVerifiedYet:
+		case utils.ErrNotVerifiedYet:
 			return echo.NewHTTPError(http.StatusConflict, err.Error())
 		default:
 			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
@@ -256,11 +256,11 @@ func (d *DocumentController) DeleteDocument(c echo.Context) error {
 	err := d.documentService.DeleteDocument(c.Request().Context(), userID, int(role), documentID)
 	if err != nil {
 		switch err {
-		case error2.ErrDocumentNotFound:
+		case utils.ErrDocumentNotFound:
 			return echo.NewHTTPError(http.StatusNotFound, err.Error())
-		case error2.ErrDidntHavePermission:
+		case utils.ErrDidntHavePermission:
 			return echo.NewHTTPError(http.StatusForbidden, err.Error())
-		case error2.ErrAlreadySigned:
+		case utils.ErrAlreadySigned:
 			return echo.NewHTTPError(http.StatusForbidden, err.Error())
 		default:
 			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
@@ -276,23 +276,23 @@ func (d *DocumentController) UpdateDocument(c echo.Context) error {
 	claims := d.jwtService.GetClaims(&c)
 	role := claims["role"].(float64)
 	if role < 2 {
-		return echo.NewHTTPError(http.StatusForbidden, error2.ErrDidntHavePermission.Error())
+		return echo.NewHTTPError(http.StatusForbidden, utils.ErrDidntHavePermission.Error())
 	}
 
 	documentID := c.Param("document_id")
 	var document dto.DocumentUpdateRequest
 	if err := c.Bind(&document); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, error2.ErrBadRequestBody.Error())
+		return echo.NewHTTPError(http.StatusBadRequest, utils.ErrBadRequestBody.Error())
 	}
 
 	err := d.documentService.UpdateDocument(c.Request().Context(), &document, documentID)
 	if err != nil {
 		switch err {
-		case error2.ErrDocumentNotFound:
+		case utils.ErrDocumentNotFound:
 			return echo.NewHTTPError(http.StatusNotFound, err.Error())
-		case error2.ErrAlreadyVerified:
+		case utils.ErrAlreadyVerified:
 			fallthrough
-		case error2.ErrAlreadySigned:
+		case utils.ErrAlreadySigned:
 			return echo.NewHTTPError(http.StatusForbidden, err.Error())
 		default:
 			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
@@ -312,7 +312,7 @@ func (d *DocumentController) UpdateDocumentFields(c echo.Context) error {
 	documentID := c.Param("document_id")
 	var fields dto.FieldsUpdateRequest
 	if err := c.Bind(&fields); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, error2.ErrBadRequestBody.Error())
+		return echo.NewHTTPError(http.StatusBadRequest, utils.ErrBadRequestBody.Error())
 	}
 
 	if err := c.Validate(fields); err != nil {
@@ -322,13 +322,13 @@ func (d *DocumentController) UpdateDocumentFields(c echo.Context) error {
 	err := d.documentService.UpdateDocumentFields(c.Request().Context(), userID, int(role), documentID, &fields)
 	if err != nil {
 		switch err {
-		case error2.ErrDocumentNotFound:
+		case utils.ErrDocumentNotFound:
 			return echo.NewHTTPError(http.StatusNotFound, err.Error())
-		case error2.ErrAlreadyVerified:
+		case utils.ErrAlreadyVerified:
 			fallthrough
-		case error2.ErrAlreadySigned:
+		case utils.ErrAlreadySigned:
 			fallthrough
-		case error2.ErrDidntHavePermission:
+		case utils.ErrDidntHavePermission:
 			return echo.NewHTTPError(http.StatusForbidden, err.Error())
 		default:
 			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())

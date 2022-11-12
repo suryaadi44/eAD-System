@@ -1,11 +1,14 @@
-package password
+package impl
 
-import "golang.org/x/crypto/bcrypt"
+import (
+	"github.com/suryaadi44/eAD-System/pkg/utils/password"
+	"golang.org/x/crypto/bcrypt"
+)
 
 type PasswordFuncImpl struct {
 }
 
-func NewPasswordFuncImpl() PasswordFunc {
+func NewPasswordFuncImpl() password.PasswordFunc {
 	return &PasswordFuncImpl{}
 }
 

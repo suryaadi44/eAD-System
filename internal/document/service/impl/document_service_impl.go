@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/suryaadi44/eAD-System/internal/document/service"
-	error2 "github.com/suryaadi44/eAD-System/pkg/utils"
+	"github.com/suryaadi44/eAD-System/pkg/utils"
 	"time"
 
 	"github.com/suryaadi44/eAD-System/pkg/utils/html"
@@ -13,18 +13,18 @@ import (
 	"github.com/google/uuid"
 	"github.com/suryaadi44/eAD-System/internal/document/dto"
 	"github.com/suryaadi44/eAD-System/internal/document/repository"
-	repository2 "github.com/suryaadi44/eAD-System/internal/template/repository"
+	tmpRepo "github.com/suryaadi44/eAD-System/internal/template/repository"
 	"github.com/suryaadi44/eAD-System/pkg/entity"
 )
 
 type DocumentServiceImpl struct {
 	documentRepository repository.DocumentRepository
-	templateRepository repository2.TemplateRepository
+	templateRepository tmpRepo.TemplateRepository
 	pdfService         pdf.PDFService
 	renderService      html.RenderService
 }
 
-func NewDocumentServiceImpl(documentRepository repository.DocumentRepository, templateRepository repository2.TemplateRepository, pdfgService pdf.PDFService, renderService html.RenderService) service.DocumentService {
+func NewDocumentServiceImpl(documentRepository repository.DocumentRepository, templateRepository tmpRepo.TemplateRepository, pdfgService pdf.PDFService, renderService html.RenderService) service.DocumentService {
 	return &DocumentServiceImpl{
 		documentRepository: documentRepository,
 		templateRepository: templateRepository,
@@ -50,7 +50,7 @@ func (d *DocumentServiceImpl) AddDocument(ctx context.Context, document *dto.Doc
 		}
 
 		if !match {
-			return "", error2.ErrFieldNotMatch
+			return "", utils.ErrFieldNotMatch
 		}
 	}
 
@@ -171,7 +171,7 @@ func (d *DocumentServiceImpl) VerifyDocument(ctx context.Context, documentID str
 	}
 
 	if briefDocument.StageID > 1 {
-		return error2.ErrAlreadyVerified
+		return utils.ErrAlreadyVerified
 	}
 
 	var documentEntity = entity.Document{}
@@ -219,9 +219,9 @@ func (d *DocumentServiceImpl) SignDocument(ctx context.Context, documentID strin
 	}
 
 	if *stage > 2 {
-		return error2.ErrAlreadySigned
+		return utils.ErrAlreadySigned
 	} else if *stage < 2 {
-		return error2.ErrNotVerifiedYet
+		return utils.ErrNotVerifiedYet
 	}
 
 	var documentEntity = entity.Document{}
@@ -241,7 +241,7 @@ func (d *DocumentServiceImpl) DeleteDocument(ctx context.Context, userID string,
 		}
 
 		if *applicantID != userID {
-			return error2.ErrDidntHavePermission
+			return utils.ErrDidntHavePermission
 		}
 	}
 
@@ -251,7 +251,7 @@ func (d *DocumentServiceImpl) DeleteDocument(ctx context.Context, userID string,
 	}
 
 	if *stage == 3 {
-		return error2.ErrAlreadySigned
+		return utils.ErrAlreadySigned
 	}
 
 	return d.documentRepository.DeleteDocument(ctx, documentID)
@@ -264,11 +264,11 @@ func (d *DocumentServiceImpl) UpdateDocument(ctx context.Context, document *dto.
 	}
 
 	if *stage == 2 {
-		return error2.ErrAlreadyVerified
+		return utils.ErrAlreadyVerified
 	}
 
 	if *stage == 3 {
-		return error2.ErrAlreadySigned
+		return utils.ErrAlreadySigned
 	}
 
 	documentEntity := document.ToEntity()
@@ -285,7 +285,7 @@ func (d *DocumentServiceImpl) UpdateDocumentFields(ctx context.Context, userID s
 		}
 
 		if *applicantID != userID {
-			return error2.ErrDidntHavePermission
+			return utils.ErrDidntHavePermission
 		}
 	}
 
@@ -295,11 +295,11 @@ func (d *DocumentServiceImpl) UpdateDocumentFields(ctx context.Context, userID s
 	}
 
 	if *stage == 2 {
-		return error2.ErrAlreadyVerified
+		return utils.ErrAlreadyVerified
 	}
 
 	if *stage == 3 {
-		return error2.ErrAlreadySigned
+		return utils.ErrAlreadySigned
 	}
 
 	fieldsEntity := fields.ToEntity(documentID)
