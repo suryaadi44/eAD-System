@@ -2,9 +2,9 @@ package controller
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"errors"
+	mockUserServicePkg "github.com/suryaadi44/eAD-System/internal/user/service/mock"
 	error2 "github.com/suryaadi44/eAD-System/pkg/utils"
 	"net/http"
 	"net/http/httptest"
@@ -17,29 +17,6 @@ import (
 	"github.com/suryaadi44/eAD-System/internal/user/dto"
 	"github.com/suryaadi44/eAD-System/pkg/entity"
 )
-
-type MockUserService struct {
-	mock.Mock
-}
-
-func (m *MockUserService) SignUpUser(ctx context.Context, user *dto.UserSignUpRequest) error {
-	args := m.Called(ctx, user)
-	return args.Error(0)
-}
-func (m *MockUserService) LogInUser(ctx context.Context, user *dto.UserLoginRequest) (string, error) {
-	args := m.Called(ctx, user)
-	return args.String(0), args.Error(1)
-}
-
-func (m *MockUserService) GetBriefUsers(ctx context.Context, page int, limit int) (*dto.BriefUsersResponse, error) {
-	args := m.Called(ctx, page, limit)
-	return args.Get(0).(*dto.BriefUsersResponse), args.Error(1)
-}
-
-func (m *MockUserService) UpdateUser(ctx context.Context, userID string, request *dto.UserUpdateRequest) error {
-	args := m.Called(ctx, userID, request)
-	return args.Error(0)
-}
 
 type MockJWTService struct {
 	mock.Mock
@@ -66,7 +43,7 @@ func (m *MockValidator) Validate(a0 interface{}) error {
 
 type TestSuiteUserControllers struct {
 	suite.Suite
-	mockUserService *MockUserService
+	mockUserService *mockUserServicePkg.MockUserService
 	mockValidator   *MockValidator
 	mockJWT         *MockJWTService
 	userController  *UserController
@@ -74,7 +51,7 @@ type TestSuiteUserControllers struct {
 }
 
 func (s *TestSuiteUserControllers) SetupTest() {
-	s.mockUserService = new(MockUserService)
+	s.mockUserService = new(mockUserServicePkg.MockUserService)
 	s.mockValidator = new(MockValidator)
 	s.mockJWT = new(MockJWTService)
 	s.userController = NewUserController(s.mockUserService, s.mockJWT)

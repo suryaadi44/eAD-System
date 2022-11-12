@@ -1,7 +1,8 @@
-package repository
+package impl
 
 import (
 	"context"
+	"github.com/suryaadi44/eAD-System/internal/user/repository"
 	"github.com/suryaadi44/eAD-System/pkg/config"
 	"github.com/suryaadi44/eAD-System/pkg/entity"
 	error2 "github.com/suryaadi44/eAD-System/pkg/utils"
@@ -13,7 +14,7 @@ type UserRepositoryImpl struct {
 	db *gorm.DB
 }
 
-func NewUserRepositoryImpl(db *gorm.DB) UserRepository {
+func NewUserRepositoryImpl(db *gorm.DB) repository.UserRepository {
 	userRepository := &UserRepositoryImpl{
 		db: db,
 	}

@@ -2,10 +2,10 @@ package controller
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	mockTemplateServicePkg "github.com/suryaadi44/eAD-System/internal/template/service/mock"
 	error2 "github.com/suryaadi44/eAD-System/pkg/utils"
 	"io"
 	"mime/multipart"
@@ -21,25 +21,6 @@ import (
 	"github.com/suryaadi44/eAD-System/internal/template/dto"
 	"github.com/suryaadi44/eAD-System/pkg/entity"
 )
-
-type MockTemplateService struct {
-	mock.Mock
-}
-
-func (m *MockTemplateService) AddTemplate(ctx context.Context, template *dto.TemplateRequest, file io.Reader, fileName string) error {
-	args := m.Called(ctx, template, file, fileName)
-	return args.Error(0)
-}
-
-func (m *MockTemplateService) GetAllTemplate(ctx context.Context) (*dto.TemplatesResponse, error) {
-	args := m.Called(ctx)
-	return args.Get(0).(*dto.TemplatesResponse), args.Error(1)
-}
-
-func (m *MockTemplateService) GetTemplateDetail(ctx context.Context, templateId uint) (*dto.TemplateResponse, error) {
-	args := m.Called(ctx, templateId)
-	return args.Get(0).(*dto.TemplateResponse), args.Error(1)
-}
 
 type MockJWTService struct {
 	mock.Mock
@@ -66,7 +47,7 @@ func (m *MockValidator) Validate(a0 interface{}) error {
 
 type TestSuiteTemplateController struct {
 	suite.Suite
-	mockTemplateService *MockTemplateService
+	mockTemplateService *mockTemplateServicePkg.MockTemplateService
 	mockJWTService      *MockJWTService
 	mockValidator       *MockValidator
 	templateController  *TemplateController
@@ -74,7 +55,7 @@ type TestSuiteTemplateController struct {
 }
 
 func (s *TestSuiteTemplateController) SetupTest() {
-	s.mockTemplateService = new(MockTemplateService)
+	s.mockTemplateService = new(mockTemplateServicePkg.MockTemplateService)
 	s.mockJWTService = new(MockJWTService)
 	s.mockValidator = new(MockValidator)
 	s.templateController = NewTemplateController(s.mockTemplateService, s.mockJWTService)

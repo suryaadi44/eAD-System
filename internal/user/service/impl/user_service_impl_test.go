@@ -1,8 +1,10 @@
-package service
+package impl
 
 import (
 	"context"
 	"errors"
+	mockUserRepoPkg "github.com/suryaadi44/eAD-System/internal/user/repository/mock"
+	"github.com/suryaadi44/eAD-System/internal/user/service"
 	error2 "github.com/suryaadi44/eAD-System/pkg/utils"
 	"testing"
 
@@ -13,30 +15,6 @@ import (
 	"github.com/suryaadi44/eAD-System/internal/user/dto"
 	"github.com/suryaadi44/eAD-System/pkg/entity"
 )
-
-type MockUserRepository struct {
-	mock.Mock
-}
-
-func (m *MockUserRepository) CreateUser(ctx context.Context, user *entity.User) error {
-	args := m.Called(ctx, user)
-	return args.Error(0)
-}
-
-func (m *MockUserRepository) FindByUsername(ctx context.Context, username string) (*entity.User, error) {
-	args := m.Called(ctx, username)
-	return args.Get(0).(*entity.User), args.Error(1)
-}
-
-func (m *MockUserRepository) GetBriefUsers(ctx context.Context, limit int, offset int) (*entity.Users, error) {
-	args := m.Called(ctx, limit, offset)
-	return args.Get(0).(*entity.Users), args.Error(1)
-}
-
-func (m *MockUserRepository) UpdateUser(ctx context.Context, user *entity.User) error {
-	args := m.Called(ctx, user)
-	return args.Error(0)
-}
 
 type MockPasswordHashFunction struct {
 	mock.Mock
@@ -68,14 +46,14 @@ func (m *MockJWTService) GetClaims(c *echo.Context) jwt.MapClaims {
 
 type TestSuiteUserService struct {
 	suite.Suite
-	mockUserRepository *MockUserRepository
+	mockUserRepository *mockUserRepoPkg.MockUserRepository
 	mockPasswordHash   *MockPasswordHashFunction
 	mockJWTService     *MockJWTService
-	userService        UserService
+	userService        service.UserService
 }
 
 func (t *TestSuiteUserService) SetupTest() {
-	t.mockUserRepository = new(MockUserRepository)
+	t.mockUserRepository = new(mockUserRepoPkg.MockUserRepository)
 	t.mockPasswordHash = new(MockPasswordHashFunction)
 	t.mockJWTService = new(MockJWTService)
 	t.userService = NewUserServiceImpl(t.mockUserRepository, t.mockPasswordHash, t.mockJWTService)

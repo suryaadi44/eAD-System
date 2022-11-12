@@ -1,7 +1,8 @@
-package repository
+package impl
 
 import (
 	"context"
+	"github.com/suryaadi44/eAD-System/internal/template/repository"
 	error2 "github.com/suryaadi44/eAD-System/pkg/utils"
 	"strings"
 
@@ -13,7 +14,7 @@ type TemplateRepositoryImpl struct {
 	db *gorm.DB
 }
 
-func NewTemplateRepositoryImpl(db *gorm.DB) TemplateRepository {
+func NewTemplateRepositoryImpl(db *gorm.DB) repository.TemplateRepository {
 	return &TemplateRepositoryImpl{
 		db: db,
 	}

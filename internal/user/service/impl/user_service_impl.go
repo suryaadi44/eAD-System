@@ -1,10 +1,11 @@
-package service
+package impl
 
 import (
 	"context"
 	"github.com/google/uuid"
 	"github.com/suryaadi44/eAD-System/internal/user/dto"
 	"github.com/suryaadi44/eAD-System/internal/user/repository"
+	"github.com/suryaadi44/eAD-System/internal/user/service"
 	error2 "github.com/suryaadi44/eAD-System/pkg/utils"
 	"github.com/suryaadi44/eAD-System/pkg/utils/jwt_service"
 	"github.com/suryaadi44/eAD-System/pkg/utils/password"
@@ -18,7 +19,7 @@ type (
 	}
 )
 
-func NewUserServiceImpl(userRepository repository.UserRepository, function password.PasswordFunc, jwt jwt_service.JWTService) UserService {
+func NewUserServiceImpl(userRepository repository.UserRepository, function password.PasswordFunc, jwt jwt_service.JWTService) service.UserService {
 	return &UserServiceImpl{
 		userRepository: userRepository,
 		passwordHash:   function,
