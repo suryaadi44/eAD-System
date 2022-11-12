@@ -24,17 +24,17 @@ func NewDocumentController(documentService service.DocumentService, jwtService j
 }
 
 func (d *DocumentController) InitRoute(api *echo.Group, secureApi *echo.Group) {
-	api.GET("/documents/:document_id/status", d.GetDocumentStatus)
+	api.GET("/:document_id/status", d.GetDocumentStatus)
 
-	secureApi.POST("/documents", d.AddDocument)
-	secureApi.GET("/documents", d.GetBriefDocument)
-	secureApi.GET("/documents/:document_id", d.GetDocument)
-	secureApi.GET("/documents/:document_id/pdf", d.GetPDFDocument)
-	secureApi.PATCH("/documents/:document_id/verify", d.VerifyDocument)
-	secureApi.PATCH("/documents/:document_id/sign", d.SignDocument)
-	secureApi.DELETE("/documents/:document_id", d.DeleteDocument)
-	secureApi.PUT("/documents/:document_id", d.UpdateDocument)
-	secureApi.PUT("/documents/:document_id/fields", d.UpdateDocumentFields)
+	secureApi.POST("", d.AddDocument)
+	secureApi.GET("", d.GetBriefDocument)
+	secureApi.GET("/:document_id", d.GetDocument)
+	secureApi.GET("/:document_id/pdf", d.GetPDFDocument)
+	secureApi.PATCH("/:document_id/verify", d.VerifyDocument)
+	secureApi.PATCH("/:document_id/sign", d.SignDocument)
+	secureApi.DELETE("/:document_id", d.DeleteDocument)
+	secureApi.PUT("/:document_id", d.UpdateDocument)
+	secureApi.PUT("/:document_id/fields", d.UpdateDocumentFields)
 }
 
 func (d *DocumentController) AddDocument(c echo.Context) error {
