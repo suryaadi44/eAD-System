@@ -2,11 +2,7 @@ package service
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"io"
-	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/suryaadi44/eAD-System/pkg/utils/html"
@@ -15,90 +11,29 @@ import (
 	"github.com/google/uuid"
 	"github.com/suryaadi44/eAD-System/internal/document/dto"
 	"github.com/suryaadi44/eAD-System/internal/document/repository"
+	repository2 "github.com/suryaadi44/eAD-System/internal/template/repository"
 	"github.com/suryaadi44/eAD-System/pkg/entity"
 	"github.com/suryaadi44/eAD-System/pkg/utils"
 )
 
 type DocumentServiceImpl struct {
 	documentRepository repository.DocumentRepository
+	templateRepository repository2.TemplateRepository
 	pdfService         pdf.PDFService
 	renderService      html.RenderService
 }
 
-func NewDocumentServiceImpl(documentRepository repository.DocumentRepository, pdfgService pdf.PDFService, renderService html.RenderService) DocumentService {
+func NewDocumentServiceImpl(documentRepository repository.DocumentRepository, templateRepository repository2.TemplateRepository, pdfgService pdf.PDFService, renderService html.RenderService) DocumentService {
 	return &DocumentServiceImpl{
 		documentRepository: documentRepository,
+		templateRepository: templateRepository,
 		pdfService:         pdfgService,
 		renderService:      renderService,
 	}
 }
 
-func (d *DocumentServiceImpl) AddTemplate(ctx context.Context, template *dto.TemplateRequest, file io.Reader, fileName string) error {
-	path, err := d.writeTemplateFile(file, fileName)
-	if err != nil {
-		return err
-	}
-
-	templateEntity := template.ToEntity()
-	templateEntity.Path = path
-
-	return d.addTemplateToRepo(ctx, templateEntity)
-}
-
-func (d *DocumentServiceImpl) addTemplateToRepo(ctx context.Context, template *entity.Template) error {
-	return d.documentRepository.AddTemplate(ctx, template)
-}
-
-func (*DocumentServiceImpl) writeTemplateFile(file io.Reader, fileName string) (string, error) {
-	newFileName := fmt.Sprint(time.Now().UnixNano(), "-", fileName)
-	path := filepath.Join("./template", newFileName)
-
-	// check if file already exist
-	if _, err := os.Stat(path); err == nil {
-		return "", fmt.Errorf("file '%s' already exist", newFileName)
-	} else if !errors.Is(err, os.ErrNotExist) {
-		return "", err
-	}
-	dst, err := os.Create(path)
-	if err != nil {
-		return "", err
-	}
-
-	if _, err = io.Copy(dst, file); err != nil {
-		return "", err
-	}
-
-	if err = dst.Close(); err != nil {
-		return "", err
-	}
-
-	return path, nil
-}
-
-func (d *DocumentServiceImpl) GetAllTemplate(ctx context.Context) (*dto.TemplatesResponse, error) {
-	templates, err := d.documentRepository.GetAllTemplate(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	templateResponse := dto.NewTemplatesResponse(templates)
-
-	return templateResponse, nil
-}
-
-func (d *DocumentServiceImpl) GetTemplateDetail(ctx context.Context, templateId uint) (*dto.TemplateResponse, error) {
-	tmpl, err := d.documentRepository.GetTemplateDetail(ctx, templateId)
-	if err != nil {
-		return nil, err
-	}
-
-	templateResponse := dto.NewTemplateResponse(tmpl)
-
-	return templateResponse, nil
-}
-
 func (d *DocumentServiceImpl) AddDocument(ctx context.Context, document *dto.DocumentRequest, userID string) (string, error) {
-	keyList, err := d.documentRepository.GetTemplateFields(ctx, document.TemplateID)
+	keyList, err := d.templateRepository.GetTemplateFields(ctx, document.TemplateID)
 	if err != nil {
 		return "", err
 	}

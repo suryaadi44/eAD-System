@@ -51,64 +51,6 @@ func (d *DocumentRepositoryImpl) InitDefaultStage() error {
 	return nil
 }
 
-func (d *DocumentRepositoryImpl) AddTemplate(ctx context.Context, template *entity.Template) error {
-	err := d.db.WithContext(ctx).Create(template).Error
-	if err != nil {
-		if strings.Contains(err.Error(), "Error 1062: Duplicate entry") {
-			return utils.ErrDuplicateTemplateName
-		}
-		return err
-	}
-
-	return nil
-}
-
-func (d *DocumentRepositoryImpl) GetAllTemplate(ctx context.Context) (*entity.Templates, error) {
-	var templates entity.Templates
-	err := d.db.WithContext(ctx).
-		Preload("Fields").
-		Find(&templates).Error
-	if err != nil {
-		return nil, err
-	}
-
-	if len(templates) == 0 {
-		return nil, utils.ErrTemplateNotFound
-	}
-
-	return &templates, nil
-}
-
-func (d *DocumentRepositoryImpl) GetTemplateDetail(ctx context.Context, templateId uint) (*entity.Template, error) {
-	var template entity.Template
-	err := d.db.WithContext(ctx).
-		Preload("Fields").
-		First(&template, "id = ?", templateId).Error
-	if err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return nil, utils.ErrTemplateNotFound
-		}
-
-		return nil, err
-	}
-
-	return &template, nil
-}
-
-func (d *DocumentRepositoryImpl) GetTemplateFields(ctx context.Context, templateId uint) (*entity.TemplateFields, error) {
-	var templateFields entity.TemplateFields
-	err := d.db.WithContext(ctx).Find(&templateFields, "template_id = ?", templateId).Error
-	if err != nil {
-		return nil, err
-	}
-
-	if len(templateFields) == 0 {
-		return nil, utils.ErrTemplateFieldNotFound
-	}
-
-	return &templateFields, nil
-}
-
 func (d *DocumentRepositoryImpl) AddDocument(ctx context.Context, document *entity.Document) (string, error) {
 	err := d.db.WithContext(ctx).Omit("Register").Create(document).Error
 	if err != nil {
