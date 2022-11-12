@@ -1,4 +1,4 @@
-package controller
+package bootsrapper
 
 import (
 	"github.com/go-playground/validator/v10"
