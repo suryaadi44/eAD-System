@@ -5,7 +5,9 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/suryaadi44/eAD-System/pkg/utils"
+	"github.com/golang-jwt/jwt"
+	"github.com/labstack/echo/v4"
+	error2 "github.com/suryaadi44/eAD-System/pkg/utils/error"
 
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
@@ -58,6 +60,11 @@ type MockJWTService struct {
 func (m *MockJWTService) GenerateToken(user *entity.User) (string, error) {
 	args := m.Called(user)
 	return args.String(0), args.Error(1)
+}
+
+func (m *MockJWTService) GetClaims(c *echo.Context) jwt.MapClaims {
+	args := m.Called(c)
+	return args.Get(0).(jwt.MapClaims)
 }
 
 type TestSuiteUserService struct {
@@ -146,14 +153,14 @@ func (t *TestSuiteUserService) TestLoginUser_FailedFindByUsername() {
 }
 
 func (t *TestSuiteUserService) TestLoginUser_FailedUserNotFound() {
-	t.mockUserRepository.On("FindByUsername", mock.Anything, "username").Return(&entity.User{}, utils.ErrUserNotFound)
+	t.mockUserRepository.On("FindByUsername", mock.Anything, "username").Return(&entity.User{}, error2.ErrUserNotFound)
 
 	_, err := t.userService.LogInUser(context.Background(), &dto.UserLoginRequest{
 		Username: "username",
 		Password: "password",
 	})
 
-	t.Equal(utils.ErrInvalidCredentials, err)
+	t.Equal(error2.ErrInvalidCredentials, err)
 }
 
 func (t *TestSuiteUserService) TestLoginUser_FailedCompareHashAndPassword() {
@@ -168,7 +175,7 @@ func (t *TestSuiteUserService) TestLoginUser_FailedCompareHashAndPassword() {
 		Password: "password",
 	})
 
-	t.Equal(utils.ErrInvalidCredentials, err)
+	t.Equal(error2.ErrInvalidCredentials, err)
 }
 
 func (t *TestSuiteUserService) TestLoginUser_FailedGenerateToken() {

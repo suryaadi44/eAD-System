@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/suryaadi44/eAD-System/pkg/config"
 	"github.com/suryaadi44/eAD-System/pkg/entity"
-	"github.com/suryaadi44/eAD-System/pkg/utils"
+	error2 "github.com/suryaadi44/eAD-System/pkg/utils/error"
 	"gorm.io/gorm"
 	"strings"
 )
@@ -51,11 +51,11 @@ func (u *UserRepositoryImpl) CreateUser(ctx context.Context, user *entity.User) 
 		if strings.Contains(err.Error(), "Error 1062: Duplicate entry") {
 			switch {
 			case strings.Contains(err.Error(), "username"):
-				return utils.ErrUsernameAlreadyExist
+				return error2.ErrUsernameAlreadyExist
 			case strings.Contains(err.Error(), "n_ip"):
-				return utils.ErrNIPAlreadyExist
+				return error2.ErrNIPAlreadyExist
 			case strings.Contains(err.Error(), "nik"):
-				return utils.ErrNIKAlreadyExist
+				return error2.ErrNIKAlreadyExist
 			}
 		}
 
@@ -70,7 +70,7 @@ func (u *UserRepositoryImpl) FindByUsername(ctx context.Context, username string
 	err := u.db.WithContext(ctx).Select([]string{"id", "username", "password", "role"}).Where("username = ?", username).First(&user).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return nil, utils.ErrUserNotFound
+			return nil, error2.ErrUserNotFound
 		}
 
 		return nil, err
@@ -92,7 +92,7 @@ func (u *UserRepositoryImpl) GetBriefUsers(ctx context.Context, limit int, offse
 	}
 
 	if len(users) == 0 {
-		return nil, utils.ErrUserNotFound
+		return nil, error2.ErrUserNotFound
 	}
 
 	return &users, nil
@@ -105,11 +105,11 @@ func (u *UserRepositoryImpl) UpdateUser(ctx context.Context, user *entity.User) 
 		if strings.Contains(errStr, "Error 1062: Duplicate entry") {
 			switch {
 			case strings.Contains(errStr, "username"):
-				return utils.ErrUsernameAlreadyExist
+				return error2.ErrUsernameAlreadyExist
 			case strings.Contains(errStr, "n_ip"):
-				return utils.ErrNIPAlreadyExist
+				return error2.ErrNIPAlreadyExist
 			case strings.Contains(errStr, "nik"):
-				return utils.ErrNIKAlreadyExist
+				return error2.ErrNIKAlreadyExist
 			}
 		}
 
@@ -117,7 +117,7 @@ func (u *UserRepositoryImpl) UpdateUser(ctx context.Context, user *entity.User) 
 	}
 
 	if result.RowsAffected == 0 {
-		return utils.ErrUserNotFound
+		return error2.ErrUserNotFound
 	}
 
 	return nil

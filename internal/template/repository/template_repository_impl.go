@@ -2,10 +2,10 @@ package repository
 
 import (
 	"context"
+	error2 "github.com/suryaadi44/eAD-System/pkg/utils/error"
 	"strings"
 
 	"github.com/suryaadi44/eAD-System/pkg/entity"
-	"github.com/suryaadi44/eAD-System/pkg/utils"
 	"gorm.io/gorm"
 )
 
@@ -23,7 +23,7 @@ func (t *TemplateRepositoryImpl) AddTemplate(ctx context.Context, template *enti
 	err := t.db.WithContext(ctx).Create(template).Error
 	if err != nil {
 		if strings.Contains(err.Error(), "Error 1062: Duplicate entry") {
-			return utils.ErrDuplicateTemplateName
+			return error2.ErrDuplicateTemplateName
 		}
 		return err
 	}
@@ -41,7 +41,7 @@ func (t *TemplateRepositoryImpl) GetAllTemplate(ctx context.Context) (*entity.Te
 	}
 
 	if len(templates) == 0 {
-		return nil, utils.ErrTemplateNotFound
+		return nil, error2.ErrTemplateNotFound
 	}
 
 	return &templates, nil
@@ -54,7 +54,7 @@ func (t *TemplateRepositoryImpl) GetTemplateDetail(ctx context.Context, template
 		First(&template, "id = ?", templateId).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return nil, utils.ErrTemplateNotFound
+			return nil, error2.ErrTemplateNotFound
 		}
 
 		return nil, err
@@ -71,7 +71,7 @@ func (t *TemplateRepositoryImpl) GetTemplateFields(ctx context.Context, template
 	}
 
 	if len(templateFields) == 0 {
-		return nil, utils.ErrTemplateFieldNotFound
+		return nil, error2.ErrTemplateFieldNotFound
 	}
 
 	return &templateFields, nil

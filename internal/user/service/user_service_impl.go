@@ -5,28 +5,20 @@ import (
 	"github.com/google/uuid"
 	"github.com/suryaadi44/eAD-System/internal/user/dto"
 	"github.com/suryaadi44/eAD-System/internal/user/repository"
-	"github.com/suryaadi44/eAD-System/pkg/entity"
-	"github.com/suryaadi44/eAD-System/pkg/utils"
+	error2 "github.com/suryaadi44/eAD-System/pkg/utils/error"
+	"github.com/suryaadi44/eAD-System/pkg/utils/jwt_service"
+	"github.com/suryaadi44/eAD-System/pkg/utils/password"
 )
 
 type (
-	PasswordHashFunction interface {
-		GenerateFromPassword(password []byte, cost int) ([]byte, error)
-		CompareHashAndPassword(hashedPassword, password []byte) error
-	}
-
-	JWTService interface {
-		GenerateToken(user *entity.User) (string, error)
-	}
-
 	UserServiceImpl struct {
 		userRepository repository.UserRepository
-		passwordHash   PasswordHashFunction
-		jwtService     JWTService
+		passwordHash   password.PasswordFunc
+		jwtService     jwt_service.JWTService
 	}
 )
 
-func NewUserServiceImpl(userRepository repository.UserRepository, function PasswordHashFunction, jwt JWTService) UserService {
+func NewUserServiceImpl(userRepository repository.UserRepository, function password.PasswordFunc, jwt jwt_service.JWTService) UserService {
 	return &UserServiceImpl{
 		userRepository: userRepository,
 		passwordHash:   function,
@@ -57,8 +49,8 @@ func (u *UserServiceImpl) SignUpUser(ctx context.Context, user *dto.UserSignUpRe
 func (u *UserServiceImpl) LogInUser(ctx context.Context, user *dto.UserLoginRequest) (string, error) {
 	userEntity, err := u.userRepository.FindByUsername(ctx, user.Username)
 	if err != nil {
-		if err == utils.ErrUserNotFound {
-			return "", utils.ErrInvalidCredentials
+		if err == error2.ErrUserNotFound {
+			return "", error2.ErrInvalidCredentials
 		}
 
 		return "", err
@@ -66,7 +58,7 @@ func (u *UserServiceImpl) LogInUser(ctx context.Context, user *dto.UserLoginRequ
 
 	err = u.passwordHash.CompareHashAndPassword([]byte(userEntity.Password), []byte(user.Password))
 	if err != nil {
-		return "", utils.ErrInvalidCredentials
+		return "", error2.ErrInvalidCredentials
 	}
 
 	token, err := u.jwtService.GenerateToken(userEntity)
