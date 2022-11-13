@@ -49,12 +49,6 @@ func (s *TestSuiteTemplateController) TearDownTest() {
 	s.echoApp = nil
 }
 
-func (s *TestSuiteTemplateController) TestInitRoute() {
-	s.NotPanics(func() {
-		s.templateController.InitRoute(s.echoApp.Group("/"), s.echoApp.Group("/"))
-	})
-}
-
 func (s *TestSuiteTemplateController) TestAddTemplate() {
 	for _, tc := range []struct {
 		Name            string

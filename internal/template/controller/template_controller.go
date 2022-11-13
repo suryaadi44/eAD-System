@@ -23,13 +23,6 @@ func NewTemplateController(templateService service.TemplateService, jwtService j
 	}
 }
 
-func (t *TemplateController) InitRoute(api *echo.Group, secureApi *echo.Group) {
-	api.GET("", t.GetAllTemplate)
-	api.GET("/:template_id", t.GetTemplateDetail)
-
-	secureApi.POST("", t.AddTemplate)
-}
-
 func (t *TemplateController) AddTemplate(c echo.Context) error {
 	claims := t.jwtService.GetClaims(&c)
 	role := claims["role"].(float64)

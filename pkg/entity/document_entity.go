@@ -6,12 +6,12 @@ import (
 )
 
 type Document struct {
-	ID          string   `gorm:"primaryKey; type:varchar(36)"`
-	RegisterID  uint     `gorm:"type:int;default:null"`
-	Register    Register `gorm:"default:null"`
-	Description string   `gorm:"type:varchar(255)"`
-	ApplicantID string   `gorm:"type:varchar(36);not null"`
-	Applicant   User     `gorm:"foreignKey:ApplicantID"`
+	ID          string `gorm:"primaryKey; type:varchar(36)"`
+	RegisterID  uint   `gorm:"type:int;default:null"`
+	Register    Register
+	Description string `gorm:"type:varchar(255)"`
+	ApplicantID string `gorm:"type:varchar(36);not null"`
+	Applicant   User   `gorm:"foreignKey:ApplicantID"`
 	TemplateID  uint
 	Template    Template
 	Fields      DocumentFields

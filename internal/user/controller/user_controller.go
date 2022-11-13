@@ -22,14 +22,6 @@ func NewUserController(userService service.UserService, jwtService jwt_service.J
 	}
 }
 
-func (u *UserController) InitRoute(api *echo.Group, secureApi *echo.Group) {
-	api.POST("/signup", u.SignUpUser)
-	api.POST("/login", u.LoginUser)
-
-	secureApi.GET("", u.GetBriefUsers)
-	secureApi.PUT("", u.UpdateUser)
-}
-
 func (u *UserController) SignUpUser(c echo.Context) error {
 	user := new(dto.UserSignUpRequest)
 	if err := c.Bind(user); err != nil {
