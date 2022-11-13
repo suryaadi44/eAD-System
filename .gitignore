@@ -15,5 +15,5 @@
 # vendor/
 *.env
 tmp/
-template/
+/template/
 .idea

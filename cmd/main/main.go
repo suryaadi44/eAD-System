@@ -3,8 +3,8 @@ package main
 import (
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
+	"github.com/suryaadi44/eAD-System/pkg/bootsrapper"
 	"github.com/suryaadi44/eAD-System/pkg/config"
-	"github.com/suryaadi44/eAD-System/pkg/controller"
 	"log"
 	"os"
 
@@ -44,7 +44,7 @@ func main() {
 	}
 
 	e := echo.New()
-	controller.InitController(e, db, env)
+	bootsrapper.InitController(e, db, env)
 
 	e.Logger.Fatal(e.Start(":" + env["PORT"]))
 }

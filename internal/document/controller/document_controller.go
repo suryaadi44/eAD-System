@@ -1,127 +1,26 @@
 package controller
 
 import (
+	"github.com/suryaadi44/eAD-System/pkg/utils"
+	"github.com/suryaadi44/eAD-System/pkg/utils/jwt_service"
 	"net/http"
 	"strconv"
 
-	"github.com/golang-jwt/jwt"
 	"github.com/labstack/echo/v4"
 	"github.com/suryaadi44/eAD-System/internal/document/dto"
 	"github.com/suryaadi44/eAD-System/internal/document/service"
-	"github.com/suryaadi44/eAD-System/pkg/utils"
 )
 
-type (
-	JWTService interface {
-		GetClaims(c *echo.Context) jwt.MapClaims
-	}
+type DocumentController struct {
+	documentService service.DocumentService
+	jwtService      jwt_service.JWTService
+}
 
-	DocumentController struct {
-		documentService service.DocumentService
-		jwtService      JWTService
-	}
-)
-
-func NewDocumentController(documentService service.DocumentService, jwtService JWTService) *DocumentController {
+func NewDocumentController(documentService service.DocumentService, jwtService jwt_service.JWTService) *DocumentController {
 	return &DocumentController{
 		documentService: documentService,
 		jwtService:      jwtService,
 	}
-}
-
-func (d *DocumentController) InitRoute(api *echo.Group, secureApi *echo.Group) {
-	api.GET("/templates", d.GetAllTemplate)
-	api.GET("/templates/:template_id", d.GetTemplateDetail)
-	api.GET("/documents/:document_id/status", d.GetDocumentStatus)
-
-	secureApi.POST("/templates", d.AddTemplate)
-	secureApi.POST("/documents", d.AddDocument)
-	secureApi.GET("/documents", d.GetBriefDocument)
-	secureApi.GET("/documents/:document_id", d.GetDocument)
-	secureApi.GET("/documents/:document_id/pdf", d.GetPDFDocument)
-	secureApi.PATCH("/documents/:document_id/verify", d.VerifyDocument)
-	secureApi.PATCH("/documents/:document_id/sign", d.SignDocument)
-	secureApi.DELETE("/documents/:document_id", d.DeleteDocument)
-	secureApi.PUT("/documents/:document_id", d.UpdateDocument)
-	secureApi.PUT("/documents/:document_id/fields", d.UpdateDocumentFields)
-}
-
-func (d *DocumentController) AddTemplate(c echo.Context) error {
-	claims := d.jwtService.GetClaims(&c)
-	role := claims["role"].(float64)
-	if role < 2 { // role 2 or above are employee
-		return echo.NewHTTPError(http.StatusForbidden, utils.ErrDidntHavePermission.Error())
-	}
-
-	template := new(dto.TemplateRequest)
-	if err := c.Bind(template); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, utils.ErrBadRequestBody.Error())
-	}
-
-	if err := c.Validate(template); err != nil {
-		return err
-	}
-
-	file, err := c.FormFile("template")
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, utils.ErrBadRequestBody.Error())
-	}
-
-	fileSrc, err := file.Open()
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
-	}
-	defer fileSrc.Close()
-
-	err = d.documentService.AddTemplate(c.Request().Context(), template, fileSrc, file.Filename)
-	if err != nil {
-		if err == utils.ErrDuplicateTemplateName {
-			return echo.NewHTTPError(http.StatusConflict, err.Error())
-		}
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
-	}
-
-	return c.JSON(http.StatusOK, echo.Map{
-		"message": "success adding template",
-	})
-}
-
-func (d *DocumentController) GetAllTemplate(c echo.Context) error {
-	templates, err := d.documentService.GetAllTemplate(c.Request().Context())
-	if err != nil {
-		if err == utils.ErrTemplateNotFound {
-			return echo.NewHTTPError(http.StatusNotFound, err.Error())
-		}
-
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
-	}
-
-	return c.JSON(http.StatusOK, echo.Map{
-		"message": "success getting all template",
-		"data":    templates,
-	})
-}
-
-func (d *DocumentController) GetTemplateDetail(c echo.Context) error {
-	templateId := c.Param("template_id")
-	templateIdInt, err := strconv.ParseUint(templateId, 10, 64)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, utils.ErrInvalidTemplateID.Error())
-	}
-
-	template, err := d.documentService.GetTemplateDetail(c.Request().Context(), uint(templateIdInt))
-	if err != nil {
-		if err == utils.ErrTemplateNotFound {
-			return echo.NewHTTPError(http.StatusNotFound, err.Error())
-		}
-
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
-	}
-
-	return c.JSON(http.StatusOK, echo.Map{
-		"message": "success getting template detail",
-		"data":    template,
-	})
 }
 
 func (d *DocumentController) AddDocument(c echo.Context) error {

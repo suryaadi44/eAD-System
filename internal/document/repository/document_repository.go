@@ -7,11 +7,6 @@ import (
 )
 
 type DocumentRepository interface {
-	AddTemplate(ctc context.Context, template *entity.Template) error
-	GetAllTemplate(ctx context.Context) (*entity.Templates, error)
-	GetTemplateDetail(ctx context.Context, templateId uint) (*entity.Template, error)
-	GetTemplateFields(ctx context.Context, templateId uint) (*entity.TemplateFields, error)
-
 	AddDocument(ctx context.Context, document *entity.Document) (string, error)
 	GetDocument(ctx context.Context, documentID string) (*entity.Document, error)
 	GetBriefDocument(ctx context.Context, documentID string) (*entity.Document, error)

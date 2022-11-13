@@ -2,74 +2,36 @@ package controller
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"errors"
+	mockUserServicePkg "github.com/suryaadi44/eAD-System/internal/user/service/mock"
+	"github.com/suryaadi44/eAD-System/pkg/utils"
+	mockJwtServicePkg "github.com/suryaadi44/eAD-System/pkg/utils/jwt_service/mock"
+	mockValidatorPkg "github.com/suryaadi44/eAD-System/pkg/utils/validation/mock"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
 	"github.com/golang-jwt/jwt"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 	"github.com/suryaadi44/eAD-System/internal/user/dto"
-	"github.com/suryaadi44/eAD-System/pkg/utils"
-	"net/http"
-	"net/http/httptest"
-	"testing"
 )
-
-type MockUserService struct {
-	mock.Mock
-}
-
-func (m *MockUserService) SignUpUser(ctx context.Context, user *dto.UserSignUpRequest) error {
-	args := m.Called(ctx, user)
-	return args.Error(0)
-}
-func (m *MockUserService) LogInUser(ctx context.Context, user *dto.UserLoginRequest) (string, error) {
-	args := m.Called(ctx, user)
-	return args.String(0), args.Error(1)
-}
-
-func (m *MockUserService) GetBriefUsers(ctx context.Context, page int, limit int) (*dto.BriefUsersResponse, error) {
-	args := m.Called(ctx, page, limit)
-	return args.Get(0).(*dto.BriefUsersResponse), args.Error(1)
-}
-
-func (m *MockUserService) UpdateUser(ctx context.Context, userID string, request *dto.UserUpdateRequest) error {
-	args := m.Called(ctx, userID, request)
-	return args.Error(0)
-}
-
-type MockJWTService struct {
-	mock.Mock
-}
-
-func (m *MockJWTService) GetClaims(c *echo.Context) jwt.MapClaims {
-	args := m.Called(c)
-	return args.Get(0).(jwt.MapClaims)
-}
-
-type MockValidator struct {
-	mock.Mock
-}
-
-func (m *MockValidator) Validate(a0 interface{}) error {
-	args := m.Called(a0)
-	return args.Error(0)
-}
 
 type TestSuiteUserControllers struct {
 	suite.Suite
-	mockUserService *MockUserService
-	mockValidator   *MockValidator
-	mockJWT         *MockJWTService
+	mockUserService *mockUserServicePkg.MockUserService
+	mockValidator   *mockValidatorPkg.MockValidator
+	mockJWT         *mockJwtServicePkg.MockJWTService
 	userController  *UserController
 	echoApp         *echo.Echo
 }
 
 func (s *TestSuiteUserControllers) SetupTest() {
-	s.mockUserService = new(MockUserService)
-	s.mockValidator = new(MockValidator)
-	s.mockJWT = new(MockJWTService)
+	s.mockUserService = new(mockUserServicePkg.MockUserService)
+	s.mockValidator = new(mockValidatorPkg.MockValidator)
+	s.mockJWT = new(mockJwtServicePkg.MockJWTService)
 	s.userController = NewUserController(s.mockUserService, s.mockJWT)
 	s.echoApp = echo.New()
 	s.echoApp.Validator = s.mockValidator
@@ -79,13 +41,6 @@ func (s *TestSuiteUserControllers) TearDownTest() {
 	s.mockUserService = nil
 	s.userController = nil
 	s.echoApp = nil
-}
-
-func (s *TestSuiteUserControllers) TestInitRoute() {
-	group := s.echoApp.Group("/user")
-	s.NotPanics(func() {
-		s.userController.InitRoute(group, group)
-	})
 }
 
 func (s *TestSuiteUserControllers) TestUpdateUser() {
