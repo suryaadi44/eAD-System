@@ -48,12 +48,6 @@ func (s *TestSuiteDocumentController) TearDownTest() {
 	s.echoApp = nil
 }
 
-func (s *TestSuiteDocumentController) TestInitRoute() {
-	s.NotPanics(func() {
-		s.documentController.InitRoute(s.echoApp.Group("/"), s.echoApp.Group("/"))
-	})
-}
-
 func (s *TestSuiteDocumentController) TestAddDocument() {
 	for _, tc := range []struct {
 		Name               string

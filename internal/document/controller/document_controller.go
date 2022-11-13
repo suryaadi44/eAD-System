@@ -23,20 +23,6 @@ func NewDocumentController(documentService service.DocumentService, jwtService j
 	}
 }
 
-func (d *DocumentController) InitRoute(api *echo.Group, secureApi *echo.Group) {
-	api.GET("/:document_id/status", d.GetDocumentStatus)
-
-	secureApi.POST("", d.AddDocument)
-	secureApi.GET("", d.GetBriefDocument)
-	secureApi.GET("/:document_id", d.GetDocument)
-	secureApi.GET("/:document_id/pdf", d.GetPDFDocument)
-	secureApi.PATCH("/:document_id/verify", d.VerifyDocument)
-	secureApi.PATCH("/:document_id/sign", d.SignDocument)
-	secureApi.DELETE("/:document_id", d.DeleteDocument)
-	secureApi.PUT("/:document_id", d.UpdateDocument)
-	secureApi.PUT("/:document_id/fields", d.UpdateDocumentFields)
-}
-
 func (d *DocumentController) AddDocument(c echo.Context) error {
 	document := new(dto.DocumentRequest)
 	if err := c.Bind(document); err != nil {

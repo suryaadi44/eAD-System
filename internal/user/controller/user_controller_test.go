@@ -43,13 +43,6 @@ func (s *TestSuiteUserControllers) TearDownTest() {
 	s.echoApp = nil
 }
 
-func (s *TestSuiteUserControllers) TestInitRoute() {
-	group := s.echoApp.Group("/user")
-	s.NotPanics(func() {
-		s.userController.InitRoute(group, group)
-	})
-}
-
 func (s *TestSuiteUserControllers) TestUpdateUser() {
 	for _, tc := range []struct {
 		Name            string
